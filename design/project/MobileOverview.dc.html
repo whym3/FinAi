@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mobile overview — Pravah</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv mob" data-theme="{{theme}}" style="width: 390px; height: 2080px; overflow: hidden; font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <header class="mob-top">
+    <span class="brand-mark" style="width: 28px; height: 28px" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8c3-3 6-3 9 0s6 3 9 0"></path><path d="M3 16c3-3 6-3 9 0s6 3 9 0"></path></svg></span>
+    <button class="ent" type="button" aria-label="Switch client entity" style="flex: 1 1 auto; border: 0; padding: 2px 4px; min-height: 44px">
+      <span style="display: flex; flex-direction: column; min-width: 0">
+        <span class="ent-n" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Meridian Auto Components</span>
+        <span class="ent-m">FY 2026-27 · Oct 2026</span>
+      </span>
+      <i class="ic t3 i-chev"></i>
+    </button>
+    <button class="ib" type="button" aria-label="Search" style="width: 44px; height: 44px"><i class="ic l i-search"></i></button>
+    <button class="ib" type="button" aria-label="Notifications, 6 unread" style="width: 44px; height: 44px"><i class="ic l i-bell"></i><span class="pip" style="top: 6px; right: 4px">6</span></button>
+  </header>
+
+  <div class="mob-body">
+    <div class="row" style="gap: 6px">
+      <span class="fresh"><span class="dot"></span>SAP · 10 min</span>
+      <span class="fresh"><span class="dot"></span>GST · 2 h</span>
+      <span class="fresh stale"><i class="ic s i-warn"></i>Bank · 26 h</span>
+    </div>
+
+    <div class="banner warn" role="status" style="padding: 10px 12px">
+      <i class="ic l i-warn"></i>
+      <div class="tx sm" style="flex-basis: 200px"><span class="b">Bank feed is stale</span> — last statement 12-10-2026 17:40.</div>
+      <button class="btn sm" type="button" style="min-height: 32px">Retry</button>
+    </div>
+
+    <section class="card" style="border-color: var(--accent)" aria-label="Waiting for your approval">
+      <div class="card-b col" style="gap: 8px">
+        <div class="row" style="justify-content: space-between"><span class="up" style="color: var(--accent)">Waiting for you</span><span class="cnt acc">3</span></div>
+        <div class="m">Payment run PR-2026-10-16</div>
+        <div class="row" style="justify-content: space-between; align-items: baseline"><span class="b" style="font-size: 22px; line-height: 28px">₹58,72,450.00</span><span class="xs t2">41 invoices · 17 vendors</span></div>
+        <div class="xs t2">Approved by Farah Siddiqui (Controller) · your approval completes it · value date 16-10-2026</div>
+        <a href="MobileApprove.dc.html" class="btn pri lg block">Review and approve<i class="ic i-arrowr"></i></a>
+        <a href="#" class="sm" style="text-align: center; padding: 6px 0">2 more approvals</a>
+      </div>
+    </section>
+
+    <div class="row" style="justify-content: space-between"><h2 class="up" style="margin: 0">Key figures</h2><span class="xs t3">tap for detail</span></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="8">
+        <article class="{{k.cls}}" style="padding: 10px 12px 8px">
+          <div class="kpi-l" style="min-height: 32px">{{k.l}}</div>
+          <div class="kpi-v" style="font-size: 20px; line-height: 26px">{{k.v}}<small>{{k.u}}</small></div>
+          <sc-if value="{{k.hasSt}}" hint-placeholder-val="{{false}}"><div><span class="{{k.stCls}}"><i class="{{k.stIc}}"></i>{{k.st}}</span></div></sc-if>
+          <div class="kpi-f" style="margin-top: 2px; padding-top: 6px"><span class="{{k.srcCls}}"><b>{{k.src}}</b>{{k.t}}</span></div>
+        </article>
+      </sc-for>
+    </div>
+    <a href="#" class="btn block">All 13 figures</a>
+
+    <section class="card" aria-label="13-week cash forecast">
+      <div class="card-h" style="padding: 10px 12px"><h3>13-week cash forecast</h3><span class="src stale"><b>Bank</b>26 h</span></div>
+      <div class="card-b" style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+        <div class="row xs t2" style="gap: 10px">
+          <span class="row" style="gap: 4px"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--s-in)"></span>In</span>
+          <span class="row" style="gap: 4px"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--s-out)"></span>Out</span>
+          <span class="row" style="gap: 4px"><span style="width: 12px; height: 2px; background: var(--s-line)"></span>Closing</span>
+          <span class="row" style="gap: 4px"><span style="width: 12px; border-top: 2px dashed var(--bad)"></span>Min ₹75 L</span>
+        </div>
+        <svg viewBox="0 0 334 150" width="100%" role="img" aria-label="Cash forecast, 13 weeks. Lowest closing balance 82 lakh in week of 07-12-2026; ends at 1.05 crore." style="display: block">
+          <line x1="0" x2="334" y1="82" y2="82" style="stroke: var(--text-3); stroke-width: 1"></line>
+          <line x1="0" x2="334" y1="37" y2="37" style="stroke: var(--bad); stroke-width: 1.2; stroke-dasharray: 4 3"></line>
+          <sc-for list="{{cols}}" as="c" hint-placeholder-count="13">
+            <rect x="{{c.bx}}" y="{{c.inY}}" width="12" height="{{c.inH}}" rx="1.5" style="fill: var(--s-in)"></rect>
+            <rect x="{{c.bx}}" y="{{c.outY}}" width="12" height="{{c.outH}}" rx="1.5" style="fill: var(--s-out)"></rect>
+          </sc-for>
+          <path d="{{line}}" style="fill: none; stroke: var(--s-line); stroke-width: 2; stroke-linejoin: round"></path>
+          <text x="0" y="146" style="fill: var(--text-3); font-size: 10px">12-10</text>
+          <text x="334" y="146" text-anchor="end" style="fill: var(--text-3); font-size: 10px">04-01</text>
+        </svg>
+        <div class="row sm" style="justify-content: space-between"><span class="t2">Lowest closing</span><span class="m">₹82.0 L · w/c 07-12-2026</span></div>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Compliance due dates">
+      <div class="card-h" style="padding: 10px 12px"><h3>Due dates</h3><span class="src"><b>GST portal</b>2 h</span></div>
+      <div>
+        <sc-for list="{{deadlines}}" as="d" hint-placeholder-count="5">
+          <div style="display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); min-height: 56px">
+            <div style="width: 44px; text-align: center; flex: none"><div class="b" style="font-size: 18px; line-height: 22px">{{d.days}}</div><div class="xs t3">days</div></div>
+            <div style="flex: 1 1 auto; min-width: 0"><div class="sm m">{{d.name}}</div><div class="xs t3">Due {{d.due}}</div></div>
+            <span class="{{d.stCls}}"><i class="{{d.stIc}}"></i>{{d.st}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Top overdue customers">
+      <div class="card-h" style="padding: 10px 12px"><h3>Top overdue customers</h3><span class="src"><b>SAP</b>10 min</span></div>
+      <div>
+        <sc-for list="{{customers}}" as="c" hint-placeholder-count="3">
+          <div style="display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); min-height: 52px">
+            <div style="flex: 1 1 auto; min-width: 0"><div class="sm m">{{c.name}}</div><div class="xs t3">{{c.days}} days overdue · {{c.note}}</div></div>
+            <span class="num sm m">{{c.od}}</span>
+          </div>
+        </sc-for>
+        <a href="#" class="sm" style="display: block; padding: 12px; text-align: center">All 11 overdue customers</a>
+      </div>
+    </section>
+  </div>
+
+  <nav class="mob-tabs" aria-label="Main">
+    <a href="#" class="mob-tab on"><i class="ic xl i-grid"></i>Overview</a>
+    <a href="MobileApprove.dc.html" class="mob-tab"><i class="ic xl i-check"></i>Approvals<span class="cnt acc" style="position: absolute; top: 2px; left: 56%">3</span></a>
+    <a href="#" class="mob-tab"><i class="ic xl i-alert"></i>Exceptions<span class="cnt bad" style="position: absolute; top: 2px; left: 56%">9</span></a>
+    <a href="#" class="mob-tab"><i class="ic xl i-menu"></i>More</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":2080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = { ok: ['st ok', 'ic i-ok'], warn: ['st warn', 'ic i-warn'], bad: ['st bad', 'ic i-bad'], none: ['st none', 'ic i-none'] };
+    const k = (l, v, u, src, t, tone, s, stale) => ({ l, v, u, src, t, srcCls: stale ? 'src stale' : 'src', cls: tone === 'bad' ? 'kpi alert' : tone === 'warn' ? 'kpi watch' : 'kpi', hasSt: !!s, st: s || '', stCls: tone ? st[tone][0] : '', stIc: tone ? st[tone][1] : '' });
+    const kpis = [
+      k('Due next 7 days', '₹62.4', 'L', 'SAP', '10 min ago'),
+      k('Overdue payables', '₹18.9', 'L', 'SAP', '10 min ago', 'bad', '23 invoices'),
+      k('MSME dues near 45-day limit', '₹7.3', 'L', 'SAP', '10 min ago', 'warn', '2 days'),
+      k('Critical exceptions', '9', 'open', 'SAP', '10 min ago', 'bad', '4 past SLA'),
+      k('Bank balance', '₹1.12', 'Cr', 'Bank', '26 h ago', 'warn', 'Stale', true),
+      k('Overdue receivables', '₹41.2', 'L', 'SAP', '10 min ago', 'bad', '11 customers'),
+      k('ITC at risk', '₹3.8', 'L', 'GST portal', '2 h ago', 'warn', '31 invoices'),
+      k('DSO · DPO', '61 · 52', 'days', 'SAP', '10 min ago')
+    ];
+    const cin = [38, 46, 52, 41, 44, 58, 36, 49, 47, 55, 40, 62, 45];
+    const cout = [62, 31, 44, 58, 48, 39, 52, 46, 61, 37, 49, 43, 50];
+    const y = v => 10 + (120 - v) * 0.6;
+    const step = 334 / 13;
+    let bal = 112;
+    const cols = cin.map((v, i) => {
+      bal = bal + v - cout[i];
+      const c = step * (i + 0.5);
+      return { c, bx: +(c - 6).toFixed(1), inY: +y(v).toFixed(1), inH: +(y(0) - y(v) - 1).toFixed(1), outY: +(y(0) + 1).toFixed(1), outH: +(y(-cout[i]) - y(0) - 1).toFixed(1), by: +y(bal).toFixed(1) };
+    });
+    const line = cols.map((p, i) => (i ? 'L' : 'M') + p.c.toFixed(1) + ' ' + p.by).join(' ');
+    const dl = (name, due, days, tone, s) => ({ name, due, days, st: s, stCls: st[tone][0], stIc: st[tone][1] });
+    return {
+      theme: this.props.theme ?? 'light',
+      kpis, cols, line,
+      deadlines: [
+        dl('MSME Form 1', '31-10-2026', 18, 'warn', 'Draft'),
+        dl('TDS deposit', '07-11-2026', 25, 'warn', 'Accruing'),
+        dl('GSTR-1', '11-11-2026', 29, 'ok', 'Ready'),
+        dl('GSTR-2B available', '14-11-2026', 32, 'warn', '64 IMS'),
+        dl('GSTR-3B', '20-11-2026', 38, 'none', 'Not started')
+      ],
+      customers: [
+        { name: 'Shivneri Motors Ltd', days: 48, note: 'promise 20-10', od: '₹11,90,500.00' },
+        { name: 'Vardhan Tractors Pvt Ltd', days: 37, note: 'reminder 2 sent', od: '₹8,62,400.00' },
+        { name: 'Indrayani Auto Assemblies', days: 64, note: 'disputed', od: '₹5,10,000.00' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Overview — Pravah Finance Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
+    <dc-import name="Sidebar" active="overview" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  </div>
+  <div class="main">
+    <dc-import name="Topbar" theme="{{theme}}" firm="{{isFirm}}" hint-size="100%,64px"></dc-import>
+    <main class="content">
+
+      <div class="ph">
+        <div class="ph-l">
+          <h1>Overview</h1>
+          <sc-if value="{{isEntity}}" hint-placeholder-val="{{true}}">
+            <p class="sm t2">Meridian Auto Components Pvt Ltd · as of 13 Oct 2026, 15:20 IST · cards in lakh (L) and crore (Cr), tables in full rupees</p>
+          </sc-if>
+          <sc-if value="{{isFirm}}" hint-placeholder-val="{{false}}">
+            <p class="sm t2">Mehta &amp; Rao Chartered Accountants · 3 client entities · as of 13 Oct 2026, 15:20 IST · sorted by risk</p>
+          </sc-if>
+        </div>
+        <div class="ph-r">
+          <div class="seg" role="group" aria-label="Overview scope">
+            <button type="button" class="{{segEntity}}" onClick="{{showEntity}}"><i class="ic i-building"></i>Entity</button>
+            <button type="button" class="{{segFirm}}" onClick="{{showFirm}}"><i class="ic i-users"></i>Firm · 3 clients</button>
+          </div>
+          <button class="btn" type="button"><i class="ic i-sliders"></i>Customise</button>
+          <button class="btn" type="button"><i class="ic i-download"></i>Export PDF</button>
+        </div>
+      </div>
+
+      <!-- ================= ENTITY VIEW ================= -->
+      <sc-if value="{{isEntity}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+
+          <div class="banner warn" role="status">
+            <i class="ic l i-warn"></i>
+            <div class="tx"><span class="b">Bank feed is stale.</span> Last statement synced 12-10-2026 17:40 (26 h ago). Bank balance and the opening balance of the cash forecast may be out of date.</div>
+            <button class="btn sm" type="button"><i class="ic i-refresh"></i>Retry sync</button>
+            <button class="btn sm ghost" type="button">Feed status</button>
+          </div>
+
+          <section aria-label="Payables KPIs" style="display: flex; flex-direction: column; gap: 8px">
+            <div class="row"><h2 class="up" style="margin: 0">Payables</h2><span class="xs t3">Purchase commitments to posted liabilities</span></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px">
+              <sc-for list="{{kpiPay}}" as="k" hint-placeholder-count="6">
+                <article class="{{k.cls}}" title="{{k.exact}}">
+                  <div class="kpi-l">{{k.l}}</div>
+                  <div class="kpi-v">{{k.v}}<small>{{k.u}}</small></div>
+                  <div class="kpi-s">{{k.s}}</div>
+                  <sc-if value="{{k.hasSt}}" hint-placeholder-val="{{false}}"><div><span class="{{k.stCls}}"><i class="{{k.stIc}}"></i>{{k.st}}</span></div></sc-if>
+                  <div class="kpi-f"><span class="{{k.srcCls}}"><b>{{k.src}}</b>{{k.t}}</span></div>
+                </article>
+              </sc-for>
+            </div>
+          </section>
+
+          <section aria-label="Receivables, cash and tax KPIs" style="display: flex; flex-direction: column; gap: 8px">
+            <div class="row"><h2 class="up" style="margin: 0">Receivables, cash &amp; tax</h2><span class="xs t3">Collections, liquidity and input tax credit</span></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px">
+              <sc-for list="{{kpiRec}}" as="k" hint-placeholder-count="6">
+                <article class="{{k.cls}}" title="{{k.exact}}">
+                  <div class="kpi-l">{{k.l}}</div>
+                  <div class="kpi-v">{{k.v}}<small>{{k.u}}</small></div>
+                  <div class="kpi-s">{{k.s}}</div>
+                  <sc-if value="{{k.hasSt}}" hint-placeholder-val="{{false}}"><div><span class="{{k.stCls}}"><i class="{{k.stIc}}"></i>{{k.st}}</span></div></sc-if>
+                  <div class="kpi-f"><span class="{{k.srcCls}}"><b>{{k.src}}</b>{{k.t}}</span></div>
+                </article>
+              </sc-for>
+            </div>
+          </section>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch">
+            <article class="kpi alert" style="flex: 1 1 220px; max-width: 320px">
+              <div class="kpi-l">Critical exceptions</div>
+              <div class="kpi-v">9<small>open</small></div>
+              <div class="kpi-s">4 past SLA · ₹9.84 L of payments blocked</div>
+              <div class="col" style="gap: 4px; margin-top: 4px">
+                <div class="row sm" style="justify-content: space-between"><span class="t2">MSME deadline risk</span><span class="m">3</span></div>
+                <div class="row sm" style="justify-content: space-between"><span class="t2">Not in GSTR-2B</span><span class="m">2</span></div>
+                <div class="row sm" style="justify-content: space-between"><span class="t2">Missing IRN</span><span class="m">2</span></div>
+                <div class="row sm" style="justify-content: space-between"><span class="t2">Vendor bank details changed</span><span class="m">1</span></div>
+                <div class="row sm" style="justify-content: space-between"><span class="t2">GRN missing</span><span class="m">1</span></div>
+              </div>
+              <div class="kpi-f"><span class="src"><b>SAP</b>synced 10 min ago</span><span class="src"><b>GST portal</b>2 h ago</span></div>
+            </article>
+
+            <section class="card" style="flex: 999 1 640px" aria-label="Compliance calendar">
+              <div class="card-h">
+                <h2>Compliance calendar</h2>
+                <span class="src"><b>GST portal</b>synced 2 h ago</span>
+                <span class="src"><b>SAP</b>synced 10 min ago</span>
+                <a href="#" class="sm">All due dates</a>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr))">
+                <sc-for list="{{deadlines}}" as="d" hint-placeholder-count="5">
+                  <div style="padding: 12px 16px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px">
+                    <div class="sm m">{{d.name}}</div>
+                    <div class="xs t3">{{d.what}}</div>
+                    <div class="row" style="gap: 6px; align-items: baseline"><span class="b" style="font-size: 18px; line-height: 24px">{{d.days}}</span><span class="xs t2">days left</span></div>
+                    <span class="bar"><i style="{{d.barStyle}}"></i></span>
+                    <div class="xs t2">Due <span class="m" style="color: var(--text)">{{d.due}}</span></div>
+                    <div><span class="{{d.stCls}}"><i class="{{d.stIc}}"></i>{{d.st}}</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+            <section class="card" style="flex: 2 1 640px; min-width: 0" aria-label="13-week cash forecast">
+              <div class="card-h">
+                <h2>13-week cash forecast</h2>
+                <span class="src"><b>SAP</b>due dates · 10 min ago</span>
+                <span class="src stale"><b>Bank</b>opening balance · 26 h ago</span>
+                <div class="seg" role="group" aria-label="Chart or table"><button type="button" class="on">Chart</button><button type="button">Table</button></div>
+              </div>
+              <div class="card-b" style="display: flex; flex-direction: column; gap: 10px">
+                <div class="row" style="gap: 16px">
+                  <span class="row sm t2" style="gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--s-in)"></span>Collections in</span>
+                  <span class="row sm t2" style="gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--s-out)"></span>Payments out</span>
+                  <span class="row sm t2" style="gap: 6px"><span style="width: 16px; height: 2px; background: var(--s-line)"></span>Closing balance</span>
+                  <span class="row sm t2" style="gap: 6px"><span style="width: 16px; height: 0; border-top: 2px dashed var(--bad)"></span>Minimum balance ₹75 L</span>
+                  <span class="spacer"></span>
+                  <span class="sm t2">Opening ₹1.12 Cr · Closing w/c 04-01-2027 <span class="m" style="color: var(--text)">₹1.05 Cr</span></span>
+                </div>
+                <div style="position: relative">
+                  <svg viewBox="0 0 712 276" width="100%" role="img" aria-label="13-week cash forecast from 12-10-2026 to 04-01-2027. Collections between 36 and 62 lakh per week, payments between 31 and 62 lakh per week. Closing balance lowest at 82 lakh in week of 07-12-2026, ends at 1.05 crore." style="display: block; overflow: visible">
+                    <sc-for list="{{ticks}}" as="t" hint-placeholder-count="6">
+                      <line x1="52" x2="704" y1="{{t.y}}" y2="{{t.y}}" style="{{t.lineStyle}}"></line>
+                      <text x="44" y="{{t.ly}}" text-anchor="end" style="fill: var(--text-3); font-size: 10.5px">{{t.t}}</text>
+                    </sc-for>
+                    <line x1="52" x2="704" y1="69.5" y2="69.5" style="stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 5 4"></line>
+                    <line x1="{{hx}}" x2="{{hx}}" y1="14" y2="244" style="stroke: var(--border-2); stroke-width: 1"></line>
+                    <sc-for list="{{cols}}" as="c" hint-placeholder-count="13">
+                      <rect x="{{c.bx}}" y="{{c.inY}}" width="18" height="{{c.inH}}" rx="2" style="fill: var(--s-in)"></rect>
+                      <rect x="{{c.bx}}" y="{{c.outY}}" width="18" height="{{c.outH}}" rx="2" style="fill: var(--s-out)"></rect>
+                      <text x="{{c.c}}" y="262" text-anchor="middle" style="fill: var(--text-3); font-size: 10.5px">{{c.label}}</text>
+                    </sc-for>
+                    <path d="{{line}}" style="fill: none; stroke: var(--s-line); stroke-width: 2; stroke-linejoin: round"></path>
+                    <sc-for list="{{cols}}" as="c" hint-placeholder-count="13">
+                      <circle cx="{{c.c}}" cy="{{c.by}}" r="3.5" style="fill: var(--s-line); stroke: var(--surface); stroke-width: 2"></circle>
+                    </sc-for>
+                    <circle cx="{{hx}}" cy="{{hy}}" r="6" style="fill: none; stroke: var(--s-line); stroke-width: 2"></circle>
+                    <text x="704" y="64" text-anchor="end" style="fill: var(--bad); font-size: 10.5px; font-weight: 600">Min ₹75 L</text>
+                  </svg>
+                  <div style="position: absolute; left: 68.5%; top: 92px; background: var(--surface); border: 1px solid var(--border-2); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; min-width: 190px; font-size: 12px; line-height: 18px">
+                    <div class="m">Week of 07-12-2026</div>
+                    <div class="row" style="justify-content: space-between; gap: 16px"><span class="row t2" style="gap: 6px"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--s-in)"></span>Collections</span><span class="num">₹47,00,000</span></div>
+                    <div class="row" style="justify-content: space-between; gap: 16px"><span class="row t2" style="gap: 6px"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--s-out)"></span>Payments</span><span class="num">−₹61,00,000</span></div>
+                    <div class="row" style="justify-content: space-between; gap: 16px; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px"><span class="t2">Closing</span><span class="num b">₹82,00,000</span></div>
+                    <div class="xs warn-t" style="margin-top: 2px">Lowest in 13 weeks · ₹7 L above minimum</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card" style="flex: 1 1 340px; min-width: 0" aria-label="Schedule III ageing">
+              <div class="card-h">
+                <h2>Schedule III ageing</h2>
+                <span class="src"><b>SAP</b>10 min ago</span>
+              </div>
+              <div class="card-b" style="display: flex; flex-direction: column; gap: 14px">
+                <div class="row" style="justify-content: space-between">
+                  <h3>Trade payables <span class="t3 xs" style="font-weight: 400">from due date</span></h3>
+                  <span class="row xs t2" style="gap: 10px"><span class="row" style="gap: 4px"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--s-out)"></span>MSME</span><span class="row" style="gap: 4px"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--s-in)"></span>Others</span></span>
+                </div>
+                <div style="display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 8px 10px; align-items: center; font-size: 12px">
+                  <sc-for list="{{apAge}}" as="r" hint-placeholder-count="4">
+                    <span class="t2">{{r.b}}</span>
+                    <span style="display: flex; gap: 2px; height: 14px">
+                      <span style="{{r.msmeStyle}}"></span>
+                      <span style="{{r.othStyle}}"></span>
+                    </span>
+                    <span class="num"><span class="m">{{r.tot}}</span><span class="xs t3"> · MSME {{r.msme}}</span></span>
+                  </sc-for>
+                </div>
+                <div class="xs t3">Total ₹1.87 Cr · disputed dues ₹3.4 L (others) reported separately · MSME balances older than 1 year: <span class="bad-t m">₹0.6 L</span></div>
+                <div class="hr"></div>
+                <h3>Trade receivables <span class="t3 xs" style="font-weight: 400">from due date · undisputed, considered good</span></h3>
+                <div style="display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 8px 10px; align-items: center; font-size: 12px">
+                  <sc-for list="{{arAge}}" as="r" hint-placeholder-count="5">
+                    <span class="t2">{{r.b}}</span>
+                    <span style="display: flex; height: 14px"><span style="{{r.style}}"></span></span>
+                    <span class="num m">{{r.tot}}</span>
+                  </sc-for>
+                </div>
+                <div class="xs t3">Total ₹2.96 Cr · credit impaired ₹1.8 L (&gt; 3 yrs) under review</div>
+              </div>
+            </section>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+            <section class="card" style="flex: 1 1 520px; min-width: 0" aria-label="Top 10 vendors by outstanding">
+              <div class="card-h">
+                <h2>Top 10 vendors by outstanding</h2>
+                <span class="src"><b>SAP</b>10 min ago</span>
+                <a href="#" class="sm">All payables</a>
+              </div>
+              <div class="tw">
+                <table class="tbl">
+                  <thead><tr><th>Vendor</th><th class="num">Outstanding</th><th class="num">Overdue</th><th>Next due</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{vendors}}" as="v" hint-placeholder-count="10">
+                      <tr>
+                        <td><div class="row" style="gap: 6px; flex-wrap: nowrap"><span class="t3 xs" style="width: 14px">{{v.n}}</span><span class="m">{{v.name}}</span><sc-if value="{{v.hasTag}}" hint-placeholder-val="{{false}}"><span class="msme">{{v.tag}}</span></sc-if></div></td>
+                        <td class="num">{{v.out}}</td>
+                        <td class="{{v.odCls}}">{{v.od}}</td>
+                        <td class="nowrap">{{v.due}}</td>
+                        <td><span class="{{v.stCls}}"><i class="{{v.stIc}}"></i>{{v.st}}</span></td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card" style="flex: 1 1 520px; min-width: 0" aria-label="Top 10 overdue customers">
+              <div class="card-h">
+                <h2>Top 10 overdue customers</h2>
+                <span class="src"><b>SAP</b>10 min ago</span>
+                <a href="#" class="sm">All receivables</a>
+              </div>
+              <div class="tw">
+                <table class="tbl">
+                  <thead><tr><th>Customer</th><th class="num">Outstanding</th><th class="num">Overdue</th><th class="num">Days</th><th>Follow-up</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{customers}}" as="c" hint-placeholder-count="10">
+                      <tr>
+                        <td><div class="row" style="gap: 6px; flex-wrap: nowrap"><span class="t3 xs" style="width: 14px">{{c.n}}</span><span class="m">{{c.name}}</span></div></td>
+                        <td class="num">{{c.out}}</td>
+                        <td class="num">{{c.od}}</td>
+                        <td class="num"><span class="{{c.dCls}}">{{c.days}}</span></td>
+                        <td><span class="{{c.stCls}}"><i class="{{c.stIc}}"></i>{{c.st}}</span></td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ================= FIRM VIEW ================= -->
+      <sc-if value="{{isFirm}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px">
+            <article class="kpi">
+              <div class="kpi-l">Client entities</div>
+              <div class="kpi-v">3<small>entities · 4 GSTINs</small></div>
+              <div class="kpi-s">1 high risk · 2 medium</div>
+              <div class="kpi-f"><span class="src"><b>SAP</b>3 systems · 10–40 min ago</span></div>
+            </article>
+            <article class="kpi alert">
+              <div class="kpi-l">Overdue payables, all clients</div>
+              <div class="kpi-v">₹1.06<small>Cr</small></div>
+              <div class="kpi-s">Northstar Pharma ₹62.4 L of it</div>
+              <div class="kpi-f"><span class="src"><b>SAP</b>synced 10 min ago</span></div>
+            </article>
+            <article class="kpi alert">
+              <div class="kpi-l">MSME 45-day breaches</div>
+              <div class="kpi-v">7<small>invoices</small></div>
+              <div class="kpi-s">₹14.2 L · 2 clients · 43B(h) exposure</div>
+              <div class="kpi-f"><span class="src"><b>SAP</b>+ Udyam · 10 min ago</span></div>
+            </article>
+            <article class="kpi watch">
+              <div class="kpi-l">IMS actions pending</div>
+              <div class="kpi-v">312<small>documents</small></div>
+              <div class="kpi-s">GSTR-2B (Oct) generates 14-11-2026</div>
+              <div class="kpi-f"><span class="src"><b>GST portal</b>synced 2 h ago</span></div>
+            </article>
+            <article class="kpi">
+              <div class="kpi-l">Next statutory deadline</div>
+              <div class="kpi-v">18<small>days</small></div>
+              <div class="kpi-s">MSME Form 1 · 31-10-2026 · 3 clients</div>
+              <div class="kpi-f"><span class="src"><b>MCA</b>calendar</span></div>
+            </article>
+          </div>
+
+          <section class="card" aria-label="Client entities by risk">
+            <div class="card-h">
+              <h2>Client entities by risk</h2>
+              <span class="xs t3">Risk = overdue ageing, MSME breaches, ITC at risk and close delay, weighted</span>
+              <button class="btn sm" type="button"><i class="ic i-columns"></i>Columns</button>
+            </div>
+            <div class="tw">
+              <table class="tbl">
+                <thead><tr><th>Risk</th><th>Client entity</th><th>GSTINs</th><th class="num">Overdue payables</th><th class="num">MSME breaches</th><th class="num">IMS pending</th><th class="num">2B mismatch</th><th class="num">TDS due</th><th>Close status (Sep 2026)</th><th></th></tr></thead>
+                <tbody>
+                  <sc-for list="{{clients}}" as="c" hint-placeholder-count="3">
+                    <tr>
+                      <td><span class="{{c.riskCls}}"><i class="{{c.riskIc}}"></i>{{c.risk}}</span><div class="xs t3" style="margin-top: 2px">Score {{c.score}}</div></td>
+                      <td><div class="m">{{c.name}}</div><div class="xs t3">{{c.city}} · PAN <span class="mono">{{c.pan}}</span></div></td>
+                      <td><div class="col" style="gap: 4px; align-items: flex-start"><sc-for list="{{c.gstins}}" as="g" hint-placeholder-count="1"><span class="gst"><span class="g">{{g.g}}</span><span class="s">{{g.s}}</span></span></sc-for></div></td>
+                      <td class="num">{{c.od}}</td>
+                      <td class="num"><span class="{{c.msmeCls}}"><i class="{{c.msmeIc}}"></i>{{c.msme}}</span></td>
+                      <td class="num">{{c.ims}}</td>
+                      <td class="num">{{c.mm}}</td>
+                      <td class="num"><div>{{c.tds}}</div><div class="xs t3">by 07-11-2026</div></td>
+                      <td><span class="{{c.closeCls}}"><i class="{{c.closeIc}}"></i>{{c.close}}</span><div class="xs t3" style="margin-top: 2px">{{c.closeSub}}</div></td>
+                      <td><a href="#" class="btn sm">Open<i class="ic i-arrowr"></i></a></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+                <tfoot><tr><td></td><td>3 entities</td><td>4 GSTINs</td><td class="num">₹1,05,91,300.00</td><td class="num">7</td><td class="num">312</td><td class="num">₹14,80,040.00</td><td class="num">₹18,63,610.00</td><td colspan="2"></td></tr></tfoot>
+              </table>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Filing status by client">
+            <div class="card-h">
+              <h2>Filing status by client — Oct 2026 period</h2>
+              <span class="src"><b>GST portal</b>2 h ago</span>
+              <span class="src"><b>TRACES</b>1 day ago</span>
+            </div>
+            <div class="tw">
+              <table class="tbl">
+                <thead><tr><th>Client entity</th><th>MSME Form 1 · 31-10-2026</th><th>TDS deposit · 07-11-2026</th><th>GSTR-1 · 11-11-2026</th><th>GSTR-2B · 14-11-2026</th><th>GSTR-3B · 20-11-2026</th></tr></thead>
+                <tbody>
+                  <tr><td class="m">Northstar Pharma Ltd</td><td><span class="st none"><i class="ic i-none"></i>Not started</span></td><td><span class="st warn"><i class="ic i-warn"></i>Challan pending</span></td><td><span class="st warn"><i class="ic i-warn"></i>38 e-invoices failed</span></td><td><span class="st warn"><i class="ic i-warn"></i>188 IMS pending</span></td><td><span class="st none"><i class="ic i-none"></i>Not started</span></td></tr>
+                  <tr><td class="m">Kaveri Foods LLP</td><td><span class="st bad"><i class="ic i-bad"></i>2 breaches to report</span></td><td><span class="st warn"><i class="ic i-warn"></i>Accruing</span></td><td><span class="st ok"><i class="ic i-ok"></i>Ready</span></td><td><span class="st warn"><i class="ic i-warn"></i>60 IMS pending</span></td><td><span class="st none"><i class="ic i-none"></i>Not started</span></td></tr>
+                  <tr><td class="m">Meridian Auto Components Pvt Ltd</td><td><span class="st warn"><i class="ic i-warn"></i>Draft · 6 vendors</span></td><td><span class="st warn"><i class="ic i-warn"></i>Accruing</span></td><td><span class="st ok"><i class="ic i-ok"></i>212 ready</span></td><td><span class="st warn"><i class="ic i-warn"></i>64 IMS pending</span></td><td><span class="st none"><i class="ic i-none"></i>Not started</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"view":{"editor":"enum","options":["entity","firm"],"default":"entity"},"$preview":{"width":1440,"height":2420}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const view = this.state.view ?? this.props.view ?? 'entity';
+    const isFirm = view === 'firm';
+    const st = { ok: ['st ok', 'ic i-ok'], warn: ['st warn', 'ic i-warn'], bad: ['st bad', 'ic i-bad'], none: ['st none', 'ic i-none'] };
+    const k = (l, v, u, s, src, t, exact, tone, stx, stale) => ({
+      l, v, u, s, exact,
+      src, t,
+      srcCls: stale ? 'src stale' : 'src',
+      cls: tone === 'bad' ? 'kpi alert' : tone === 'warn' ? 'kpi watch' : 'kpi',
+      hasSt: !!stx, st: stx || '', stCls: tone ? st[tone][0] : '', stIc: tone ? st[tone][1] : ''
+    });
+    const kpiPay = [
+      k('Open PO commitments', '₹3.42', 'Cr', '86 open POs · 31 vendors', 'SAP', 'synced 10 min ago', '₹3,42,18,450.00'),
+      k('Goods received, not invoiced', '₹48.6', 'L', '27 GRNs · oldest 38 days', 'SAP', 'synced 10 min ago', '₹48,62,900.00', 'warn', '6 GRNs > 30 days'),
+      k('Posted AP outstanding', '₹1.87', 'Cr', '412 invoices · 58 vendors', 'SAP', 'synced 10 min ago', '₹1,87,04,310.00'),
+      k('Due next 7 days', '₹62.4', 'L', '58 invoices · run on 16-10-2026', 'SAP', 'synced 10 min ago', '₹62,40,118.00'),
+      k('Overdue payables', '₹18.9', 'L', '23 invoices · 9 over 30 days', 'SAP', 'synced 10 min ago', '₹18,90,000.00', 'bad', 'Overdue'),
+      k('MSME dues near 45-day limit', '₹7.3', 'L', '4 invoices · first limit 15-10-2026', 'SAP', 'synced 10 min ago', '₹7,30,480.00', 'warn', '2 days to first limit')
+    ];
+    const kpiRec = [
+      k('Receivables outstanding', '₹2.96', 'Cr', '164 invoices · 42 customers', 'SAP', 'synced 10 min ago', '₹2,96,00,000.00'),
+      k('Overdue receivables', '₹41.2', 'L', '31 invoices · 11 customers', 'SAP', 'synced 10 min ago', '₹41,20,000.00', 'bad', '3 over 90 days'),
+      k('Days sales outstanding (DSO)', '61', 'days', 'Target 45 · up 4 days vs Sep', 'SAP', 'synced 10 min ago', '61 days, rolling 90 days', 'warn', 'Above target'),
+      k('Days payables outstanding (DPO)', '52', 'days', 'Down 3 days vs Sep', 'SAP', 'synced 10 min ago', '52 days, rolling 90 days'),
+      k('Bank balance', '₹1.12', 'Cr', '3 accounts · as of 12-10-2026 17:40', 'Bank', 'synced 26 h ago', '₹1,12,46,720.00', 'warn', 'Stale feed', true),
+      k('ITC at risk', '₹3.8', 'L', '31 invoices in books, not in GSTR-2B', 'GST portal', 'synced 2 h ago', '₹3,82,940.00', 'warn', 'Follow up suppliers')
+    ];
+    const dl = (name, what, days, due, tone, s, total) => ({ name, what, days, due, st: s, stCls: st[tone][0], stIc: st[tone][1], barStyle: 'width:' + Math.max(4, Math.round(100 - days / total * 100)) + '%; background: var(--' + (days <= 20 ? 'warn' : 'accent') + ')' });
+    const deadlines = [
+      dl('MSME Form 1', 'Half-year Apr–Sep 2026 · MCA', 18, '31-10-2026', 'warn', 'Draft · 6 vendors', 31),
+      dl('TDS deposit', 'Oct 2026 deductions · ₹4,82,310.00', 25, '07-11-2026', 'warn', 'Accruing', 38),
+      dl('GSTR-1', 'Oct 2026 · 27 · MH and 24 · GJ', 29, '11-11-2026', 'ok', '212 invoices ready', 42),
+      dl('GSTR-2B available', 'Oct 2026 · act on IMS before', 32, '14-11-2026', 'warn', '64 IMS pending', 45),
+      dl('GSTR-3B', 'Oct 2026 · both GSTINs', 38, '20-11-2026', 'none', 'Not started', 51)
+    ];
+    const weeks = ['12-10', '19-10', '26-10', '02-11', '09-11', '16-11', '23-11', '30-11', '07-12', '14-12', '21-12', '28-12', '04-01'];
+    const cin = [38, 46, 52, 41, 44, 58, 36, 49, 47, 55, 40, 62, 45];
+    const cout = [62, 31, 44, 58, 48, 39, 52, 46, 61, 37, 49, 43, 50];
+    const y = v => 20 + (120 - v) * 1.1;
+    const x0 = 52, step = (704 - 52) / 13;
+    let bal = 112;
+    const cols = weeks.map((w, i) => {
+      bal = bal + cin[i] - cout[i];
+      const c = x0 + step * (i + 0.5);
+      return { label: w, c: +c.toFixed(1), bx: +(c - 9).toFixed(1), inY: +y(cin[i]).toFixed(1), inH: +(y(0) - y(cin[i]) - 1).toFixed(1), outY: +(y(0) + 1).toFixed(1), outH: +(y(-cout[i]) - y(0) - 1).toFixed(1), by: +y(bal).toFixed(1) };
+    });
+    const line = cols.map((p, i) => (i ? 'L' : 'M') + p.c + ' ' + p.by).join(' ');
+    const ticks = [120, 80, 40, 0, -40, -80].map(v => ({ y: y(v), ly: y(v) + 3.5, t: v === 0 ? '₹0' : (v < 0 ? '−' : '') + '₹' + Math.abs(v) + ' L', lineStyle: v === 0 ? 'stroke: var(--text-3); stroke-width: 1' : 'stroke: var(--grid); stroke-width: 1' }));
+    const apMax = 172.6;
+    const ap = (b, msme, oth) => ({ b, tot: '₹' + (msme + oth).toFixed(1) + ' L', msme: '₹' + msme.toFixed(1) + ' L',
+      msmeStyle: msme > 0 ? 'display:block; width:' + Math.max(0.6, msme / apMax * 100) + '%; background: var(--s-out); border-radius: 2px' : 'display:none',
+      othStyle: 'display:block; width:' + Math.max(0.8, oth / apMax * 100) + '%; background: var(--s-in); border-radius: 2px' });
+    const apAge = [ap('< 1 year', 21.4, 151.2), ap('1–2 years', 0.6, 9.8), ap('2–3 years', 0, 2.1), ap('> 3 years', 0, 1.9)];
+    const ar = (b, v) => ({ b, tot: '₹' + v.toFixed(1) + ' L', style: 'display:block; width:' + Math.max(0.8, v / 248.3 * 100) + '%; background: var(--s-in); border-radius: 2px' });
+    const arAge = [ar('< 6 months', 248.3), ar('6 m – 1 yr', 31.6), ar('1–2 years', 11.2), ar('2–3 years', 3.1), ar('> 3 years', 1.8)];
+    const vd = (n, name, tag, out, od, due, tone, s) => ({ n, name, tag, hasTag: !!tag, out, od, odCls: od === '0.00' ? 'num t3' : 'num bad-t', due, st: s, stCls: st[tone][0], stIc: st[tone][1] });
+    const vendors = [
+      vd(1, 'Deccan Steel Traders', '', '38,42,600.00', '4,12,000.00', '16-10-2026', 'bad', 'Overdue 12 days'),
+      vd(2, 'Konkan Chemicals Pvt Ltd', '', '24,18,950.00', '0.00', '18-10-2026', 'bad', 'Held · bank change'),
+      vd(3, 'Sahyadri Packaging Pvt Ltd', 'Micro', '9,86,320.00', '0.00', '15-10-2026', 'warn', 'MSME limit in 2 days'),
+      vd(4, 'Bharat Forgings Pvt Ltd', '', '9,12,400.00', '2,10,000.00', '16-10-2026', 'bad', 'Overdue 21 days'),
+      vd(5, 'Patel Electricals', 'Small', '7,64,180.00', '1,18,000.00', '16-10-2026', 'bad', 'Overdue 9 days'),
+      vd(6, 'Vyas Roadlines', 'GTA · RCM', '6,48,250.00', '0.00', '22-10-2026', 'ok', 'On schedule'),
+      vd(7, 'Shakti Castings', 'Micro', '5,92,100.00', '0.00', '19-10-2026', 'warn', 'MSME limit in 6 days'),
+      vd(8, 'Pune Precision Tools', '', '4,88,900.00', '64,000.00', '16-10-2026', 'bad', 'Overdue 4 days'),
+      vd(9, 'Ratnagiri Rubber Products', '', '4,10,320.00', '0.00', '28-10-2026', 'ok', 'On schedule'),
+      vd(10, 'Om Sai Engineering', 'Micro', '3,74,800.00', '0.00', '02-11-2026', 'ok', 'On schedule')
+    ];
+    const cu = (n, name, out, od, days, tone, s) => ({ n, name, out, od, days, dCls: days > 90 ? 'bad-t m' : days > 45 ? 'warn-t m' : '', st: s, stCls: st[tone][0], stIc: st[tone][1] });
+    const customers = [
+      cu(1, 'Shivneri Motors Ltd', '64,20,000.00', '11,90,500.00', 48, 'warn', 'Promise 20-10-2026'),
+      cu(2, 'Vardhan Tractors Pvt Ltd', '41,80,250.00', '8,62,400.00', 37, 'warn', 'Reminder 2 sent'),
+      cu(3, 'Indrayani Auto Assemblies', '28,44,600.00', '5,10,000.00', 64, 'bad', 'Disputed · short supply'),
+      cu(4, 'Sahyog Two Wheelers Pvt Ltd', '22,10,900.00', '4,25,780.00', 22, 'warn', 'Reminder 1 sent'),
+      cu(5, 'Godavari Agro Equipment', '18,62,300.00', '3,18,200.00', 91, 'bad', 'Escalated to CFO'),
+      cu(6, 'Narmada Coach Builders', '14,90,000.00', '2,40,000.00', 31, 'warn', 'Promise 25-10-2026'),
+      cu(7, 'Malwa Gears Ltd', '12,30,450.00', '1,96,320.00', 18, 'none', 'No contact yet'),
+      cu(8, 'Trident EV Systems', '9,84,000.00', '1,62,000.00', 115, 'bad', 'Legal notice drafted'),
+      cu(9, 'Ajanta Fleet Services', '7,12,600.00', '1,05,000.00', 12, 'none', 'No contact yet'),
+      cu(10, 'Bhima Motor Works', '5,40,000.00', '80,000.00', 9, 'ok', 'Paid · UTR awaited')
+    ];
+    const cl = (risk, score, name, city, pan, gstins, od, msme, msmeTone, ims, mm, tds, closeTone, close, closeSub) => ({
+      risk, score, riskCls: st[risk === 'High' ? 'bad' : 'warn'][0], riskIc: st[risk === 'High' ? 'bad' : 'warn'][1],
+      name, city, pan, gstins, od, msme, msmeCls: st[msmeTone][0], msmeIc: st[msmeTone][1], ims, mm, tds,
+      close, closeSub, closeCls: st[closeTone][0], closeIc: st[closeTone][1]
+    });
+    const clients = [
+      cl('High', 82, 'Northstar Pharma Ltd', 'Hyderabad', 'AAACN0000N', [{ g: '36AAACN0000N1Z8', s: '36 · Telangana' }], '62,40,800.00', '5 breached', 'bad', '188', '9,84,300.00', '11,62,400.00', 'bad', 'Day 9 · 14 of 24 tasks', 'SLA 5 working days'),
+      cl('Medium', 58, 'Kaveri Foods LLP', 'Bengaluru', 'AAKFK0000K', [{ g: '29AAKFK0000K1Z4', s: '29 · Karnataka' }], '24,60,500.00', '2 breached', 'bad', '60', '1,12,800.00', '2,18,900.00', 'warn', 'Day 6 · 20 of 22 tasks', 'Bank reco pending'),
+      cl('Medium', 41, 'Meridian Auto Components Pvt Ltd', 'Pune', 'AAACM0000M', [{ g: '27AAACM0000M1Z2', s: '27 · Maharashtra' }, { g: '24AAACM0000M1Z6', s: '24 · Gujarat' }], '18,90,000.00', '0 · 4 near limit', 'warn', '64', '3,82,940.00', '4,82,310.00', 'ok', 'Closed 08-10-2026', 'Signed off by F. Siddiqui')
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      isFirm, isEntity: !isFirm,
+      segEntity: isFirm ? '' : 'on', segFirm: isFirm ? 'on' : '',
+      showEntity: () => this.setState({ view: 'entity' }),
+      showFirm: () => this.setState({ view: 'firm' }),
+      kpiPay, kpiRec, deadlines, cols, line, ticks,
+      hx: cols[8].c, hy: cols[8].by,
+      apAge, arAge, vendors, customers, clients
+    };
+  }
+}
+</script>
+</body>
+</html>

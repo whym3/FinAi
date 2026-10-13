@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invoice review — SPK/2026-27/0418</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
+    <dc-import name="Sidebar" active="review" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  </div>
+  <div class="main">
+    <dc-import name="Topbar" theme="{{theme}}" hint-size="100%,64px"></dc-import>
+    <main class="content">
+
+      <div class="ph">
+        <div class="ph-l" style="gap: 4px">
+          <nav class="crumb" aria-label="Breadcrumb"><a href="#">Invoice review</a><i class="ic s i-chevr"></i><span>SPK/2026-27/0418</span></nav>
+          <div class="row" style="gap: 10px"><h1>Invoice SPK/2026-27/0418</h1><span class="st warn"><i class="ic i-warn"></i>Needs decision</span><span class="chip"><i class="ic s i-flag"></i>4 flags</span></div>
+          <div class="row sm t2" style="gap: 6px 14px">
+            <span class="m" style="color: var(--text)">Sahyadri Packaging Pvt Ltd</span>
+            <span class="gst"><span class="g">27AAACX0000X1Z5</span><span class="s">27 · Maharashtra</span></span>
+            <span class="msme"><i class="ic s i-shield"></i>Micro</span>
+            <span>Total <span class="m" style="color: var(--text)">₹1,05,020.00</span></span>
+            <span>Dated 10-10-2026 · received 13-10-2026 by email</span>
+            <a href="P2P.dc.html">PO 4500012345</a><span>·</span><a href="#">GRN 5000098812</a>
+          </div>
+        </div>
+        <div class="ph-r">
+          <button class="btn" type="button"><i class="ic i-eye"></i>Open document</button>
+          <button class="ib bd" type="button" aria-label="Previous invoice"><i class="ic i-chevl"></i></button>
+          <span class="xs t3">3 of 37</span>
+          <button class="ib bd" type="button" aria-label="Next invoice"><i class="ic i-chevr"></i></button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <div style="flex: 2 1 760px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+          <section class="card" aria-label="Flags">
+            <div class="card-h">
+              <h2>4 differences to decide</h2>
+              <span class="sm t2">Net <span class="m" style="color: var(--text)">₹4,720.00</span> above PO incl. GST · Pravah flags, you decide</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))">
+              <div style="padding: 10px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; gap: 10px">
+                <i class="ic l bad-t i-flag" style="margin-top: 2px"></i>
+                <div class="col" style="gap: 2px"><span class="m">Rate ₹87.00 on invoice vs ₹85.00 on PO</span><span class="xs t2">+₹2.00 per piece × 1,000 = +₹2,000.00 taxable. Matches superseded quote v1.</span><span class="xs t3">Usual resolution: debit note or vendor credit note</span></div>
+              </div>
+              <div style="padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px">
+                <i class="ic l bad-t i-flag" style="margin-top: 2px"></i>
+                <div class="col" style="gap: 2px"><span class="m">Freight ₹2,000.00 charged</span><span class="xs t2">Agreed terms are FOR destination — freight included in rate. Transporter Vyas Roadlines was paid by the vendor.</span><span class="xs t3">Usual resolution: debit note</span></div>
+              </div>
+              <div style="padding: 10px 16px; border-right: 1px solid var(--border); display: flex; gap: 10px">
+                <i class="ic l bad-t i-flag" style="margin-top: 2px"></i>
+                <div class="col" style="gap: 2px"><span class="m">HSN 3923 on invoice vs 3926 on PO</span><span class="xs t2">Both at 18%, so tax is unaffected. The vendor's GSTR-1 will report 3923.</span><span class="xs t3">Usual resolution: ask vendor to confirm classification</span></div>
+              </div>
+              <div style="padding: 10px 16px; display: flex; gap: 10px">
+                <i class="ic l bad-t i-flag" style="margin-top: 2px"></i>
+                <div class="col" style="gap: 2px"><span class="m">Payment terms 15 days vs 30 days agreed</span><span class="xs t2">Schedule on agreed terms (09-11-2026), well inside the MSME 45-day limit.</span><span class="xs t3">Usual resolution: keep agreed terms, note to vendor</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Three-way match comparison">
+            <div class="card-h">
+              <h2>Three-way match</h2>
+              <span class="row xs t2" style="gap: 12px">
+                <span class="row" style="gap: 4px"><i class="ic ok-t i-ok"></i>Matched</span>
+                <span class="row" style="gap: 4px"><i class="ic warn-t i-warn"></i>Within tolerance</span>
+                <span class="row" style="gap: 4px"><i class="ic bad-t i-bad"></i>Differs</span>
+                <span class="row" style="gap: 4px"><i class="ic none-t i-none"></i>Missing</span>
+              </span>
+              <label class="row xs t2" style="gap: 6px"><input class="chk" type="checkbox">Only rows with differences</label>
+            </div>
+            <div class="tw">
+              <table class="cmp">
+                <thead>
+                  <tr>
+                    <th style="width: 140px">Field</th>
+                    <sc-for list="{{heads}}" as="h" hint-placeholder-count="5">
+                      <th><div style="color: var(--text); font-size: 12px">{{h.t}}</div><div class="mono" style="font-weight: 400">{{h.ref}}</div><div style="margin-top: 3px"><span class="src"><b>{{h.src}}</b>{{h.when}}</span></div></th>
+                    </sc-for>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{rows}}" as="r" hint-placeholder-count="16">
+                    <tr>
+                      <td class="f">{{r.f}}</td>
+                      <sc-for list="{{r.cells}}" as="c" hint-placeholder-count="5">
+                        <td><div class="{{c.cls}}"><div class="v"><i class="{{c.ic}}"></i><span class="{{c.vCls}}">{{c.v}}</span></div><sc-if value="{{c.hasD}}" hint-placeholder-val="{{false}}"><div class="{{c.dCls}}">{{c.d}}</div></sc-if></div></td>
+                      </sc-for>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Decision" style="border-color: var(--border-2)">
+            <div class="card-h">
+              <h2>Decision</h2>
+              <span class="row sm t2" style="gap: 6px"><span class="av a2">RK</span>Rohan Kulkarni · AP executive · approval limit ₹5,00,000.00</span>
+            </div>
+            <div class="card-b" style="display: flex; flex-wrap: wrap; gap: 20px">
+              <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 6px" role="radiogroup" aria-label="Decision">
+                <sc-for list="{{choices}}" as="o" hint-placeholder-count="5">
+                  <label class="{{o.cls}}"><input type="radio" name="decision" checked="{{o.on}}" onChange="{{o.pick}}"><span class="col" style="gap: 0"><span class="m">{{o.t}}</span><span class="xs t3">{{o.d}}</span></span></label>
+                </sc-for>
+              </div>
+              <div style="flex: 2 1 380px; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+                <div>
+                  <label class="lbl-f" for="reason">Reason code <span class="req">*</span> <span class="t3" style="font-weight: 400">required for every decision</span></label>
+                  <select id="reason" class="sel" style="width: 100%">
+                    <option>{{reason}}</option>
+                    <option>RT-01 · Rate above agreed price</option>
+                    <option>FR-02 · Freight not agreed</option>
+                    <option>HS-03 · Classification differs</option>
+                    <option>PT-04 · Payment terms differ</option>
+                    <option>OK-00 · Matched, no exception</option>
+                  </select>
+                </div>
+                <sc-if value="{{isDn}}" hint-placeholder-val="{{true}}">
+                  <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden">
+                    <table class="tbl dense">
+                      <thead><tr><th>Debit note DN/2026-27/0091 · draft</th><th class="num">Taxable</th><th class="num">GST 18%</th><th class="num">Total</th></tr></thead>
+                      <tbody>
+                        <tr><td>Rate difference · 1,000 × ₹2.00</td><td class="num">2,000.00</td><td class="num">360.00</td><td class="num">2,360.00</td></tr>
+                        <tr><td>Freight not agreed (FOR destination)</td><td class="num">2,000.00</td><td class="num">360.00</td><td class="num">2,360.00</td></tr>
+                      </tbody>
+                      <tfoot><tr><td>Debit note</td><td class="num">4,000.00</td><td class="num">720.00</td><td class="num">₹4,720.00</td></tr></tfoot>
+                    </table>
+                    <div class="xs t2" style="padding: 8px 10px; border-top: 1px solid var(--border)">Invoice posts in SAP at ₹1,05,020.00 with the debit note against it — net payable <span class="m" style="color: var(--text)">₹1,00,300.00</span>, equal to the PO. HSN and terms flags are sent to the vendor with the note.</div>
+                  </div>
+                </sc-if>
+                <div>
+                  <label class="lbl-f" for="note">Note to file <span class="t3" style="font-weight: 400">{{noteHint}}</span></label>
+                  <textarea id="note" class="inp" rows="3">Rate and freight follow superseded quote v1. Agreed v2 (19-09-2026) is ₹85.00 FOR destination, 30 days. Asked vendor to confirm HSN 3926.</textarea>
+                </div>
+                <div class="banner info" style="padding: 8px 12px">
+                  <i class="ic l i-users"></i>
+                  <div class="tx sm">Amounts above <span class="m">₹5,00,000.00</span> need a second approver (Controller or CFO). This invoice is ₹1,05,020.00, so your decision is final and is logged with the evidence above.</div>
+                </div>
+                <div class="row" style="gap: 8px">
+                  <button class="btn pri" type="button"><i class="ic i-check"></i>{{submit}}</button>
+                  <button class="btn" type="button">Save draft</button>
+                  <span class="xs t3">Ctrl Enter to submit · next invoice opens automatically</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <section class="card" aria-label="TDS">
+            <div class="card-h"><h2>TDS</h2><span class="src"><b>SAP</b>vendor master</span></div>
+            <div class="card-b">
+              <dl class="kv">
+                <dt>Nature of payment</dt><dd class="m">Purchase of goods</dd>
+                <dt>Section</dt><dd><span class="m">Section 393(1) · purchase of goods</span><div class="xs t3">Legacy: 194Q, Income-tax Act 1961</div></dd>
+                <dt>Threshold</dt><dd>₹50,00,000.00 a year <div class="xs t3">Crossed 04-08-2026 · year to date ₹61,72,904.00</div></dd>
+                <dt>Rate</dt><dd>0.1% <span class="xs ok-t">· PAN operative</span></dd>
+                <dt>Base, excl. GST</dt><dd class="num">₹89,000.00</dd>
+                <dt>TDS amount</dt><dd class="num b">₹89.00</dd>
+              </dl>
+              <div class="xs t3" style="margin-top: 10px">With the debit note the base becomes ₹85,000.00 and TDS ₹85.00. Deposit by 07-11-2026.</div>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Input tax credit">
+            <div class="card-h"><h2>Input tax credit</h2><span class="src"><b>GST portal</b>2 h ago</span></div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 10px">
+              <div><span class="st warn"><i class="ic i-warn"></i>Pending — not yet in GSTR-2B</span></div>
+              <dl class="kv">
+                <dt>ITC on invoice</dt><dd class="num">₹16,020.00</dd>
+                <dt>Claimable after DN</dt><dd class="num">₹15,300.00</dd>
+                <dt>IMS</dt><dd>Not visible yet <div class="xs t3">Supplier's GSTR-1 for Oct due 11-11-2026</div></dd>
+                <dt>Expected in 2B</dt><dd>14-11-2026 · Oct 2026</dd>
+                <dt>180-day payment</dt><dd>Pay by 08-04-2027 or reverse ITC</dd>
+                <dt>Section 16(4)</dt><dd>Claim by 30-11-2027</dd>
+                <dt>Supplier filing</dt><dd><span class="row ok-t xs m" style="gap: 3px"><i class="ic s i-ok"></i>12 of 12 returns on time</span></dd>
+              </dl>
+            </div>
+          </section>
+
+          <section class="card" aria-label="MSME">
+            <div class="card-h"><h2>MSME</h2><span class="msme"><i class="ic s i-shield"></i>Micro · Udyam registered</span></div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 8px">
+              <div class="row" style="justify-content: space-between; align-items: baseline"><span class="sm t2">45-day countdown</span><span><span class="b" style="font-size: 22px">40</span> <span class="sm t2">days left</span></span></div>
+              <span class="bar ok"><i style="width: 11%"></i></span>
+              <div class="row xs t3" style="justify-content: space-between"><span>Accepted 08-10-2026 (GRN)</span><span>Pay by 22-11-2026</span></div>
+              <div class="xs t2" style="margin-top: 4px">Recommended payment date <span class="m" style="color: var(--text)">09-11-2026</span> — agreed 30 days. Late payment carries compound interest at 3× the RBI bank rate and a 43B(h) disallowance.</div>
+              <div class="row" style="gap: 6px"><span class="src"><b>Udyam</b>verified 02-04-2026</span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"decision":{"editor":"enum","options":["approve","note","hold","reject","dn"],"default":"dn"},"$preview":{"width":1440,"height":1780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const icons = { ok: 'ic i-ok', warn: 'ic i-warn', bad: 'ic i-bad', none: 'ic i-none', na: '' };
+    const C = (s, v, d, money) => ({
+      cls: 'cc ' + s, ic: icons[s], v: s === 'na' ? 'n/a' : s === 'none' ? (v || 'Missing') : v,
+      vCls: money ? 'num' : '', d: d || '', hasD: !!d, dCls: s === 'bad' || s === 'warn' ? 'd' : 'xs t3'
+    });
+    const NA = C('na');
+    const rows = [
+      { f: 'Supplier & GSTIN', cells: [C('ok', 'Sahyadri · 27AAACX0000X1Z5'), C('ok', 'Vendor 100231'), C('ok', 'Vendor 100231'), C('ok', '27AAACX0000X1Z5', 'Active on portal'), C('ok', 'Vendor 100231')] },
+      { f: 'Bill-to GSTIN', cells: [NA, C('ok', '27AAACM0000M1Z2'), C('ok', 'Plant 1100', '27 · Maharashtra'), C('ok', '27AAACM0000M1Z2'), C('ok', '27AAACM0000M1Z2')] },
+      { f: 'Place of supply', cells: [NA, C('ok', '27 · Maharashtra'), NA, C('ok', '27 · Maharashtra'), C('ok', '27 · intra-state')] },
+      { f: 'Invoice no. / date', cells: [NA, NA, NA, C('ok', 'SPK/2026-27/0418', '10-10-2026'), C('ok', 'Same reference', '10-10-2026')] },
+      { f: 'IRN', cells: [NA, NA, NA, C('ok', 'a3f9c2d7…61d7e71c', 'Signed QR verified on IRP'), C('none', 'Not captured', 'Add before posting')] },
+      { f: 'E-way bill', cells: [NA, NA, C('ok', '3410 0000 7788', 'From gate entry'), C('ok', '3410 0000 7788'), NA] },
+      { f: 'Item text', cells: [C('ok', 'HDPE separator tray 600×400'), C('ok', 'HDPE separator tray 600×400 mm'), C('ok', 'Same as PO'), C('warn', 'HDPE Separator Tray 600x400', 'Text match 94%'), C('ok', 'Same as PO')] },
+      { f: 'HSN', cells: [C('ok', '3926'), C('ok', '3926'), NA, C('bad', '3923', 'Differs from PO'), C('ok', '3926')] },
+      { f: 'Quantity', cells: [C('ok', '1,000 Nos', '', true), C('ok', '1,000', '', true), C('ok', '1,000 accepted', '', true), C('ok', '1,000', '', true), C('ok', '1,000', '', true)] },
+      { f: 'Rate', cells: [C('ok', '₹85.00', '', true), C('ok', '₹85.00', '', true), NA, C('bad', '₹87.00', '+₹2.00/pc · +₹2,000.00', true), C('ok', '₹85.00', '', true)] },
+      { f: 'Taxable value', cells: [C('ok', '₹85,000.00', '', true), C('ok', '₹85,000.00', '', true), C('ok', '₹85,000.00', 'Valued at PO rate', true), C('bad', '₹89,000.00', '+₹4,000.00', true), C('ok', '₹85,000.00', '', true)] },
+      { f: 'CGST 9%', cells: [C('ok', '₹7,650.00', '', true), C('ok', '₹7,650.00', '', true), NA, C('warn', '₹8,010.00', '+₹360.00 · follows rate and freight', true), C('ok', '₹7,650.00', '', true)] },
+      { f: 'SGST 9%', cells: [C('ok', '₹7,650.00', '', true), C('ok', '₹7,650.00', '', true), NA, C('warn', '₹8,010.00', '+₹360.00 · follows rate and freight', true), C('ok', '₹7,650.00', '', true)] },
+      { f: 'Freight', cells: [C('ok', 'FOR destination', 'Included in rate'), C('ok', '₹0.00', 'Incoterm FOR', true), NA, C('bad', '₹2,000.00', 'Not agreed', true), C('ok', '₹0.00', '', true)] },
+      { f: 'Total', cells: [C('ok', '₹1,00,300.00', '', true), C('ok', '₹1,00,300.00', '', true), NA, C('bad', '₹1,05,020.00', '+₹4,720.00', true), C('ok', '₹1,00,300.00', 'Parked at PO values', true)] },
+      { f: 'Payment terms', cells: [C('ok', '30 days'), C('ok', 'Z030 · 30 days'), NA, C('bad', '15 days', 'Shorter than agreed'), C('ok', 'Z030 · 30 days')] }
+    ];
+    const heads = [
+      { t: 'Negotiated', ref: 'Quote v2 · 19-09-2026', src: 'Extracted', when: 'confirmed' },
+      { t: 'PO', ref: '4500012345', src: 'SAP', when: '10 min ago' },
+      { t: 'GRN', ref: '5000098812', src: 'SAP', when: '10 min ago' },
+      { t: 'Invoice', ref: 'SPK/2026-27/0418', src: 'Extracted', when: '92%' },
+      { t: 'SAP posted', ref: 'Parked 5105600231', src: 'SAP', when: '10 min ago' }
+    ];
+    const choice = this.state.choice ?? this.props.decision ?? 'dn';
+    const opts = [
+      ['approve', 'Approve', 'Post at invoice values'],
+      ['note', 'Approve with note', 'Post and record why differences are accepted'],
+      ['hold', 'Hold', 'Keep unposted; payment blocked'],
+      ['reject', 'Reject', 'Return to vendor; invoice not posted'],
+      ['dn', 'Raise debit note', 'Post invoice and recover the differences']
+    ];
+    const choices = opts.map(([id, t, d]) => ({ t, d, on: id === choice, cls: 'opt-r' + (id === choice ? ' on' : ''), pick: () => this.setState({ choice: id }) }));
+    const submitText = { approve: 'Approve invoice', note: 'Approve with note', hold: 'Put on hold', reject: 'Reject invoice', dn: 'Raise debit note ₹4,720.00 and approve' };
+    const reasonText = { approve: 'Choose a reason code', note: 'Choose a reason code', hold: 'Choose a reason code', reject: 'Choose a reason code', dn: 'RT-01 · Rate above agreed price  +  FR-02 · Freight not agreed' };
+    return {
+      theme: this.props.theme ?? 'light',
+      rows, heads, choices,
+      isDn: choice === 'dn',
+      submit: submitText[choice],
+      reason: reasonText[choice],
+      noteHint: choice === 'note' || choice === 'reject' || choice === 'hold' ? 'required for this decision' : 'optional'
+    };
+  }
+}
+</script>
+</body>
+</html>

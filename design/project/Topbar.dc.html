@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pravah top bar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<header class="pv top" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <sc-if value="{{entity}}" hint-placeholder-val="{{true}}">
+    <button class="ent" type="button" aria-label="Switch client entity">
+      <span class="ent-ic"><i class="ic l i-building"></i></span>
+      <span style="display: flex; flex-direction: column; min-width: 0">
+        <span class="ent-n">Meridian Auto Components Pvt Ltd</span>
+        <span class="ent-m"><span>PAN <span class="mono">AAACM0000M</span></span><span class="gst"><span class="s" style="border-left: 0">27 · Maharashtra</span></span><span class="gst"><span class="s" style="border-left: 0">24 · Gujarat</span></span></span>
+      </span>
+      <i class="ic t3 i-chev"></i>
+    </button>
+  </sc-if>
+  <sc-if value="{{firm}}" hint-placeholder-val="{{false}}">
+    <button class="ent" type="button" aria-label="Switch client entity">
+      <span class="ent-ic"><i class="ic l i-users"></i></span>
+      <span style="display: flex; flex-direction: column; min-width: 0">
+        <span class="ent-n">All clients — Mehta &amp; Rao Chartered Accountants</span>
+        <span class="ent-m">3 entities · 4 GSTINs · Pune, Bengaluru, Hyderabad</span>
+      </span>
+      <i class="ic t3 i-chev"></i>
+    </button>
+  </sc-if>
+
+  <button class="btn" type="button" aria-label="Financial year and period">
+    <i class="ic t3 i-cal"></i><span>FY 2026-27</span><span class="t3">·</span><span>Oct 2026</span><span class="t3 sm">Q3 (Oct–Dec)</span><i class="ic t3 i-chev"></i>
+  </button>
+
+  <label class="search">
+    <i class="ic l i-search"></i>
+    <input type="search" aria-label="Global search" placeholder="Invoice no., GSTIN, PO, GRN, UTR, IRN">
+    <span class="kbd">Ctrl K</span>
+  </label>
+
+  <div class="row" style="gap: 6px; margin-left: auto">
+    <span class="fresh" title="SAP S/4HANA synced 13-10-2026 15:10"><span class="dot"></span>SAP · 10 min</span>
+    <span class="fresh" title="GST portal synced 13-10-2026 13:05"><span class="dot"></span>GST · 2 h</span>
+    <span class="fresh stale" title="Bank feed last synced 12-10-2026 17:40 — stale"><i class="ic s i-warn"></i>Bank · 26 h</span>
+  </div>
+  <button class="ib" type="button" aria-label="Notifications, 6 unread"><i class="ic l i-bell"></i><span class="pip">6</span></button>
+  <button class="btn ghost" type="button" aria-label="User menu" style="padding: 2px 4px; gap: 6px">
+    <span class="av a2">KM</span><i class="ic t3 i-chev"></i>
+  </button>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"firm":{"editor":"boolean","default":false},"$preview":{"width":1200,"height":64}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const firm = !!this.props.firm;
+    return { theme: this.props.theme ?? 'light', firm, entity: !firm };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GST hub — IMS and GSTR-2B</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
+    <dc-import name="Sidebar" active="gst" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  </div>
+  <div class="main">
+    <dc-import name="Topbar" theme="{{theme}}" hint-size="100%,64px"></dc-import>
+    <main class="content">
+
+      <div class="ph">
+        <div class="ph-l" style="gap: 4px">
+          <nav class="crumb" aria-label="Breadcrumb"><a href="#">GST hub</a><i class="ic s i-chevr"></i><span>IMS &amp; GSTR-2B</span></nav>
+          <div class="row" style="gap: 10px"><h1>IMS &amp; GSTR-2B</h1><span class="gst"><span class="g">27AAACM0000M1Z2</span><span class="s">27 · Maharashtra</span></span><span class="chip">Return period Oct 2026</span></div>
+        </div>
+        <div class="ph-r">
+          <div class="seg" role="group" aria-label="GSTIN"><button type="button" class="on">27 · Maharashtra</button><button type="button">24 · Gujarat</button></div>
+          <span class="src"><b>GST portal</b>IMS synced 13-10-2026 13:05 · 2 h ago</span>
+          <button class="btn" type="button"><i class="ic i-refresh"></i>Fetch IMS now</button>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="GST hub sections">
+        <button class="tab on" role="tab" type="button" aria-selected="true">IMS &amp; GSTR-2B</button>
+        <button class="tab" role="tab" type="button">GSTR-1</button>
+        <button class="tab" role="tab" type="button">GSTR-3B</button>
+        <button class="tab" role="tab" type="button">E-invoice &amp; e-way bill</button>
+        <button class="tab" role="tab" type="button">Reverse charge</button>
+        <button class="tab" role="tab" type="button">Supplier compliance</button>
+      </div>
+
+      <div class="banner info" role="note">
+        <i class="ic l i-info"></i>
+        <div class="tx"><span class="b">GSTR-2B for Oct 2026 is generated on 14-11-2026.</span> Until then these figures are a draft built from IMS. Any accept, reject or keep-pending action taken after the 14th needs GSTR-2B to be recomputed on the portal before you file GSTR-3B (due 20-11-2026).</div>
+        <button class="btn sm" type="button">How recompute works</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px">
+        <article class="kpi">
+          <div class="row" style="justify-content: space-between"><span class="kpi-l" style="min-height: 0">Matched</span><span class="st ok"><i class="ic i-ok"></i>Matched</span></div>
+          <div class="kpi-v">214<small>documents</small></div>
+          <div class="kpi-s">ITC <span class="m" style="color: var(--text)">₹38,42,610.00</span> · taxable ₹2,13,47,830.00</div>
+          <div class="kpi-f"><span class="src"><b>GST portal</b>2 h ago</span><span class="src"><b>SAP</b>10 min ago</span></div>
+        </article>
+        <article class="kpi watch">
+          <div class="row" style="justify-content: space-between"><span class="kpi-l" style="min-height: 0">Partial match</span><span class="st warn"><i class="ic i-warn"></i>Check</span></div>
+          <div class="kpi-v">23<small>documents</small></div>
+          <div class="kpi-s">ITC <span class="m" style="color: var(--text)">₹4,18,300.00</span> · value, date or rate differs</div>
+          <div class="kpi-f"><span class="src"><b>GST portal</b>2 h ago</span><span class="src"><b>SAP</b>10 min ago</span></div>
+        </article>
+        <article class="kpi alert">
+          <div class="row" style="justify-content: space-between"><span class="kpi-l" style="min-height: 0">In GSTR-2B, not in books</span><span class="st bad"><i class="ic i-bad"></i>Mismatch</span></div>
+          <div class="kpi-v">17<small>documents</small></div>
+          <div class="kpi-s">ITC <span class="m" style="color: var(--text)">₹2,06,450.00</span> · not booked or unknown supplier</div>
+          <div class="kpi-f"><span class="src"><b>GST portal</b>2 h ago</span></div>
+        </article>
+        <article class="kpi alert">
+          <div class="row" style="justify-content: space-between"><span class="kpi-l" style="min-height: 0">In books, not in GSTR-2B</span><span class="st bad"><i class="ic i-bad"></i>Mismatch</span></div>
+          <div class="kpi-v">31<small>documents</small></div>
+          <div class="kpi-s">ITC <span class="m" style="color: var(--text)">₹3,82,940.00</span> at risk · supplier yet to file</div>
+          <div class="kpi-f"><span class="src"><b>SAP</b>10 min ago</span></div>
+        </article>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+          <div class="filters">
+            <span class="fchip on">IMS inward · 254</span>
+            <span class="fchip">No action on portal · 186</span>
+            <span class="fchip">Recommendation differs from final · 3</span>
+            <span class="fchip">Supplier</span>
+            <span class="spacer"></span>
+            <button class="btn sm" type="button"><i class="ic i-columns"></i>Columns</button>
+          </div>
+          <div class="bulk" role="region" aria-label="Bulk actions">
+            <span class="m">2 selected</span>
+            <span class="sm" style="opacity: .8">ITC ₹20,970.00</span>
+            <span class="spacer"></span>
+            <button class="btn sm" type="button"><i class="ic i-check"></i>Accept</button>
+            <button class="btn sm" type="button"><i class="ic i-x"></i>Reject</button>
+            <button class="btn sm" type="button"><i class="ic i-pause"></i>Keep pending</button>
+            <button class="btn sm" type="button">Apply all recommendations (14)</button>
+          </div>
+          <section class="card">
+            <div class="tw" style="max-height: 760px">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th class="c"><input class="chk" type="checkbox" aria-label="Select all"></th>
+                    <th>Supplier &amp; document</th><th class="num">ITC</th><th>Portal status</th><th>Our match result</th><th>Recommended</th><th>Final action</th><th>Acted by</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+                    <tr class="{{r.rowCls}}">
+                      <td class="c"><input class="chk" type="checkbox" checked="{{r.chk}}" readOnly="{{true}}" aria-label="Select document"></td>
+                      <td style="min-width: 250px">
+                        <div class="row" style="gap: 6px"><span class="m">{{r.sup}}</span><span class="gst"><span class="g">{{r.gstin}}</span></span></div>
+                        <div class="xs t2">{{r.doctype}} <span class="mono">{{r.no}}</span> · {{r.dt}}</div>
+                      </td>
+                      <td class="num"><div class="{{r.itcCls}}">{{r.itc}}</div><div class="xs t3">on {{r.tx}}</div></td>
+                      <td><span class="{{r.psCls}}"><i class="{{r.psIc}}"></i>{{r.ps}}</span></td>
+                      <td><span class="{{r.mCls}}"><i class="{{r.mIc}}"></i>{{r.m}}</span><div class="xs t3" style="margin-top: 2px; max-width: 200px">{{r.md}}</div></td>
+                      <td class="m nowrap">{{r.rec}}</td>
+                      <td><select class="sel" style="min-height: 28px; padding-top: 2px; padding-bottom: 2px; font-size: 12px" aria-label="Final action"><option>{{r.fin}}</option><option>Accept</option><option>Reject</option><option>Keep pending</option></select></td>
+                      <td><sc-if value="{{r.acted}}" hint-placeholder-val="{{true}}"><span class="row nowrap" style="gap: 6px; flex-wrap: nowrap"><span class="{{r.avCls}}">{{r.ini}}</span><span class="xs t2">{{r.when}}</span></span></sc-if><sc-if value="{{r.notActed}}" hint-placeholder-val="{{false}}"><span class="xs t3">—</span></sc-if></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-f xs t3">Showing 12 of 254 · actions are sent to the GST portal IMS when you press Save to portal · last saved 13-10-2026 11:42 by Priya Nair <span class="spacer"></span><button class="btn sm pri" type="button">Save 4 actions to portal</button></div>
+          </section>
+        </div>
+
+        <aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px" aria-label="ITC risk and liabilities">
+          <section class="card">
+            <div class="card-h"><h2>ITC at risk</h2><span class="src"><b>SAP</b>+ GST portal</span></div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <div class="row" style="justify-content: space-between"><span class="sm m">180-day payment rule</span><span class="st bad"><i class="ic i-bad"></i>3 invoices</span></div>
+                <div class="xs t2" style="margin: 2px 0 6px">Unpaid more than 180 days from invoice date. Reverse ITC in GSTR-3B or pay before filing.</div>
+                <table class="tbl dense">
+                  <tbody>
+                    <tr><td class="xs">Konkan Chemicals · KC/2026/0221<div class="t3">12-04-2026 · 184 days</div></td><td class="num xs">₹46,800.00</td></tr>
+                    <tr><td class="xs">Deccan Steel · DST/0942<div class="t3">09-04-2026 · 187 days</div></td><td class="num xs">₹38,600.00</td></tr>
+                    <tr><td class="xs">Pune Precision · PPT/118<div class="t3">14-04-2026 · 182 days</div></td><td class="num xs">₹27,000.00</td></tr>
+                  </tbody>
+                  <tfoot><tr><td class="xs">ITC to reverse</td><td class="num xs">₹1,12,400.00</td></tr></tfoot>
+                </table>
+              </div>
+              <div class="hr"></div>
+              <div>
+                <div class="row" style="justify-content: space-between"><span class="sm m">Section 16(4) cut-off · FY 2025-26</span><span class="st warn"><i class="ic i-warn"></i>48 days left</span></div>
+                <div class="xs t2" style="margin-top: 2px">7 invoices with ITC <span class="m" style="color: var(--text)">₹68,210.00</span> not yet claimed. Last date 30-11-2026.</div>
+                <button class="btn sm" type="button" style="margin-top: 6px">Review 7 invoices</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-h"><h2>Blocked credits</h2><span class="chip">Section 17(5)</span></div>
+            <div class="card-b">
+              <dl class="kv">
+                <dt>Motor vehicle repairs</dt><dd class="num">₹14,230.00</dd>
+                <dt>Food &amp; beverages (canteen)</dt><dd class="num">₹9,860.00</dd>
+                <dt>Club membership</dt><dd class="num">₹4,500.00</dd>
+                <dt class="m" style="color: var(--text)">Not claimed</dt><dd class="num b">₹28,590.00</dd>
+              </dl>
+              <div class="xs t3" style="margin-top: 8px">Tagged from SAP GL accounts 5402, 5611 and 5730. 2 items need a person to confirm.</div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-h"><h2>Reverse-charge liability</h2><span class="src"><b>SAP</b>10 min ago</span></div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 10px">
+              <div class="row" style="gap: 6px"><span class="m">Vyas Roadlines</span><span class="chip">GTA · 5%</span></div>
+              <span class="gst" style="align-self: flex-start"><span class="g">27AAAFX0002X1Z1</span><span class="s">27 · Maharashtra</span></span>
+              <dl class="kv">
+                <dt>Lorry receipts, Oct</dt><dd>6</dd>
+                <dt>Freight value</dt><dd class="num">₹1,48,500.00</dd>
+                <dt>CGST 2.5%</dt><dd class="num">₹3,712.50</dd>
+                <dt>SGST 2.5%</dt><dd class="num">₹3,712.50</dd>
+                <dt class="m" style="color: var(--text)">Payable in cash</dt><dd class="num b">₹7,425.00</dd>
+              </dl>
+              <div class="row" style="gap: 6px"><span class="st warn"><i class="ic i-warn"></i>Self-invoices 4 of 6</span><span class="xs t3">GSTR-3B Table 3.1(d) · ITC after payment</span></div>
+              <button class="btn sm" type="button" style="align-self: flex-start">Generate 2 self-invoices</button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = { ok: ['st ok', 'ic i-ok'], warn: ['st warn', 'ic i-warn'], bad: ['st bad', 'ic i-bad'], none: ['st none', 'ic i-none'], acc: ['st acc', 'ic i-check'] };
+    const people = { PN: 'a3', FS: 'a4', RK: 'a2' };
+    const r = (sup, gstin, doctype, no, dt, tx, itc, psTone, ps, mTone, m, md, rec, fin, ini, when, chk) => ({
+      sup, gstin, doctype, no, dt, tx, itc, itcCls: itc.startsWith('−') ? 'neg' : '',
+      ps, psCls: st[psTone][0], psIc: st[psTone][1],
+      m, md, mCls: st[mTone][0], mIc: st[mTone][1],
+      rec, fin: fin || 'Choose…',
+      acted: !!ini, notActed: !ini, ini: ini || '', avCls: 'av ' + (people[ini] || ''), when: when || '',
+      chk: !!chk, rowCls: chk ? 'sel' : ''
+    });
+    const rows = [
+      r('Sahyadri Packaging', '27AAACX0000X1Z5', 'Invoice', 'SPK/2026-27/0402', '03-10-2026', '₹42,500.00', '₹7,650.00', 'none', 'No action', 'ok', 'Matched', 'All fields agree', 'Accept', '', '', '', true),
+      r('Ratnagiri Rubber', '27AAAFX0007X1Z1', 'Invoice', 'RRP/554', '08-10-2026', '₹74,000.00', '₹13,320.00', 'none', 'No action', 'ok', 'Matched', 'All fields agree', 'Accept', '', '', '', true),
+      r('Bharat Forgings', '27AAACX0006X1Z3', 'Invoice', 'BF/2026/1311', '04-10-2026', '₹2,10,000.00', '₹37,800.00', 'ok', 'Accepted', 'ok', 'Matched', 'All fields agree', 'Accept', 'Accept', 'RK', '10-10 16:40'),
+      r('Deccan Steel Traders', '27AAAFX0001X1Z3', 'Credit note', 'DST/CN/014', '07-10-2026', '−₹24,000.00', '−₹4,320.00', 'ok', 'Accepted', 'ok', 'Matched', 'Reduces ITC; booked in SAP', 'Accept', 'Accept', 'PN', '11-10 10:02'),
+      r('Patel Electricals', '27AAAFX0003X1Z9', 'Invoice', 'PE/26-27/076', '01-10-2026', '₹31,000.00', '₹5,580.00', 'none', 'No action', 'ok', 'Matched', 'IRN found on portal; resolves EX-1035', 'Accept', '', '', ''),
+      r('Om Sai Engineering', '27AAAFX0008X1Z9', 'Invoice', 'OSE/0931', '10-10-2026', '₹38,500.00', '₹6,930.00', 'none', 'No action', 'warn', 'Partial', 'Date 10-10 on portal, 11-10 in books', 'Accept', '', '', ''),
+      r('Konkan Chemicals', '27AAACX0004X1Z7', 'Invoice', 'KC/2026/0733', '05-10-2026', '₹1,86,400.00', '₹33,552.00', 'none', 'No action', 'warn', 'Partial', 'Taxable differs by ₹1,180.00', 'Keep pending', '', '', ''),
+      r('Konkan Chemicals', '27AAACX0004X1Z7', 'Debit note', 'KC/DN/007', '06-10-2026', '₹12,000.00', '₹2,160.00', 'warn', 'Pending', 'warn', 'Partial', 'Debit note not agreed by purchase', 'Keep pending', 'Keep pending', 'PN', '11-10 10:05'),
+      r('Deccan Steel Traders', '27AAAFX0001X1Z3', 'Invoice', 'DST/1187', '08-10-2026', '₹4,00,000.00', '₹72,000.00', 'none', 'No action', 'warn', 'Partial', 'In books; GRN missing (EX-1019)', 'Keep pending', '', '', ''),
+      r('Sahyadri Packaging', '27AAACX0000X1Z5', 'Invoice', 'SPK/2026-27/0395', '30-09-2026', '₹51,000.00', '₹9,180.00', 'none', 'No action', 'bad', 'Duplicate in books', 'Posted twice in SAP; reverse one', 'Accept', '', '', ''),
+      r('Patel Electricals', '27AAAFX0003X1Z9', 'Invoice', 'PE/26-27/079', '09-10-2026', '₹64,000.00', '₹11,520.00', 'none', 'No action', 'bad', 'Not in books', 'Goods not yet received', 'Keep pending', '', '', ''),
+      r('Shree Ganesh Enterprises', '27AAAFX0005X1Z5', 'Invoice', 'SGE/098', '02-10-2026', '₹48,000.00', '₹8,640.00', 'bad', 'Rejected', 'bad', 'Not in books', 'No PO; supplier not in vendor master', 'Reject', 'Reject', 'FS', '12-10 15:20')
+    ];
+    return { theme: this.props.theme ?? 'light', rows };
+  }
+}
+</script>
+</body>
+</html>

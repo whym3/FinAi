@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pravah sidebar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav class="pv side" data-theme="{{theme}}" aria-label="Main" style="width: 100%; height: 100%; border-right: 0; font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 8c3-3 6-3 9 0s6 3 9 0"></path><path d="M3 16c3-3 6-3 9 0s6 3 9 0"></path></svg>
+    </span>
+    <span style="display: flex; flex-direction: column">
+      <span class="brand-n">Pravah</span>
+      <span class="brand-s">Finance Control</span>
+    </span>
+  </div>
+
+  <a href="#" class="{{overview.cls}}"><i class="ic l i-grid"></i><span class="lbl">Overview</span></a>
+
+  <sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+    <div class="nav-g up">{{g.title}}</div>
+    <sc-for list="{{g.items}}" as="it" hint-placeholder-count="3">
+      <a href="#" class="{{it.cls}}"><i class="{{it.ic}}"></i><span class="lbl">{{it.label}}</span><sc-if value="{{it.hasCount}}" hint-placeholder-val="{{true}}"><span class="{{it.ccls}}">{{it.count}}</span></sc-if></a>
+    </sc-for>
+  </sc-for>
+
+  <div style="flex: 1 1 auto; min-height: 16px"></div>
+  <a href="#" class="{{settings.cls}}"><i class="ic l i-sliders"></i><span class="lbl">Settings</span></a>
+  <div style="margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; display: flex; gap: 10px; align-items: center">
+    <span class="av lg a1">MR</span>
+    <span style="display: flex; flex-direction: column; min-width: 0">
+      <span class="sm m">Mehta &amp; Rao</span>
+      <span class="xs t3">Chartered Accountants · 3 clients</span>
+    </span>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["overview","intake","p2p","review","exceptions","payables","receivables","bank","gst","tds","msme","close","reports","audit","vendors","customers","settings"],"default":"overview"},"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":240,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.active ?? 'overview';
+    const mk = (id, label, icon, count, tone) => ({
+      label,
+      cls: 'nav' + (id === a ? ' on' : ''),
+      ic: 'ic l ' + icon,
+      count: count || '',
+      hasCount: !!count,
+      ccls: 'cnt' + (tone ? ' ' + tone : '')
+    });
+    return {
+      theme: this.props.theme ?? 'light',
+      overview: mk('overview', 'Overview', 'i-grid'),
+      settings: mk('settings', 'Settings', 'i-sliders'),
+      groups: [
+        { title: 'Work', items: [
+          mk('intake', 'Intake inbox', 'i-inbox', '23', 'acc'),
+          mk('p2p', 'Purchase-to-pay', 'i-flow', '6', 'warn'),
+          mk('review', 'Invoice review', 'i-filecheck', '37'),
+          mk('exceptions', 'Exceptions', 'i-alert', '41', 'bad')
+        ]},
+        { title: 'Money', items: [
+          mk('payables', 'Payables & payment runs', 'i-wallet', '2'),
+          mk('receivables', 'Receivables', 'i-receive', '11'),
+          mk('bank', 'Bank', 'i-bank', '14')
+        ]},
+        { title: 'Compliance', items: [
+          mk('gst', 'GST hub', 'i-receipt', '64'),
+          mk('tds', 'TDS hub', 'i-percent', '5'),
+          mk('msme', 'MSME tracker', 'i-shield', '4', 'warn')
+        ]},
+        { title: 'Close & reports', items: [
+          mk('close', 'Month-end close', 'i-calcheck', '16'),
+          mk('reports', 'Reports', 'i-chart'),
+          mk('audit', 'Audit log', 'i-history')
+        ]},
+        { title: 'Masters', items: [
+          mk('vendors', 'Vendors', 'i-truck', '1', 'bad'),
+          mk('customers', 'Customers', 'i-users')
+        ]}
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

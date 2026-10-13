@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Purchase-to-pay — PO 4500012345</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
+    <dc-import name="Sidebar" active="p2p" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  </div>
+  <div class="main">
+    <dc-import name="Topbar" theme="{{theme}}" hint-size="100%,64px"></dc-import>
+    <main class="content">
+
+      <div class="ph">
+        <div class="ph-l" style="gap: 4px">
+          <nav class="crumb" aria-label="Breadcrumb"><a href="#">Purchase-to-pay</a><i class="ic s i-chevr"></i><a href="#">Sahyadri Packaging Pvt Ltd</a><i class="ic s i-chevr"></i><span>PO 4500012345</span></nav>
+          <div class="row" style="gap: 10px"><h1>PO 4500012345</h1><span class="st acc"><i class="ic i-filecheck"></i>Stage 6 of 9 · Invoice review</span><span class="msme"><i class="ic s i-shield"></i>Micro · Udyam</span></div>
+          <div class="row sm t2" style="gap: 6px 14px">
+            <span class="m" style="color: var(--text)">Sahyadri Packaging Pvt Ltd</span>
+            <span class="gst"><span class="g">27AAACX0000X1Z5</span><span class="s">27 · Maharashtra</span></span>
+            <span>PO value <span class="m" style="color: var(--text)">₹1,00,300.00</span> incl. GST</span>
+            <span>Buyer Vikram Joshi</span>
+            <span>Plant 1100 · Chakan</span>
+            <span class="src"><b>SAP</b>synced 10 min ago</span>
+          </div>
+        </div>
+        <div class="ph-r">
+          <button class="btn" type="button"><i class="ic i-ext"></i>Open in SAP (ME23N)</button>
+          <button class="btn" type="button"><i class="ic i-plus"></i>Add document</button>
+          <button class="btn" type="button"><i class="ic i-send"></i>Ask vendor</button>
+          <a href="InvoiceReview.dc.html" class="btn pri">Review invoice<i class="ic i-arrowr"></i></a>
+        </div>
+      </div>
+
+      <section class="card" aria-label="Order timeline">
+        <div class="card-h">
+          <h2>Order timeline</h2>
+          <span class="row xs t2" style="gap: 12px">
+            <span class="row" style="gap: 4px"><i class="ic ok-t i-ok"></i>Done</span>
+            <span class="row" style="gap: 4px"><span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--accent)"></span>Current</span>
+            <span class="row" style="gap: 4px"><i class="ic bad-t i-bad"></i>Blocked</span>
+            <span class="row" style="gap: 4px"><i class="ic none-t i-none"></i>Not started</span>
+          </span>
+          <span class="sm t2">Elapsed 24 days · on track overall</span>
+        </div>
+        <div class="tw" style="padding: 16px">
+          <div class="tl">
+            <sc-for list="{{stages}}" as="s" hint-placeholder-count="9">
+              <div class="{{s.cls}}">
+                <div class="stg-hd"><span class="stg-dot"><i class="{{s.ic}}"></i></span><span class="stg-ln" style="{{s.lnStyle}}"></span></div>
+                <div class="stg-card">
+                  <div class="stg-n">{{s.n}}</div>
+                  <div class="t2">{{s.date}}</div>
+                  <div class="row" style="gap: 5px; flex-wrap: nowrap"><span class="{{s.avCls}}" style="width: 18px; height: 18px; font-size: 8.5px">{{s.ini}}</span><span style="min-width: 0">{{s.owner}}</span></div>
+                  <div class="mono xs t2">{{s.ref}}</div>
+                  <div class="row" style="gap: 3px 4px; margin-top: 2px">
+                    <sc-for list="{{s.docs}}" as="d" hint-placeholder-count="2"><a href="#" class="row xs" style="gap: 3px"><i class="ic s i-file"></i>{{d}}</a></sc-for>
+                  </div>
+                  <div style="margin-top: auto; padding-top: 4px"><span class="{{s.slaCls}}"><i class="{{s.slaIc}}"></i>{{s.sla}}</span></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <div style="flex: 2 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
+          <section class="card" aria-label="Line ledger">
+            <div class="card-h">
+              <h2>Line ledger</h2>
+              <span class="src"><b>SAP</b>EKBE history · 10 min ago</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border-bottom: 1px solid var(--border)">
+              <div style="padding: 12px 16px; border-right: 1px solid var(--border)"><div class="xs t2 m">Ordered</div><div class="b" style="font-size: 22px; line-height: 28px">1,000 <span class="sm t2" style="font-weight: 400">Nos</span></div><div class="xs t3">₹85,000.00 taxable</div><span class="bar ok" style="margin-top: 6px"><i style="width: 100%"></i></span></div>
+              <div style="padding: 12px 16px; border-right: 1px solid var(--border)"><div class="xs t2 m">Received &amp; accepted</div><div class="b" style="font-size: 22px; line-height: 28px">1,000 <span class="sm t2" style="font-weight: 400">Nos</span></div><div class="xs t3">GRN 5000098812 · QC passed</div><span class="bar ok" style="margin-top: 6px"><i style="width: 100%"></i></span></div>
+              <div style="padding: 12px 16px; border-right: 1px solid var(--border)"><div class="xs t2 m">Invoiced</div><div class="b" style="font-size: 22px; line-height: 28px">1,000 <span class="sm t2" style="font-weight: 400">Nos</span></div><div class="xs warn-t m">₹89,000.00 taxable · ₹4,000.00 above PO</div><span class="bar warn" style="margin-top: 6px"><i style="width: 100%"></i></span></div>
+              <div style="padding: 12px 16px"><div class="xs t2 m">Paid</div><div class="b" style="font-size: 22px; line-height: 28px">0 <span class="sm t2" style="font-weight: 400">Nos</span></div><div class="xs t3">₹0.00 · agreed due 09-11-2026</div><span class="bar" style="margin-top: 6px"><i style="width: 0%"></i></span></div>
+            </div>
+            <div class="tw">
+              <table class="tbl">
+                <thead><tr><th>Line</th><th>Material</th><th class="num">PO rate</th><th class="num">Ordered</th><th class="num">Received</th><th class="num">Accepted</th><th class="num">Invoiced</th><th class="num">Posted</th><th class="num">Paid</th><th class="num">Open value</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td class="mono">10</td>
+                    <td><div class="m">HDPE separator tray 600×400 mm</div><div class="xs t3">Material 100004512 · HSN 3926 · UoM Nos</div></td>
+                    <td class="num">₹85.00</td>
+                    <td class="num">1,000</td>
+                    <td class="num">1,000</td>
+                    <td class="num">1,000</td>
+                    <td class="num">1,000</td>
+                    <td class="num t3">0</td>
+                    <td class="num t3">0</td>
+                    <td class="num m">₹1,00,300.00</td>
+                  </tr>
+                </tbody>
+                <tfoot><tr><td></td><td>Freight</td><td class="num">FOR · incl.</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num warn-t">₹2,000.00</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr></tfoot>
+              </table>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Documents and evidence">
+            <div class="card-h">
+              <h2>Documents &amp; evidence</h2>
+              <span class="xs t3">11 documents · click a row to open it in the side viewer</span>
+              <button class="btn sm" type="button"><i class="ic i-download"></i>Download all (ZIP)</button>
+            </div>
+            <div class="tw">
+              <table class="tbl">
+                <thead><tr><th>Document</th><th>Number</th><th>Date</th><th>Source</th><th>Linked by</th><th>Check</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{docs}}" as="d" hint-placeholder-count="11">
+                    <tr>
+                      <td><span class="row" style="gap: 6px; flex-wrap: nowrap"><i class="ic t2 i-file"></i><span class="m">{{d.t}}</span></span></td>
+                      <td class="mono nowrap">{{d.no}}</td>
+                      <td class="nowrap">{{d.dt}}</td>
+                      <td><span class="src"><b>{{d.src}}</b></span></td>
+                      <td class="t2">{{d.by}}</td>
+                      <td><span class="{{d.stCls}}"><i class="{{d.stIc}}"></i>{{d.st}}</span></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <section class="card" aria-label="Negotiation record">
+            <div class="card-h">
+              <h2>Negotiation record</h2>
+              <span class="chip"><i class="ic s i-lock"></i>Locked · version 2</span>
+            </div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 12px">
+              <dl class="kv">
+                <dt>Rate</dt><dd><span class="b">₹85.00</span> per piece (Nos)</dd>
+                <dt>Freight</dt><dd>FOR destination — <span class="m">included in rate</span></dd>
+                <dt>Payment terms</dt><dd><span class="m">30 days</span> from invoice date</dd>
+                <dt>Delivery</dt><dd>By 10-10-2026, Chakan plant</dd>
+                <dt>Price valid till</dt><dd>31-03-2027</dd>
+                <dt>GST</dt><dd>Extra at 18% · HSN 3926</dd>
+                <dt>Approved by</dt><dd><span class="row" style="gap: 6px"><span class="av a4" style="width: 20px; height: 20px; font-size: 9px">MD</span>Meera Deshpande, Purchase Head</span><span class="xs t3">19-09-2026 16:12 · via email</span></dd>
+              </dl>
+              <div class="row" style="gap: 6px">
+                <a href="#" class="chip"><i class="ic s i-file"></i>Quote Q-SPK-2209 rev 2</a>
+                <a href="#" class="chip"><i class="ic s i-mail"></i>Approval email</a>
+                <span class="src"><b>Extracted</b>confirmed by V. Joshi</span>
+              </div>
+              <div class="xs t3" style="border-top: 1px solid var(--border); padding-top: 8px">Superseded v1 (12-09-2026): ₹88.00 per piece, freight extra, 15 days. The invoice follows parts of v1.</div>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Payment and MSME clock">
+            <div class="card-h">
+              <h2>Payment clock</h2>
+              <span class="msme"><i class="ic s i-shield"></i>Micro</span>
+            </div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 10px">
+              <div class="row" style="justify-content: space-between; align-items: baseline"><span class="sm t2">MSMED Act 45-day limit</span><span><span class="b" style="font-size: 18px">40</span> <span class="sm t2">days left</span></span></div>
+              <span class="bar ok"><i style="width: 11%"></i></span>
+              <div class="row xs t3" style="justify-content: space-between"><span>Accepted 08-10-2026</span><span>Limit 22-11-2026</span></div>
+              <dl class="kv" style="margin-top: 4px">
+                <dt>Agreed due date</dt><dd>09-11-2026 <span class="xs t3">30 days from invoice</span></dd>
+                <dt>Invoice asks</dt><dd><span class="warn-t m">25-10-2026</span> <span class="xs t3">15 days — not agreed</span></dd>
+                <dt>Udyam</dt><dd><span class="mono xs">UDYAM-MH-26-0000000</span><div class="xs ok-t row" style="gap: 3px"><i class="ic s i-ok"></i>Verified 02-04-2026</div></dd>
+              </dl>
+              <div class="xs t2" style="background: var(--surface-2); border-radius: 6px; padding: 8px 10px">Section 43B(h): if unpaid after 22-11-2026, the expense is disallowed for FY 2026-27 until the year it is paid.</div>
+            </div>
+          </section>
+
+          <section class="card" aria-label="SAP references">
+            <div class="card-h"><h2>SAP references</h2><span class="src"><b>SAP</b>10 min ago</span></div>
+            <div class="card-b">
+              <dl class="kv">
+                <dt>Company code</dt><dd class="mono">1000 · Meridian Auto</dd>
+                <dt>Vendor</dt><dd class="mono">100231</dd>
+                <dt>Purchase order</dt><dd class="mono">4500012345 <span class="t3">ME23N</span></dd>
+                <dt>Gate entry</dt><dd class="mono">GE-1100-08812</dd>
+                <dt>Goods receipt</dt><dd class="mono">5000098812 <span class="t3">MIGO 101</span></dd>
+                <dt>Invoice document</dt><dd><span class="st none"><i class="ic i-none"></i>Not posted</span></dd>
+                <dt>Payment / UTR</dt><dd><span class="st none"><i class="ic i-none"></i>Not paid</span></dd>
+              </dl>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = { ok: ['st ok', 'ic i-ok'], warn: ['st warn', 'ic i-warn'], bad: ['st bad', 'ic i-bad'], none: ['st none', 'ic i-none'] };
+    const stIcon = { done: 'ic i-check', cur: 'ic i-filecheck', blk: 'ic i-x', ns: '' };
+    const s = (state, n, date, ini, av, owner, ref, docs, slaTone, sla, icon, last) => ({
+      cls: 'stg ' + state, n, date, ini, avCls: 'av ' + av, owner, ref, docs,
+      ic: 'ic ' + (state === 'done' ? 'i-check' : icon),
+      lnStyle: last ? 'visibility: hidden' : '',
+      sla, slaCls: st[slaTone][0] + ' plain', slaIc: st[slaTone][1]
+    });
+    const stages = [
+      s('done', 'Negotiated terms', '19-09-2026', 'VJ', 'a1', 'Vikram Joshi · Procurement', 'RFQ 6000004471', ['Quote rev 2', 'Approval'], 'ok', '1 d · SLA 5 d', 'i-tag'),
+      s('done', 'SAP PO', '22-09-2026', 'VJ', 'a1', 'Vikram Joshi · released by M. Deshpande', 'PO 4500012345', ['PO PDF'], 'ok', '1 d · SLA 2 d', 'i-file'),
+      s('done', 'Dispatch', '06-10-2026', 'SP', 'a3', 'Sahyadri Packaging', 'EWB 3410 0000 7788', ['Challan DC/0931', 'E-way bill', 'LR VR/LR/22874'], 'ok', 'On time', 'i-truck'),
+      s('done', 'Gate entry', '08-10-2026 09:42', 'SU', 'a5', 'Suresh Patil · Stores', 'GE-1100-08812', ['Gate pass', 'Vehicle photo'], 'ok', '0 d · SLA 1 d', 'i-gate'),
+      s('done', 'GRN', '08-10-2026 16:10', 'SU', 'a5', 'Suresh Patil · Stores', 'GRN 5000098812', ['GRN', 'QC report'], 'ok', '6 h · SLA 1 d', 'i-box'),
+      s('cur', 'Invoice review', 'Received 13-10-2026', 'RK', 'a2', 'Rohan Kulkarni · AP', 'SPK/2026-27/0418', ['Invoice PDF', 'WhatsApp copy'], 'warn', 'Day 1 of 2 · 4 flags', 'i-filecheck'),
+      s('ns', 'AP posting', 'Target 15-10-2026', 'RK', 'a2', 'Rohan Kulkarni · AP', 'MIRO — not posted', [], 'none', 'SLA 2 d after review', 'i-book'),
+      s('ns', 'Payment', 'Due 09-11-2026', 'FS', 'a4', 'Farah Siddiqui · Controller', 'UTR —', [], 'none', 'MSME limit 22-11-2026', 'i-rupee'),
+      s('ns', 'Reconciled', 'After bank statement', 'AU', '', 'Automatic · bank match', 'Clearing doc —', [], 'none', 'SLA 3 d after payment', 'i-recon', true)
+    ];
+    const d = (t, no, dt, src, by, tone, sx) => ({ t, no, dt, src, by, st: sx, stCls: st[tone][0], stIc: st[tone][1] });
+    const docs = [
+      d('Quotation, revised', 'Q-SPK-2209 rev 2', '18-09-2026', 'Email', 'Vikram Joshi', 'ok', 'Approved'),
+      d('Approval note', 'Email · RE: Revised quote', '19-09-2026', 'Email', 'Meera Deshpande', 'ok', 'Approved'),
+      d('Purchase order', '4500012345', '22-09-2026', 'SAP', 'System', 'ok', 'Released'),
+      d('Delivery challan', 'DC/0931', '06-10-2026', 'WhatsApp', 'Auto-linked', 'ok', 'Matches PO'),
+      d('E-way bill', '3410 0000 7788', '06-10-2026', 'GST portal', 'Auto-linked', 'ok', 'Valid · used 08-10'),
+      d('Lorry receipt', 'VR/LR/22874', '06-10-2026', 'Upload', 'Suresh Patil', 'ok', 'Matches vehicle'),
+      d('Gate pass', 'GE-1100-08812', '08-10-2026', 'Upload', 'Suresh Patil', 'ok', 'Recorded'),
+      d('Goods receipt', '5000098812', '08-10-2026', 'SAP', 'System', 'ok', '1,000 accepted'),
+      d('QC report', 'QC-26-1188', '08-10-2026', 'Upload', 'QC lab', 'ok', 'Passed'),
+      d('Tax invoice', 'SPK/2026-27/0418', '10-10-2026', 'Extracted', 'Auto-linked', 'warn', '4 flags'),
+      d('Tax invoice, copy', 'SPK/2026-27/0418', '10-10-2026', 'WhatsApp', 'Auto-linked', 'none', 'Duplicate')
+    ];
+    return { theme: this.props.theme ?? 'light', stages, docs };
+  }
+}
+</script>
+</body>
+</html>

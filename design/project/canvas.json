@@ -1,0 +1,54 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-13T19:45:00Z" },
+  "title": "Pravah Finance Control",
+  "launch": { "view": "canvas", "page": "light" },
+  "pages": [
+    { "id": "light", "name": "Desktop · Light" },
+    { "id": "dark", "name": "Desktop · Dark" },
+    { "id": "components", "name": "Components" },
+    { "id": "mobile", "name": "Mobile" }
+  ],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 2420, "title": "1 · Overview — entity view", "page": "light", "expand": "fill", "is_interactive": true },
+    "OverviewFirm.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1560, "title": "1b · Overview — firm view", "page": "light", "expand": "fill", "is_interactive": true },
+    "Intake.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 1640, "title": "2 · Intake inbox", "page": "light", "expand": "fill" },
+    "P2P.dc.html": { "x": 4560, "y": 0, "w": 1440, "h": 1640, "title": "3 · Purchase-to-pay workbench", "page": "light", "expand": "fill" },
+    "InvoiceReview.dc.html": { "x": 6080, "y": 0, "w": 1440, "h": 1780, "title": "4 · Invoice review (three-way match)", "page": "light", "expand": "fill", "is_interactive": true },
+    "Exceptions.dc.html": { "x": 7600, "y": 0, "w": 1440, "h": 1360, "title": "5 · Exception queue — table", "page": "light", "expand": "fill", "is_interactive": true },
+    "ExceptionsBoard.dc.html": { "x": 9120, "y": 0, "w": 1440, "h": 1360, "title": "5b · Exception queue — board", "page": "light", "expand": "fill", "is_interactive": true },
+    "GstHub.dc.html": { "x": 10640, "y": 0, "w": 1440, "h": 1640, "title": "6 · GST hub — IMS & GSTR-2B", "page": "light", "expand": "fill" },
+
+    "OverviewDark.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 2420, "title": "1 · Overview — entity view (dark)", "page": "dark", "expand": "fill", "is_interactive": true },
+    "OverviewFirmDark.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1560, "title": "1b · Overview — firm view (dark)", "page": "dark", "expand": "fill", "is_interactive": true },
+    "IntakeDark.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 1640, "title": "2 · Intake inbox (dark)", "page": "dark", "expand": "fill" },
+    "P2PDark.dc.html": { "x": 4560, "y": 0, "w": 1440, "h": 1640, "title": "3 · Purchase-to-pay workbench (dark)", "page": "dark", "expand": "fill" },
+    "InvoiceReviewDark.dc.html": { "x": 6080, "y": 0, "w": 1440, "h": 1780, "title": "4 · Invoice review (dark)", "page": "dark", "expand": "fill", "is_interactive": true },
+    "ExceptionsDark.dc.html": { "x": 7600, "y": 0, "w": 1440, "h": 1360, "title": "5 · Exception queue — table (dark)", "page": "dark", "expand": "fill", "is_interactive": true },
+    "ExceptionsBoardDark.dc.html": { "x": 9120, "y": 0, "w": 1440, "h": 1360, "title": "5b · Exception queue — board (dark)", "page": "dark", "expand": "fill", "is_interactive": true },
+    "GstHubDark.dc.html": { "x": 10640, "y": 0, "w": 1440, "h": 1640, "title": "6 · GST hub (dark)", "page": "dark", "expand": "fill" },
+
+    "Components.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 3560, "title": "Component set (light)", "page": "components", "expand": "fill" },
+    "ComponentsDark.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 3560, "title": "Component set (dark)", "page": "components", "expand": "fill" },
+    "Sidebar.dc.html": { "x": 3040, "y": 0, "w": 240, "h": 1040, "title": "Shell · sidebar", "page": "components" },
+    "Topbar.dc.html": { "x": 3360, "y": 0, "w": 1200, "h": 64, "title": "Shell · top bar", "page": "components" },
+
+    "MobileOverview.dc.html": { "x": 0, "y": 0, "w": 390, "h": 2080, "title": "Mobile · Overview", "page": "mobile" },
+    "MobileApprove.dc.html": { "x": 470, "y": 0, "w": 390, "h": 1560, "title": "Mobile · Approve payment run", "page": "mobile", "is_interactive": true },
+    "MobileOverviewDark.dc.html": { "x": 1020, "y": 0, "w": 390, "h": 2080, "title": "Mobile · Overview (dark)", "page": "mobile" },
+    "MobileApproveDark.dc.html": { "x": 1490, "y": 0, "w": 390, "h": 1560, "title": "Mobile · Approve payment run (dark)", "page": "mobile", "is_interactive": true }
+  },
+  "order": [
+    "Main.dc.html", "OverviewFirm.dc.html", "Intake.dc.html", "P2P.dc.html", "InvoiceReview.dc.html", "Exceptions.dc.html", "ExceptionsBoard.dc.html", "GstHub.dc.html",
+    "OverviewDark.dc.html", "OverviewFirmDark.dc.html", "IntakeDark.dc.html", "P2PDark.dc.html", "InvoiceReviewDark.dc.html", "ExceptionsDark.dc.html", "ExceptionsBoardDark.dc.html", "GstHubDark.dc.html",
+    "Components.dc.html", "ComponentsDark.dc.html", "Sidebar.dc.html", "Topbar.dc.html",
+    "MobileOverview.dc.html", "MobileApprove.dc.html", "MobileOverviewDark.dc.html", "MobileApproveDark.dc.html"
+  ],
+  "notes": {
+    "tLight": { "x": 0, "y": -300, "text": "Pravah Finance Control — desktop screens, light (1440 px)", "kind": "title1", "maxW": 12080, "page": "light" },
+    "tDark": { "x": 0, "y": -300, "text": "Pravah Finance Control — desktop screens, dark (1440 px)", "kind": "title1", "maxW": 12080, "page": "dark" },
+    "tComp": { "x": 0, "y": -300, "text": "Component set and shell parts", "kind": "title1", "maxW": 4560, "page": "components" },
+    "tMob": { "x": 0, "y": -300, "text": "Mobile — Overview and Approve payment", "kind": "title1", "maxW": 1880, "page": "mobile" }
+  },
+  "designSystems": []
+}

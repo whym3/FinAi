@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Intake inbox — Pravah Finance Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
+    <dc-import name="Sidebar" active="intake" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  </div>
+  <div class="main">
+    <dc-import name="Topbar" theme="{{theme}}" hint-size="100%,64px"></dc-import>
+    <main class="content">
+
+      <div class="ph">
+        <div class="ph-l">
+          <h1>Intake inbox</h1>
+          <p class="sm t2">Every document that reaches Meridian Auto Components — email, post, WhatsApp, uploads and SAP. Last mailbox fetch 2 min ago.</p>
+        </div>
+        <div class="ph-r">
+          <span class="chip"><i class="ic i-mail"></i><span class="mono">invoices+meridian@intake.pravah.example</span><button class="ib" type="button" aria-label="Copy forwarding address" style="width: 20px; height: 20px"><i class="ic s i-copy"></i></button></span>
+          <button class="btn" type="button"><i class="ic i-chat"></i>WhatsApp number</button>
+          <button class="btn pri" type="button"><i class="ic i-upload"></i>Upload documents</button>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Status">
+        <button class="tab" role="tab" type="button">All <span class="cnt">64</span></button>
+        <button class="tab on" role="tab" type="button" aria-selected="true">New <span class="cnt acc">23</span></button>
+        <button class="tab" role="tab" type="button">Needs review <span class="cnt warn">9</span></button>
+        <button class="tab" role="tab" type="button">Linked <span class="cnt">26</span></button>
+        <button class="tab" role="tab" type="button">Duplicate <span class="cnt">2</span></button>
+        <button class="tab" role="tab" type="button">Not finance <span class="cnt">3</span></button>
+        <button class="tab" role="tab" type="button">Rejected <span class="cnt">1</span></button>
+      </div>
+
+      <div class="filters">
+        <span class="fchip on"><i class="ic i-filter"></i>Received: today and yesterday</span>
+        <span class="fchip">Channel</span>
+        <span class="fchip">Detected type</span>
+        <span class="fchip">Vendor</span>
+        <span class="fchip">Confidence below 80%</span>
+        <span class="spacer"></span>
+        <span class="xs t3">Showing 9 of 64 · newest first</span>
+        <button class="btn sm" type="button"><i class="ic i-columns"></i>Columns</button>
+      </div>
+
+      <section class="card" aria-label="Intake queue">
+        <div class="tw" style="max-height: 432px">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th class="c"><input class="chk" type="checkbox" aria-label="Select all"></th>
+                <th>Channel</th><th>Received</th><th>Sender</th><th>Detected type</th><th>Vendor</th><th>Invoice no.</th><th class="num">Amount</th><th>Confidence</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="9">
+                <tr class="{{r.cls}}">
+                  <td class="c"><input class="chk" type="checkbox" aria-label="Select row"></td>
+                  <td><span class="row nowrap" style="gap: 6px; flex-wrap: nowrap"><i class="{{r.chIc}}"></i>{{r.ch}}</span></td>
+                  <td class="nowrap">{{r.at}}</td>
+                  <td><span class="sm" style="display: block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.from}}</span></td>
+                  <td class="nowrap">{{r.type}}</td>
+                  <td class="m">{{r.vendor}}</td>
+                  <td class="mono nowrap">{{r.inv}}</td>
+                  <td class="{{r.amtCls}}">{{r.amt}}</td>
+                  <td><span class="{{r.confCls}}"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>{{r.conf}}</span></td>
+                  <td><span class="{{r.stCls}}"><i class="{{r.stIc}}"></i>{{r.st}}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Review selected document">
+        <div class="card-h">
+          <div class="col" style="gap: 2px; margin-right: auto; min-width: 0">
+            <div class="row" style="gap: 8px"><h2>SPK/2026-27/0418</h2><span class="st warn"><i class="ic i-warn"></i>Needs review</span><span class="msme"><i class="ic s i-shield"></i>Micro · Udyam</span></div>
+            <div class="xs t3">Sahyadri Packaging Pvt Ltd · emailed by accounts@sahyadripack.example on 13-10-2026 10:40 · 1 page PDF, 214 KB</div>
+          </div>
+          <button class="ib bd" type="button" aria-label="Previous document"><i class="ic i-chevl"></i></button>
+          <span class="xs t3">1 of 9</span>
+          <button class="ib bd" type="button" aria-label="Next document"><i class="ic i-chevr"></i></button>
+        </div>
+
+        <div style="padding: 12px 16px 0">
+          <div class="banner warn" role="alert">
+            <i class="ic l i-copy" style="color: var(--warn)"></i>
+            <div class="tx"><span class="b">Possible duplicate.</span> The same invoice — supplier GSTIN 27AAACX0000X1Z5, invoice no. SPK/2026-27/0418, total ₹1,05,020.00 — also arrived by WhatsApp from +91 98220 00210 at 10:52, 12 minutes after this email. The WhatsApp copy is a phone photo (88% confidence).</div>
+            <button class="btn sm" type="button"><i class="ic i-columns"></i>Compare side by side</button>
+            <button class="btn sm" type="button">Keep this, mark WhatsApp copy duplicate</button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 16px 16px; align-items: stretch">
+          <!-- document viewer -->
+          <div class="viewer" style="flex: 1 1 540px">
+            <div class="viewer-tb">
+              <span class="sm m">Original · PDF</span>
+              <span class="src"><b>Email</b>13-10-2026 10:40</span>
+              <span class="spacer"></span>
+              <label class="row xs t2" style="gap: 6px"><input class="chk" type="checkbox" checked>Show field boxes</label>
+              <button class="ib" type="button" aria-label="Zoom out"><i class="ic l i-zout"></i></button>
+              <span class="xs t2">100%</span>
+              <button class="ib" type="button" aria-label="Zoom in"><i class="ic l i-zin"></i></button>
+              <button class="ib" type="button" aria-label="Rotate"><i class="ic l i-rotate"></i></button>
+              <button class="ib" type="button" aria-label="Open original in new tab"><i class="ic l i-ext"></i></button>
+            </div>
+            <div style="padding: 20px; display: flex; justify-content: center; overflow: auto">
+              <div class="doc" style="width: 540px; padding: 26px 28px 24px; display: flex; flex-direction: column; gap: 12px">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1.5px solid #1b1e23; padding-bottom: 8px">
+                  <div style="display: flex; flex-direction: column; gap: 2px">
+                    <span style="position: relative; display: inline-block; font-weight: 700; font-size: 14px; line-height: 18px">Sahyadri Packaging Pvt Ltd<span class="hl" style="inset: -3px -5px"><span class="hl-t">Supplier 99%</span></span></span>
+                    <span class="dl">Plot 14, MIDC Bhosari, Pune 411026, Maharashtra</span>
+                    <span style="position: relative; display: inline-block; align-self: flex-start">GSTIN: <b>27AAACX0000X1Z5</b><span class="hl" style="inset: -3px -5px"><span class="hl-t">GSTIN 99%</span></span></span>
+                    <span class="dl">Udyam: UDYAM-MH-26-0000000 (Micro)</span>
+                  </div>
+                  <div style="text-align: right; display: flex; flex-direction: column; gap: 2px; align-items: flex-end">
+                    <span style="font-weight: 700; font-size: 15px; letter-spacing: .06em">TAX INVOICE</span>
+                    <span class="dl">Original for recipient</span>
+                    <span style="position: relative; display: inline-block; margin-top: 4px">Invoice No: <b>SPK/2026-27/0418</b><span class="hl" style="inset: -3px -5px"><span class="hl-t">Inv no. 98%</span></span></span>
+                    <span style="position: relative; display: inline-block; margin-top: 6px">Date: <b>10-10-2026</b><span class="hl" style="inset: -3px -5px"><span class="hl-t">Date 97%</span></span></span>
+                    <span class="dl">PO Ref: 4500012345 · E-way bill: 3410 0000 7788</span>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; align-items: center">
+                  <div style="width: 54px; height: 54px; flex: none; background-image: repeating-linear-gradient(0deg, #1b1e23 0 3px, transparent 3px 6px), repeating-linear-gradient(90deg, #1b1e23 0 3px, transparent 3px 7px); background-blend-mode: multiply; outline: 3px solid #1b1e23; outline-offset: -3px; opacity: .85" aria-label="Signed QR code" role="img"></div>
+                  <span style="position: relative; display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; line-height: 13px; word-break: break-all">IRN: a3f9c2d7 51be0c44 9e1f7a62 d0c8b3e5 7f24a910 6c5e8d13 b2a4f0e9 61d7e71c<span class="hl lo" style="inset: -3px -5px"><span class="hl-t">IRN 71% · unconfirmed</span></span></span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; gap: 12px">
+                  <div style="display: flex; flex-direction: column; gap: 2px">
+                    <span class="dl">Bill to / Ship to</span>
+                    <b>Meridian Auto Components Pvt Ltd</b>
+                    <span>Gat 412, Chakan Industrial Area, Pune 410501</span>
+                    <span style="position: relative; display: inline-block; align-self: flex-start">GSTIN: <b>27AAACM0000M1Z2</b><span class="hl" style="inset: -3px -5px"><span class="hl-t">Bill-to 98%</span></span></span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-end">
+                    <span style="position: relative; display: inline-block">Place of supply: <b>27-Maharashtra</b><span class="hl" style="inset: -3px -5px"><span class="hl-t">POS 96%</span></span></span>
+                    <span class="dl">Reverse charge: No</span>
+                  </div>
+                </div>
+
+                <table>
+                  <thead><tr><th>#</th><th>Description</th><th>HSN/SAC</th><th style="text-align: right">Qty</th><th style="text-align: right">Rate</th><th style="text-align: right">Amount</th></tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>HDPE Separator Tray 600x400</td><td><span style="position: relative; display: inline-block">3923<span class="hl lo cur" style="inset: -3px -5px"><span class="hl-t">HSN 76%</span></span></span></td><td style="text-align: right">1,000 Nos</td><td style="text-align: right"><span style="position: relative; display: inline-block">87.00<span class="hl" style="inset: -3px -4px"></span></span></td><td style="text-align: right">87,000.00</td></tr>
+                    <tr><td>2</td><td>Freight charges</td><td>9965</td><td style="text-align: right">1</td><td style="text-align: right">2,000.00</td><td style="text-align: right">2,000.00</td></tr>
+                  </tbody>
+                </table>
+
+                <div style="display: flex; justify-content: space-between; gap: 16px; align-items: flex-start">
+                  <div style="display: flex; flex-direction: column; gap: 3px; max-width: 250px">
+                    <span class="dl">Bank details</span>
+                    <span style="position: relative; display: inline-block">HDFC Bank, Bhosari<br>A/c 5020 0000 4417 · IFSC HDFC0001234<span class="hl lo" style="inset: -3px -5px"><span class="hl-t">Bank 68%</span></span></span>
+                    <span style="position: relative; display: inline-block; margin-top: 6px; align-self: flex-start">Terms: Payment within 15 days<span class="hl" style="inset: -3px -5px"><span class="hl-t">Terms 88%</span></span></span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: auto auto; gap: 3px 16px; text-align: right; min-width: 200px">
+                    <span class="dl">Taxable value</span><span style="position: relative; display: inline-block">89,000.00<span class="hl" style="inset: -2px -4px"></span></span>
+                    <span class="dl">CGST @ 9%</span><span style="position: relative; display: inline-block">8,010.00<span class="hl" style="inset: -2px -4px"></span></span>
+                    <span class="dl">SGST @ 9%</span><span style="position: relative; display: inline-block">8,010.00<span class="hl" style="inset: -2px -4px"></span></span>
+                    <b>Total (₹)</b><b style="position: relative; display: inline-block">1,05,020.00<span class="hl" style="inset: -3px -5px"><span class="hl-t">Total 99%</span></span></b>
+                  </div>
+                </div>
+                <div class="dl" style="font-style: italic">Rupees One Lakh Five Thousand Twenty Only</div>
+                <div style="display: flex; justify-content: flex-end; padding-top: 18px"><span class="dl">For Sahyadri Packaging Pvt Ltd — Authorised signatory</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- extracted fields -->
+          <div style="flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+            <div class="row" style="justify-content: space-between">
+              <h3>Extracted fields</h3>
+              <span class="row" style="gap: 8px"><span class="src"><b>Extracted</b>OCR + e-invoice QR · 10:41</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>92% overall</span></span>
+            </div>
+            <div class="xs t2 row" style="gap: 12px"><span class="row" style="gap: 4px"><span style="width: 14px; height: 10px; border: 1.5px dashed var(--warn); border-radius: 2px"></span>Low confidence, not yet confirmed (3)</span><span>Click a field to see it on the document</span></div>
+
+            <div class="col" style="gap: 2px">
+              <div class="xf"><span class="xl">Supplier GSTIN</span><span class="xv"><span class="gst"><span class="g">27AAACX0000X1Z5</span><span class="s">27 · Maharashtra</span></span><span class="xs ok-t row" style="gap: 3px"><i class="ic s i-ok"></i>Active · vendor 100231</span></span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>99%</span></div>
+              <div class="xf"><span class="xl">Bill-to GSTIN</span><span class="xv"><span class="gst"><span class="g">27AAACM0000M1Z2</span><span class="s">27 · Maharashtra</span></span></span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>98%</span></div>
+              <div class="xf"><span class="xl">Invoice no.</span><span class="xv mono">SPK/2026-27/0418</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>98%</span></div>
+              <div class="xf"><span class="xl">Invoice date</span><span class="xv">10-10-2026</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>97%</span></div>
+              <div class="xf low"><span class="xl">IRN</span><span class="xv"><span class="mono xs">a3f9c2d7…61d7e71c</span><button class="btn sm" type="button" style="margin-left: auto">Verify on IRP</button></span><span class="conf lo"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>71%</span></div>
+              <div class="xf"><span class="xl">Place of supply</span><span class="xv">27 · Maharashtra <span class="xs t3">intra-state → CGST + SGST</span></span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>96%</span></div>
+            </div>
+
+            <div class="card" style="border-radius: 6px">
+              <table class="tbl dense">
+                <thead><tr><th>Line</th><th>HSN</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Taxable</th><th>Conf.</th></tr></thead>
+                <tbody>
+                  <tr class="sel"><td>HDPE separator tray 600×400</td><td><span class="xv mono" style="display: inline-flex; padding: 1px 6px; border: 1.5px dashed var(--warn); border-radius: 4px; background: var(--warn-bg)">3923</span></td><td class="num">1,000</td><td class="num">87.00</td><td class="num">87,000.00</td><td><span class="conf mid"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>76%</span></td></tr>
+                  <tr><td>Freight charges</td><td class="mono">9965</td><td class="num">1</td><td class="num">2,000.00</td><td class="num">2,000.00</td><td><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>89%</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="col" style="gap: 2px">
+              <div class="xf"><span class="xl">Taxable value</span><span class="xv num" style="justify-content: flex-end">₹89,000.00</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>96%</span></div>
+              <div class="xf"><span class="xl">CGST 9%</span><span class="xv num" style="justify-content: flex-end">₹8,010.00</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>95%</span></div>
+              <div class="xf"><span class="xl">SGST 9%</span><span class="xv num" style="justify-content: flex-end">₹8,010.00</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>95%</span></div>
+              <div class="xf"><span class="xl">IGST</span><span class="xv num" style="justify-content: flex-end">₹0.00</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>99%</span></div>
+              <div class="xf"><span class="xl">Total</span><span class="xv num b" style="justify-content: space-between"><span class="xs ok-t row m" style="gap: 3px"><i class="ic s i-ok"></i>Taxable + tax = total</span>₹1,05,020.00</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>99%</span></div>
+              <div class="xf low"><span class="xl">Bank details</span><span class="xv"><span class="mono xs">HDFC0001234 · A/c ••••4417</span><span class="xs ok-t row" style="gap: 3px"><i class="ic s i-ok"></i>Same as vendor master</span></span><span class="conf lo"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>68%</span></div>
+              <div class="xf"><span class="xl">Payment terms</span><span class="xv">15 days <span class="xs warn-t">PO says 30 days</span></span><span class="conf mid"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>88%</span></div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--surface-2)">
+              <i class="ic l i-link" style="color: var(--accent)"></i>
+              <div style="flex: 1 1 220px; min-width: 0">
+                <div class="sm m">Suggested link: PO 4500012345 · GRN 5000098812</div>
+                <div class="xs t3">Same vendor, item and quantity · 96% match · 4 differences go to Invoice review</div>
+              </div>
+              <button class="btn sm" type="button">Link to PO</button>
+            </div>
+
+            <div class="row" style="gap: 8px; padding-top: 4px">
+              <button class="btn pri" type="button"><i class="ic i-check"></i>Confirm fields</button>
+              <button class="btn" type="button"><i class="ic i-link"></i>Link to PO</button>
+              <button class="btn" type="button"><i class="ic i-copy"></i>Mark duplicate</button>
+              <button class="btn" type="button">Not an invoice</button>
+              <button class="btn" type="button"><i class="ic i-send"></i>Ask vendor</button>
+            </div>
+            <div class="xs t3">Confirm stays available with low-confidence fields; each one you accept unchanged is logged with your name in the audit log.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = { ok: ['st ok', 'ic i-ok'], warn: ['st warn', 'ic i-warn'], bad: ['st bad', 'ic i-bad'], none: ['st none', 'ic i-none'], acc: ['st acc', 'ic i-plus'] };
+    const ch = { Email: 'i-mail', WhatsApp: 'i-chat', Post: 'i-post', Upload: 'i-upload', SAP: 'i-db' };
+    const r = (sel, c, at, from, type, vendor, inv, amt, conf, tone, s) => ({
+      cls: sel ? 'sel' : '', ch: c, chIc: 'ic l t2 ' + ch[c], at, from, type, vendor, inv, amt,
+      amtCls: amt.startsWith('−') ? 'num neg' : 'num',
+      conf: conf == null ? '—' : conf + '%',
+      confCls: conf == null ? 'conf' : conf >= 90 ? 'conf hi' : conf >= 75 ? 'conf mid' : 'conf lo',
+      st: s, stCls: st[tone][0], stIc: st[tone][1]
+    });
+    return {
+      theme: this.props.theme ?? 'light',
+      rows: [
+        r(true, 'Email', '13-10-2026 10:40', 'accounts@sahyadripack.example', 'Tax invoice', 'Sahyadri Packaging Pvt Ltd', 'SPK/2026-27/0418', '₹1,05,020.00', 92, 'warn', 'Needs review'),
+        r(false, 'WhatsApp', '13-10-2026 10:52', '+91 98220 00210', 'Tax invoice', 'Sahyadri Packaging Pvt Ltd', 'SPK/2026-27/0418', '₹1,05,020.00', 88, 'none', 'Duplicate'),
+        r(false, 'SAP', '13-10-2026 10:15', 'MIRO parked doc 5105600219', 'Tax invoice', 'Deccan Steel Traders', 'DST/1187', '₹4,72,000.00', null, 'ok', 'Linked'),
+        r(false, 'Upload', '13-10-2026 09:58', 'Rohan Kulkarni (AP)', 'Lorry receipt', 'Vyas Roadlines', 'VR/LR/22931', '₹18,500.00', 81, 'acc', 'New'),
+        r(false, 'Post', '13-10-2026 09:30', 'Inward register IN-2210', 'Tax invoice', 'Patel Electricals', 'PE/26-27/076', '₹36,580.00', 64, 'warn', 'Needs review'),
+        r(false, 'Email', '13-10-2026 09:12', 'billing@konkanchem.example', 'Credit note', 'Konkan Chemicals Pvt Ltd', 'KC/CN/0042', '−₹12,390.00', 95, 'acc', 'New'),
+        r(false, 'Email', '13-10-2026 08:47', 'offers@toolmart.example', 'Promotion', '—', '—', '—', 98, 'none', 'Not finance'),
+        r(false, 'WhatsApp', '12-10-2026 18:20', '+91 99300 00418', 'Delivery challan', 'Sahyadri Packaging Pvt Ltd', 'DC/0931', '—', 90, 'ok', 'Linked'),
+        r(false, 'Email', '12-10-2026 17:05', 'sales@shreeganesh.example', 'Tax invoice', 'Shree Ganesh Enterprises', 'SGE/112', '₹8,850.00', 71, 'bad', 'Rejected · GSTIN cancelled')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

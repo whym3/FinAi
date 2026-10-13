@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Component set — Pravah Finance Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text); background: var(--bg); padding: 40px 40px 64px; display: flex; flex-direction: column; gap: 24px">
+
+  <header style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 20px">
+    <div class="col" style="gap: 4px">
+      <div class="row" style="gap: 10px"><span class="brand-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 8c3-3 6-3 9 0s6 3 9 0"></path><path d="M3 16c3-3 6-3 9 0s6 3 9 0"></path></svg></span><h1 style="font-size: 26px; line-height: 32px">Pravah Finance Control — component set</h1></div>
+      <p class="t2">IBM Plex Sans with Plex Sans Devanagari, tabular figures throughout · Plex Mono for GSTIN, PAN, IRN and document numbers · one status system, always icon + text</p>
+    </div>
+    <span class="chip">{{themeLabel}}</span>
+  </header>
+
+  <!-- ============ FOUNDATIONS ============ -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px">
+    <section class="card">
+      <div class="card-h"><h2>Colour tokens</h2><span class="xs t3">Same names in light and dark</span></div>
+      <div class="card-b" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border)"></span><span class="xs mono">--bg</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border)"></span><span class="xs mono">--surface</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border)"></span><span class="xs mono">--surface-2</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--border-2)"></span><span class="xs mono">--border-2</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--text)"></span><span class="xs mono">--text</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--text-2)"></span><span class="xs mono">--text-2</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--accent)"></span><span class="xs mono">--accent</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--accent-weak)"></span><span class="xs mono">--accent-weak</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--ok-bg); border: 2px solid var(--ok)"></span><span class="xs mono">--ok</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--warn-bg); border: 2px solid var(--warn)"></span><span class="xs mono">--warn</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--bad-bg); border: 2px solid var(--bad)"></span><span class="xs mono">--bad</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--none-bg); border: 2px solid var(--none)"></span><span class="xs mono">--none</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--s-in)"></span><span class="xs mono">--s-in · chart</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--s-out)"></span><span class="xs mono">--s-out · chart</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--paper); border: 1px solid var(--border)"></span><span class="xs mono">--paper</span></div>
+        <div class="col" style="gap: 4px"><span style="height: 36px; border-radius: 6px; background: var(--surface-3)"></span><span class="xs mono">--surface-3</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Type scale</h2><span class="xs t3">Tabular, lining figures everywhere</span></div>
+      <div class="card-b col" style="gap: 10px">
+        <div class="row" style="justify-content: space-between"><span style="font-size: 22px; line-height: 28px; font-weight: 600">₹1.87 Cr</span><span class="xs t3 mono">KPI 22/28 · 600</span></div>
+        <div class="row" style="justify-content: space-between"><span style="font-size: 20px; line-height: 28px; font-weight: 600">Invoice review</span><span class="xs t3 mono">H1 20/28 · 600</span></div>
+        <div class="row" style="justify-content: space-between"><span style="font-size: 15px; line-height: 22px; font-weight: 600">Three-way match</span><span class="xs t3 mono">H2 15/22 · 600</span></div>
+        <div class="row" style="justify-content: space-between"><span>Rate ₹87.00 on invoice vs ₹85.00 on PO</span><span class="xs t3 mono">Body 13/19 · 400</span></div>
+        <div class="row" style="justify-content: space-between"><span style="font-size: 12.5px">Deccan Steel Traders · 38,42,600.00</span><span class="xs t3 mono">Table 12.5/18</span></div>
+        <div class="row" style="justify-content: space-between"><span class="xs t2">synced 10 min ago</span><span class="xs t3 mono">Caption 11/16</span></div>
+        <div class="row" style="justify-content: space-between"><span class="mono">27AAACX0000X1Z5 · SPK/2026-27/0418</span><span class="xs t3 mono">Mono 12.5</span></div>
+        <div class="row" style="justify-content: space-between" lang="hi"><span>माल प्राप्त, बिल नहीं आया — ₹48.6 L</span><span class="xs t3 mono">Devanagari 13</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Numbers, dates, periods</h2><span class="xs t3">Indian grouping, right-aligned</span></div>
+      <div class="card-b">
+        <table class="tbl dense">
+          <thead><tr><th>Use</th><th class="num">Example</th></tr></thead>
+          <tbody>
+            <tr><td>Amount in tables</td><td class="num">₹1,23,45,678.00</td></tr>
+            <tr><td>Negative amount</td><td class="num neg">−₹12,390.00</td></tr>
+            <tr><td>Zero</td><td class="num t3">₹0.00</td></tr>
+            <tr><td>KPI, lakh</td><td class="num">₹36.5 L</td></tr>
+            <tr><td>KPI, crore</td><td class="num">₹4.82 Cr</td></tr>
+            <tr><td>Date in tables</td><td class="num">13-10-2026</td></tr>
+            <tr><td>Date in headers</td><td class="num">13 Oct 2026</td></tr>
+            <tr><td>Period</td><td class="num">FY 2026-27 · Q2 (Jul–Sep)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ SMALL PARTS ============ -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px">
+    <section class="card">
+      <div class="card-h"><h2>Status pill</h2><span class="xs t3">The only status system</span></div>
+      <div class="card-b col" style="gap: 12px">
+        <div class="row"><span class="st ok"><i class="ic i-ok"></i>Matched</span><span class="st warn"><i class="ic i-warn"></i>Within tolerance</span><span class="st warn"><i class="ic i-warn"></i>Pending</span></div>
+        <div class="row"><span class="st bad"><i class="ic i-bad"></i>Mismatch</span><span class="st bad"><i class="ic i-bad"></i>Breach</span><span class="st none"><i class="ic i-none"></i>Missing</span></div>
+        <div class="row"><span class="st ok plain"><i class="ic i-ok"></i>Plain, in dense rows</span><span class="st acc"><i class="ic i-filecheck"></i>Stage / info</span></div>
+        <div class="hr"></div>
+        <div class="row"><span class="sla"><i class="ic s i-warn"></i>SLA +3 d</span><span class="prio p1"><i class="bars"><s></s><s></s><s></s></i>Critical</span><span class="prio p2"><i class="bars"><s></s><s></s><s></s></i>High</span><span class="prio p3"><i class="bars"><s></s><s></s><s></s></i>Medium</span><span class="prio p4"><i class="bars"><s></s><s></s><s></s></i>Low</span></div>
+        <div class="xs t3">Green matched · amber within tolerance or pending · red mismatch or breach · grey missing. Colour never stands alone.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Chips</h2></div>
+      <div class="card-b col" style="gap: 12px">
+        <div class="row"><span class="xs t3" style="width: 92px">Source</span><span class="src"><b>SAP</b>synced 10 min ago</span><span class="src"><b>GST portal</b>2 h ago</span><span class="src"><b>Extracted</b>92%</span></div>
+        <div class="row"><span class="xs t3" style="width: 92px">Stale source</span><span class="src stale"><b>Bank</b>synced 26 h ago</span></div>
+        <div class="row"><span class="xs t3" style="width: 92px">Freshness</span><span class="fresh"><span class="dot"></span>SAP · 10 min</span><span class="fresh stale"><i class="ic s i-warn"></i>Bank · 26 h</span></div>
+        <div class="row"><span class="xs t3" style="width: 92px">GSTIN</span><span class="gst"><span class="g">27AAACX0000X1Z5</span><span class="s">27 · Maharashtra</span></span></div>
+        <div class="row"><span class="xs t3" style="width: 92px">GSTIN, short</span><span class="gst"><span class="g">24AAACM0000M1Z6</span></span><span class="gst"><span class="s" style="border-left: 0">24 · Gujarat</span></span></div>
+        <div class="row"><span class="xs t3" style="width: 92px">Badges</span><span class="msme"><i class="ic s i-shield"></i>Micro · Udyam</span><span class="chip">GTA · RCM</span><span class="chip acc">Linked</span><span class="cnt bad">9</span><span class="cnt acc">23</span></div>
+        <div class="row"><span class="xs t3" style="width: 92px">Owners</span><span class="av a1">VJ</span><span class="av a2">RK</span><span class="av a3">PN</span><span class="av a4">FS</span><span class="av a5">SU</span><span class="av lg a2">KM</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Buttons &amp; inputs</h2></div>
+      <div class="card-b col" style="gap: 12px">
+        <div class="row"><button class="btn pri" type="button"><i class="ic i-check"></i>Confirm</button><button class="btn" type="button">Secondary</button><button class="btn dng" type="button">Reject</button><button class="btn ghost" type="button">Ghost</button><button class="ib bd" type="button" aria-label="More"><i class="ic l i-more"></i></button></div>
+        <div class="row"><button class="btn sm" type="button">Small</button><button class="btn pri lg" type="button">Approve ₹58,72,450.00</button></div>
+        <div class="row"><div class="seg"><button type="button" class="on">Entity</button><button type="button">Firm</button></div><span class="fchip on"><i class="ic i-filter"></i>Status: open</span><span class="fchip">Owner</span></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div><label class="lbl-f" for="c-in">Invoice no. <span class="req">*</span></label><input id="c-in" class="inp" style="width: 100%" value="SPK/2026-27/0418"></div>
+          <div><label class="lbl-f" for="c-sel">Reason code <span class="req">*</span></label><select id="c-sel" class="sel" style="width: 100%"><option>RT-01 · Rate above agreed price</option></select></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ KPI CARDS / AMOUNT / CONFIDENCE ============ -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px">
+    <section class="card">
+      <div class="card-h"><h2>KPI card</h2><span class="xs t3">Default · watch · stale source</span></div>
+      <div class="card-b" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <article class="kpi" title="₹1,87,04,310.00">
+          <div class="kpi-l">Posted AP outstanding</div>
+          <div class="kpi-v">₹1.87<small>Cr</small></div>
+          <div class="kpi-s">412 invoices</div>
+          <div class="kpi-f"><span class="src"><b>SAP</b>10 min ago</span></div>
+        </article>
+        <article class="kpi watch">
+          <div class="kpi-l">MSME dues near 45-day limit</div>
+          <div class="kpi-v">₹7.3<small>L</small></div>
+          <div><span class="st warn"><i class="ic i-warn"></i>4 invoices</span></div>
+          <div class="kpi-f"><span class="src"><b>SAP</b>10 min ago</span></div>
+        </article>
+        <article class="kpi">
+          <div class="kpi-l">Bank balance</div>
+          <div class="kpi-v">₹1.12<small>Cr</small></div>
+          <div class="kpi-s">as of 12-10-2026 17:40</div>
+          <div class="kpi-f"><span class="src stale"><b>Bank</b>26 h ago</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Amount cell</h2><span class="xs t3">Right-aligned, ₹ and paise always shown</span></div>
+      <div class="card-b">
+        <table class="tbl dense">
+          <thead><tr><th>Case</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+            <tr><td>Positive</td><td class="num">₹1,05,020.00</td></tr>
+            <tr><td>Negative · credit note</td><td class="num neg">−₹12,390.00</td></tr>
+            <tr><td>Zero</td><td class="num t3">₹0.00</td></tr>
+            <tr><td>Crore-scale</td><td class="num">₹3,42,18,450.00</td></tr>
+            <tr><td>Difference</td><td class="num"><span class="bad-t m">+₹4,720.00</span></td></tr>
+            <tr><td>Masked · restricted role</td><td class="num t3"><span class="row" style="gap: 4px; justify-content: flex-end"><i class="ic s i-lock"></i>₹ ••••••</span></td></tr>
+          </tbody>
+          <tfoot><tr><td>Total, visible rows</td><td class="num">₹3,43,15,800.00</td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Confidence indicator</h2><span class="xs t3">Extracted values</span></div>
+      <div class="card-b col" style="gap: 10px">
+        <div class="row" style="gap: 16px"><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>96% high</span><span class="conf mid"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>82% check</span><span class="conf lo"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>64% low</span></div>
+        <div class="xf"><span class="xl">Invoice date</span><span class="xv">10-10-2026</span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>97%</span></div>
+        <div class="xf low"><span class="xl">IRN · unconfirmed</span><span class="xv mono xs">a3f9c2d7…61d7e71c</span><span class="conf lo"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>71%</span></div>
+        <div class="xf on"><span class="xl">HSN · focused</span><span class="xv mono">3923</span><span class="conf mid"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>76%</span></div>
+        <div class="xf"><span class="xl">Bank · confirmed</span><span class="xv"><span class="mono xs">HDFC0001234</span><span class="xs ok-t row" style="gap: 3px"><i class="ic s i-check"></i>Confirmed by RK</span></span><span class="conf hi"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>100%</span></div>
+        <div class="xs t3">Below 90% shows amber, below 75% red. Unconfirmed low-confidence fields get a dashed outline until a person confirms or edits them.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ COMPARISON CELL + TIMELINE ============ -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 16px">
+    <section class="card">
+      <div class="card-h"><h2>Comparison-grid cell</h2><span class="xs t3">4 states, plus not applicable</span></div>
+      <div class="card-b">
+        <table class="cmp" style="border: 1px solid var(--border); border-radius: 6px">
+          <thead><tr><th>State</th><th>Cell</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td class="f">Matched</td><td style="width: 200px"><div class="cc ok"><div class="v"><i class="ic i-ok"></i><span class="num">₹85.00</span></div></div></td><td class="f" style="white-space: normal; font-weight: 400">Equal to the reference column</td></tr>
+            <tr><td class="f">Within tolerance</td><td><div class="cc warn"><div class="v"><i class="ic i-warn"></i><span class="num">₹8,010.00</span></div><div class="d">+₹360.00 · follows rate</div></div></td><td class="f" style="white-space: normal; font-weight: 400">Differs inside the rule's tolerance, or derived</td></tr>
+            <tr><td class="f">Mismatch</td><td><div class="cc bad"><div class="v"><i class="ic i-bad"></i><span class="num">₹87.00</span></div><div class="d">+₹2.00/pc · +₹2,000.00</div></div></td><td class="f" style="white-space: normal; font-weight: 400">A flag for a person to decide</td></tr>
+            <tr><td class="f">Missing</td><td><div class="cc none"><div class="v"><i class="ic i-none"></i><span>Not captured</span></div><div class="xs t3">Add before posting</div></div></td><td class="f" style="white-space: normal; font-weight: 400">Expected but absent</td></tr>
+            <tr><td class="f">Not applicable</td><td><div class="cc na"><div class="v"><span>n/a</span></div></div></td><td class="f" style="white-space: normal; font-weight: 400">Field does not exist on this document</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Timeline stage</h2><span class="xs t3">Done · current · blocked · not started</span></div>
+      <div class="card-b tw">
+        <div class="tl" style="grid-template-columns: repeat(4, minmax(140px, 1fr)); min-width: 600px">
+          <div class="stg done"><div class="stg-hd"><span class="stg-dot"><i class="ic i-check"></i></span><span class="stg-ln"></span></div><div class="stg-card" style="min-height: 0"><div class="stg-n">GRN</div><div class="t2">08-10-2026 16:10</div><div>Suresh Patil · Stores</div><div class="mono xs t2">GRN 5000098812</div><span class="st ok plain"><i class="ic i-ok"></i>6 h · SLA 1 d</span></div></div>
+          <div class="stg cur"><div class="stg-hd"><span class="stg-dot"><i class="ic i-filecheck"></i></span><span class="stg-ln"></span></div><div class="stg-card" style="min-height: 0"><div class="stg-n">Invoice review</div><div class="t2">Received 13-10-2026</div><div>Rohan Kulkarni · AP</div><div class="mono xs t2">SPK/2026-27/0418</div><span class="st warn plain"><i class="ic i-warn"></i>Day 1 of 2</span></div></div>
+          <div class="stg blk"><div class="stg-hd"><span class="stg-dot"><i class="ic i-x"></i></span><span class="stg-ln"></span></div><div class="stg-card" style="min-height: 0"><div class="stg-n">Payment</div><div class="t2">Due 18-10-2026</div><div>Farah Siddiqui</div><div class="mono xs t2">Vendor 100448</div><span class="st bad plain"><i class="ic i-bad"></i>Blocked · bank change</span></div></div>
+          <div class="stg ns"><div class="stg-hd"><span class="stg-dot"><i class="ic i-recon"></i></span><span class="stg-ln" style="visibility: hidden"></span></div><div class="stg-card" style="min-height: 0"><div class="stg-n">Reconciled</div><div>After bank statement</div><div>Automatic</div><div class="mono xs">Clearing doc —</div><span class="st none plain"><i class="ic i-none"></i>Not started</span></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ DATA TABLE ============ -->
+  <section class="card">
+    <div class="card-h"><h2>Data table</h2><span class="xs t3">Sticky header · column chooser · bulk bar · selected and hover rows</span></div>
+    <div class="card-b col" style="gap: 8px; position: relative">
+      <div class="bulk"><input class="chk" type="checkbox" checked aria-label="Selection"><span class="m">2 selected</span><span class="sm" style="opacity: .8">₹4,77,320.00</span><span class="spacer"></span><button class="btn sm" type="button"><i class="ic i-user"></i>Assign to</button><button class="btn sm" type="button"><i class="ic i-pause"></i>Hold</button><button class="btn sm" type="button"><i class="ic i-download"></i>Export</button></div>
+      <div class="row" style="justify-content: flex-end"><button class="btn sm" type="button" aria-expanded="true"><i class="ic i-columns"></i>Columns · 7 of 11</button></div>
+      <div class="pop" style="right: 16px; top: 96px" role="dialog" aria-label="Choose columns">
+        <div class="xs t3 m" style="padding: 4px 8px">Columns</div>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox" checked>Vendor</label>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox" checked>GSTIN</label>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox" checked>Invoice no.</label>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox">IRN</label>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox" checked>Amount</label>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox">TDS section</label>
+        <label class="opt"><i class="ic t3 i-drag"></i><input class="chk" type="checkbox" checked>Due date</label>
+        <div class="hr" style="margin: 4px 0"></div>
+        <div class="row" style="padding: 4px 8px; justify-content: space-between"><button class="btn ghost sm" type="button">Reset</button><button class="btn sm pri" type="button">Apply</button></div>
+      </div>
+      <div class="tw" style="max-height: 236px; border: 1px solid var(--border); border-radius: 8px; margin-right: 250px">
+        <table class="tbl">
+          <thead><tr><th class="c"><input class="chk" type="checkbox" aria-label="Select all"></th><th>Vendor</th><th>GSTIN</th><th>Invoice no.</th><th class="num">Amount</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr class="sel"><td class="c"><input class="chk" type="checkbox" checked aria-label="Select"></td><td class="m">Deccan Steel Traders</td><td><span class="gst"><span class="g">27AAAFX0001X1Z3</span></span></td><td class="mono">DST/1187</td><td class="num">₹4,72,000.00</td><td>16-10-2026</td><td><span class="st bad"><i class="ic i-bad"></i>GRN missing</span></td></tr>
+            <tr class="sel"><td class="c"><input class="chk" type="checkbox" checked aria-label="Select"></td><td class="m">Sahyadri Packaging Pvt Ltd</td><td><span class="gst"><span class="g">27AAACX0000X1Z5</span></span></td><td class="mono">SPK/2026-27/0402</td><td class="num">₹5,320.00</td><td>17-10-2026</td><td><span class="st ok"><i class="ic i-ok"></i>Matched</span></td></tr>
+            <tr><td class="c"><input class="chk" type="checkbox" aria-label="Select"></td><td class="m">Patel Electricals</td><td><span class="gst"><span class="g">27AAAFX0003X1Z9</span></span></td><td class="mono">PE/26-27/076</td><td class="num">₹36,580.00</td><td>16-10-2026</td><td><span class="st warn"><i class="ic i-warn"></i>IRN pending</span></td></tr>
+            <tr><td class="c"><input class="chk" type="checkbox" aria-label="Select"></td><td class="m">Konkan Chemicals Pvt Ltd</td><td><span class="gst"><span class="g">27AAACX0004X1Z7</span></span></td><td class="mono">KC/CN/0042</td><td class="num neg">−₹12,390.00</td><td>—</td><td><span class="st none"><i class="ic i-none"></i>Not posted</span></td></tr>
+            <tr><td class="c"><input class="chk" type="checkbox" aria-label="Select"></td><td class="m">Vyas Roadlines</td><td><span class="gst"><span class="g">27AAAFX0002X1Z1</span></span></td><td class="mono">VR/LR/22931</td><td class="num">₹18,500.00</td><td>22-10-2026</td><td><span class="st ok"><i class="ic i-ok"></i>Matched</span></td></tr>
+            <tr><td class="c"><input class="chk" type="checkbox" aria-label="Select"></td><td class="m">Bharat Forgings Pvt Ltd</td><td><span class="gst"><span class="g">27AAACX0006X1Z3</span></span></td><td class="mono">BF/2026/1311</td><td class="num">₹2,47,800.00</td><td>16-10-2026</td><td><span class="st ok"><i class="ic i-ok"></i>Matched</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DRAWER + EXCEPTION + APPROVAL ============ -->
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <section class="card" style="flex: 3 1 640px; min-width: 0; overflow: hidden">
+      <div class="card-h"><h2>Document viewer drawer</h2><span class="xs t3">Opens from any table row, over the right side of the screen</span></div>
+      <div style="display: flex; min-height: 600px; position: relative; background: var(--bg)">
+        <div style="flex: 1 1 200px; padding: 16px; display: flex; flex-direction: column; gap: 8px; opacity: .55" aria-hidden="true">
+          <span class="sk" style="width: 60%; height: 14px"></span><span class="sk" style="width: 90%"></span><span class="sk" style="width: 85%"></span><span class="sk" style="width: 88%"></span><span class="sk" style="width: 70%"></span><span class="sk" style="width: 92%"></span><span class="sk" style="width: 80%"></span>
+        </div>
+        <div style="position: absolute; inset: 0 480px 0 0; background: var(--scrim)"></div>
+        <aside class="drawer" style="flex: 0 0 480px; position: relative" aria-label="Document viewer">
+          <div class="card-h" style="align-items: flex-start">
+            <div class="col" style="gap: 2px; margin-right: auto">
+              <div class="xs t3 m">E-way bill · linked to PO 4500012345</div>
+              <h3>EWB 3410 0000 7788</h3>
+              <div class="row" style="gap: 6px"><span class="src"><b>GST portal</b>validated 08-10-2026</span><span class="st ok"><i class="ic i-ok"></i>Valid</span></div>
+            </div>
+            <button class="ib" type="button" aria-label="Open in new tab"><i class="ic l i-ext"></i></button>
+            <button class="ib" type="button" aria-label="Close drawer"><i class="ic l i-x"></i></button>
+          </div>
+          <div style="padding: 0 16px"><div class="tabs"><button class="tab on" type="button">Document</button><button class="tab" type="button">Fields</button><button class="tab" type="button">Links · 4</button><button class="tab" type="button">History</button></div></div>
+          <div class="viewer" style="margin: 12px 16px; border-radius: 6px">
+            <div class="viewer-tb"><span class="xs t2">Page 1 of 1</span><span class="spacer"></span><button class="ib" type="button" aria-label="Zoom out"><i class="ic i-zout"></i></button><span class="xs t2">90%</span><button class="ib" type="button" aria-label="Zoom in"><i class="ic i-zin"></i></button><button class="ib" type="button" aria-label="Download"><i class="ic i-download"></i></button></div>
+            <div style="padding: 14px; display: flex; justify-content: center">
+              <div class="doc" style="width: 400px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px">
+                <div style="text-align: center; font-weight: 700; font-size: 12px; letter-spacing: .05em; border-bottom: 1px solid #b9bcc2; padding-bottom: 6px">E-WAY BILL</div>
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 10px">
+                  <span class="dl">E-way bill no.</span><span><span style="position: relative; display: inline-block"><b>3410 0000 7788</b><span class="hl" style="inset: -3px -5px"><span class="hl-t">EWB 99%</span></span></span></span>
+                  <span class="dl">Generated</span><span>06-10-2026 14:22 · valid till 09-10-2026</span>
+                  <span class="dl">From GSTIN</span><span><span style="position: relative; display: inline-block">27AAACX0000X1Z5<span class="hl" style="inset: -3px -5px"></span></span></span>
+                  <span class="dl">To GSTIN</span><span><span style="position: relative; display: inline-block">27AAACM0000M1Z2<span class="hl" style="inset: -3px -5px"></span></span></span>
+                  <span class="dl">Document</span><span>Challan DC/0931 · 06-10-2026</span>
+                  <span class="dl">Value</span><span><span style="position: relative; display: inline-block">₹1,00,300.00<span class="hl" style="inset: -3px -5px"><span class="hl-t">Value</span></span></span></span>
+                  <span class="dl">HSN</span><span><span style="position: relative; display: inline-block">3926<span class="hl lo" style="inset: -3px -5px"><span class="hl-t">HSN 79%</span></span></span></span>
+                  <span class="dl">Vehicle</span><span><span style="position: relative; display: inline-block">MH 12 XX 0000<span class="hl" style="inset: -3px -5px"></span></span></span>
+                  <span class="dl">Transporter</span><span>Vyas Roadlines · LR VR/LR/22874</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 0 16px 12px; display: flex; flex-direction: column; gap: 4px">
+            <div class="xf"><span class="xl">Vehicle no.</span><span class="xv mono">MH 12 XX 0000</span><span class="st ok plain"><i class="ic i-ok"></i>Gate entry</span></div>
+            <div class="xf low"><span class="xl">HSN</span><span class="xv mono">3926</span><span class="conf mid"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>79%</span></div>
+          </div>
+          <div class="card-f" style="margin-top: auto"><button class="btn sm" type="button"><i class="ic i-link"></i>Linked records</button><button class="btn sm" type="button">Report a problem</button><span class="spacer"></span><button class="btn sm ghost" type="button"><i class="ic i-chevl"></i>Prev</button><button class="btn sm ghost" type="button">Next<i class="ic i-chevr"></i></button></div>
+        </aside>
+      </div>
+    </section>
+
+    <div style="flex: 2 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <section class="card">
+        <div class="card-h"><h2>Exception card</h2><span class="xs t3">Board lanes and side lists</span></div>
+        <div class="card-b" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; background: var(--surface-2)">
+          <article class="exc crit">
+            <div class="row" style="justify-content: space-between; flex-wrap: nowrap"><span class="xs t3 m">EX-1019 · GRN missing</span><span class="prio p1"><i class="bars"><s></s><s></s><s></s></i></span></div>
+            <div class="t">Invoice received, no goods receipt in SAP</div>
+            <div class="mono xs"><a href="#">DST/1187</a></div>
+            <div class="row" style="justify-content: space-between"><span class="num m">₹4,72,000.00</span><span class="sla"><i class="ic s i-warn"></i>SLA +4 d</span></div>
+            <div class="row" style="justify-content: space-between; flex-wrap: nowrap"><span class="row" style="gap: 5px"><span class="av a5" style="width: 20px; height: 20px; font-size: 9px">SU</span><span class="xs t2">Suresh Patil</span></span><span class="xs t3">Due 09-10-2026</span></div>
+          </article>
+          <article class="exc">
+            <div class="row" style="justify-content: space-between; flex-wrap: nowrap"><span class="xs t3 m">EX-1044 · HSN mismatch</span><span class="prio p4"><i class="bars"><s></s><s></s><s></s></i></span></div>
+            <div class="t">HSN 3923 on invoice vs 3926 on PO</div>
+            <div class="mono xs"><a href="#">SPK/2026-27/0418</a></div>
+            <div class="row" style="justify-content: space-between"><span class="num m">₹0.00</span><span class="st none"><i class="ic i-none"></i>Open</span></div>
+            <div class="row" style="justify-content: space-between; flex-wrap: nowrap"><span class="row" style="gap: 5px"><span class="av a2" style="width: 20px; height: 20px; font-size: 9px">RK</span><span class="xs t2">Rohan Kulkarni</span></span><span class="xs t3">Due 20-10-2026</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h"><h2>Approval box</h2><span class="xs t3">Two-approver variant</span></div>
+        <div class="card-b col" style="gap: 10px">
+          <div class="row" style="gap: 8px; flex-wrap: nowrap"><span class="st ok"><i class="ic i-ok"></i>Approver 1</span><span class="sm">Farah Siddiqui, Controller · 13-10-2026 11:20</span></div>
+          <div class="row" style="gap: 8px; flex-wrap: nowrap"><span class="st warn"><i class="ic i-warn"></i>Approver 2</span><span class="sm">You · CFO · required above ₹5,00,000.00</span></div>
+          <label class="opt-r on"><input type="radio" name="c-ap" checked><span class="col" style="gap: 0"><span class="m">Approve</span><span class="xs t3">Release run PR-2026-10-16 to the bank</span></span></label>
+          <label class="opt-r"><input type="radio" name="c-ap"><span class="col" style="gap: 0"><span class="m">Send back</span><span class="xs t3">Return to Controller with a note</span></span></label>
+          <div><label class="lbl-f" for="c-rc">Reason code <span class="req">*</span></label><select id="c-rc" class="sel" style="width: 100%"><option>PR-00 · Run reviewed, approve</option></select></div>
+          <div class="row"><button class="btn pri" type="button"><i class="ic i-check"></i>Approve ₹58,72,450.00</button><button class="btn" type="button">Send back</button></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ STATES ============ -->
+  <section class="col" style="gap: 12px">
+    <h2>States</h2>
+    <div class="banner warn" role="status"><i class="ic l i-warn"></i><div class="tx"><span class="b">Stale data.</span> Bank feed last synced 12-10-2026 17:40 (26 h ago). Bank balance, bank reconciliation and the cash forecast opening balance may be out of date.</div><button class="btn sm" type="button"><i class="ic i-refresh"></i>Retry sync</button><button class="btn sm ghost" type="button">Feed status</button></div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px">
+      <section class="card" aria-label="Empty state">
+        <div class="card-h"><h3>Empty</h3></div>
+        <div class="state">
+          <span class="state-ic"><i class="ic xl i-inbox"></i></span>
+          <div class="m">Nothing waiting for review</div>
+          <div class="sm t2" style="max-width: 280px">New documents from email, WhatsApp, post, uploads and SAP appear here as they arrive.</div>
+          <button class="btn sm" type="button"><i class="ic i-upload"></i>Upload documents</button>
+        </div>
+      </section>
+      <section class="card" aria-label="Loading state">
+        <div class="card-h"><h3>Loading</h3><span class="xs t3">Skeleton, no spinner</span></div>
+        <div class="card-b col" style="gap: 12px" aria-busy="true">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <div class="kpi"><span class="sk" style="width: 70%"></span><span class="sk" style="width: 50%; height: 22px; margin-top: 4px"></span><span class="sk" style="width: 60%"></span></div>
+            <div class="kpi"><span class="sk" style="width: 60%"></span><span class="sk" style="width: 40%; height: 22px; margin-top: 4px"></span><span class="sk" style="width: 70%"></span></div>
+          </div>
+          <span class="sk" style="width: 100%"></span><span class="sk" style="width: 92%"></span><span class="sk" style="width: 96%"></span>
+        </div>
+      </section>
+      <section class="card" aria-label="Error state">
+        <div class="card-h"><h3>Error</h3></div>
+        <div class="state">
+          <span class="state-ic" style="background: var(--bad-bg); color: var(--bad)"><i class="ic xl i-bad"></i></span>
+          <div class="m">Couldn't reach SAP S/4HANA</div>
+          <div class="sm t2" style="max-width: 300px">The sync at 15:12 timed out after 30 s. Figures shown are from 14:58 and are marked stale.</div>
+          <div class="row"><button class="btn sm" type="button"><i class="ic i-refresh"></i>Retry</button><button class="btn sm ghost" type="button">Sync log</button></div>
+          <span class="xs t3 mono">SAP-RFC-504 · ref 7f3a19</span>
+        </div>
+      </section>
+      <section class="card" aria-label="Permission restricted state">
+        <div class="card-h"><h3>Permission restricted</h3></div>
+        <div class="state">
+          <span class="state-ic"><i class="ic xl i-lock"></i></span>
+          <div class="m">You have read-only access</div>
+          <div class="sm t2" style="max-width: 300px">Auditor role for Northstar Pharma Ltd. Approving payments needs the Controller or CFO role. Bank account numbers are masked.</div>
+          <button class="btn sm" type="button">Request access</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ============ HINDI ============ -->
+  <section class="card" lang="hi" aria-label="Hindi length test">
+    <div class="card-h"><h2>Hindi length test · हिंदी</h2><span class="xs t3" lang="en">Labels run up to 30% longer; parts wrap or grow, nothing truncates</span></div>
+    <div class="card-b" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start">
+      <div class="col" style="gap: 2px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--surface)">
+        <a href="#" class="nav on"><i class="ic l i-inbox"></i><span class="lbl">प्राप्ति इनबॉक्स</span><span class="cnt acc">23</span></a>
+        <a href="#" class="nav"><i class="ic l i-flow"></i><span class="lbl">खरीद से भुगतान तक</span><span class="cnt warn">6</span></a>
+        <a href="#" class="nav"><i class="ic l i-wallet"></i><span class="lbl">देय राशि एवं भुगतान रन</span><span class="cnt">2</span></a>
+        <a href="#" class="nav"><i class="ic l i-calcheck"></i><span class="lbl">माह-अंत समापन</span><span class="cnt">16</span></a>
+      </div>
+      <article class="kpi watch">
+        <div class="kpi-l">एमएसएमई देय — 45 दिन की सीमा के निकट</div>
+        <div class="kpi-v">₹7.3<small>लाख</small></div>
+        <div class="kpi-s">4 बिल · पहली सीमा 15-10-2026</div>
+        <div><span class="st warn"><i class="ic i-warn"></i>सीमा में 2 दिन शेष</span></div>
+        <div class="kpi-f"><span class="src"><b>SAP</b>10 मिनट पहले सिंक</span></div>
+      </article>
+      <div class="col" style="gap: 10px">
+        <div class="row"><span class="st ok"><i class="ic i-ok"></i>मिलान हुआ</span><span class="st warn"><i class="ic i-warn"></i>सहनसीमा के भीतर</span></div>
+        <div class="row"><span class="st bad"><i class="ic i-bad"></i>मेल नहीं खाता</span><span class="st none"><i class="ic i-none"></i>अनुपलब्ध</span></div>
+        <div class="row"><button class="btn pri" type="button"><i class="ic i-check"></i>पुष्टि करें</button><button class="btn" type="button">PO से जोड़ें</button><button class="btn" type="button">विक्रेता से पूछें</button></div>
+        <div class="row"><button class="btn" type="button">डेबिट नोट जारी करें</button><button class="btn" type="button">डुप्लिकेट के रूप में चिह्नित करें</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":3560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    return { theme, themeLabel: theme === 'dark' ? 'Dark theme' : 'Light theme' };
+  }
+}
+</script>
+</body>
+</html>

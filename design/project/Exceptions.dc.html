@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Exceptions — Pravah Finance Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/9a3e89fee7a5df0ed2c50753d6b32027">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
+  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
+    <dc-import name="Sidebar" active="exceptions" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  </div>
+  <div class="main">
+    <dc-import name="Topbar" theme="{{theme}}" hint-size="100%,64px"></dc-import>
+    <main class="content">
+
+      <div class="ph">
+        <div class="ph-l">
+          <h1>Exceptions</h1>
+          <p class="sm t2">41 open · <span class="bad-t m">9 critical</span> · <span class="bad-t m">6 past SLA</span> · ₹14.6 L at stake · rules run on every SAP and GST portal sync</p>
+        </div>
+        <div class="ph-r">
+          <div class="seg" role="group" aria-label="View">
+            <button type="button" class="{{segTable}}" onClick="{{showTable}}"><i class="ic i-table"></i>Table</button>
+            <button type="button" class="{{segBoard}}" onClick="{{showBoard}}"><i class="ic i-board"></i>Board</button>
+          </div>
+          <button class="btn" type="button"><i class="ic i-sliders"></i>Rules</button>
+          <button class="btn" type="button"><i class="ic i-download"></i>Export</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <span class="fchip on">All types · 41</span>
+        <sc-for list="{{types}}" as="t" hint-placeholder-count="9"><span class="fchip">{{t.t}} · {{t.n}}</span></sc-for>
+      </div>
+      <div class="filters">
+        <span class="fchip"><i class="ic i-user"></i>Owner</span>
+        <span class="fchip">Priority</span>
+        <span class="fchip">Due date</span>
+        <span class="fchip">Status: open</span>
+        <span class="fchip">Assigned to me</span>
+        <span class="spacer"></span>
+        <span class="xs t3">Sorted by priority, then due date</span>
+        <button class="btn sm" type="button"><i class="ic i-columns"></i>Columns</button>
+      </div>
+
+      <!-- ============ TABLE VIEW ============ -->
+      <sc-if value="{{isTable}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+          <div style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+            <div class="bulk" role="region" aria-label="Bulk actions">
+              <span class="m">3 selected</span>
+              <span class="sm" style="opacity: .8">₹9,48,720.00 at stake</span>
+              <span class="spacer"></span>
+              <button class="btn sm" type="button"><i class="ic i-user"></i>Assign to<i class="ic s i-chev"></i></button>
+              <button class="btn sm" type="button">Priority<i class="ic s i-chev"></i></button>
+              <button class="btn sm" type="button"><i class="ic i-cal"></i>Due date</button>
+              <button class="btn sm" type="button"><i class="ic i-pause"></i>Snooze</button>
+              <button class="btn sm" type="button"><i class="ic i-check"></i>Resolve</button>
+              <button class="ib" type="button" aria-label="Clear selection" style="color: inherit"><i class="ic i-x"></i></button>
+            </div>
+            <section class="card">
+              <div class="tw" style="max-height: 820px">
+                <table class="tbl">
+                  <thead>
+                    <tr>
+                      <th class="c"><input class="chk" type="checkbox" aria-label="Select all"></th>
+                      <th>Exception</th><th>Linked document</th><th>Owner</th><th>Status</th><th>Priority</th><th>Due</th><th class="num">Age</th><th class="num">₹ impact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{items}}" as="x" hint-placeholder-count="14">
+                      <tr class="{{x.rowCls}}">
+                        <td class="c"><input class="chk" type="checkbox" checked="{{x.chk}}" aria-label="Select exception" readOnly="{{true}}"></td>
+                        <td style="min-width: 240px"><div class="xs t3 m">{{x.id}} · {{x.type}}</div><div class="m">{{x.title}}</div></td>
+                        <td class="mono xs nowrap"><a href="#">{{x.doc}}</a></td>
+                        <td><span class="row nowrap" style="gap: 6px; flex-wrap: nowrap"><span class="{{x.avCls}}">{{x.ini}}</span><span class="sm">{{x.owner}}</span></span></td>
+                        <td><span class="{{x.stCls}}"><i class="{{x.stIc}}"></i>{{x.st}}</span></td>
+                        <td><span class="{{x.pCls}}"><i class="bars"><s></s><s></s><s></s></i>{{x.p}}</span></td>
+                        <td class="nowrap"><div>{{x.due}}</div><sc-if value="{{x.breach}}" hint-placeholder-val="{{false}}"><span class="sla"><i class="ic s i-warn"></i>SLA +{{x.over}}</span></sc-if></td>
+                        <td class="num t2">{{x.age}}</td>
+                        <td class="num m">{{x.amt}}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <aside class="card" style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column" aria-label="Exception detail">
+            <div class="card-h" style="align-items: flex-start">
+              <div class="col" style="gap: 4px; margin-right: auto; min-width: 0">
+                <div class="xs t3 m">EX-1031 · Vendor bank details changed</div>
+                <h2>Konkan Chemicals — new bank account requested by email</h2>
+                <div class="row" style="gap: 6px"><span class="prio p1"><i class="bars"><s></s><s></s><s></s></i>Critical</span><span class="st warn"><i class="ic i-warn"></i>In progress</span><span class="xs t3">Due 14-10-2026 · age 2 d</span></div>
+              </div>
+              <button class="ib" type="button" aria-label="Close panel"><i class="ic l i-x"></i></button>
+            </div>
+            <div class="card-b" style="display: flex; flex-direction: column; gap: 12px">
+              <div class="banner bad" style="padding: 8px 12px">
+                <i class="ic l i-lock"></i>
+                <div class="tx sm">Payments to vendor 100448 are blocked. <span class="m">₹6,42,800.00</span> held out of payment run PR-2026-10-16.</div>
+              </div>
+              <div class="row" style="gap: 8px"><span class="av a4">FS</span><span class="sm">Owner <span class="m">Farah Siddiqui</span> · Controller</span><span class="spacer"></span><button class="btn sm" type="button">Reassign</button></div>
+
+              <div class="tabs" role="tablist"><button class="tab on" type="button" role="tab">Evidence</button><button class="tab" type="button" role="tab">Comments <span class="cnt">3</span></button><button class="tab" type="button" role="tab">History</button></div>
+
+              <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden">
+                <table class="tbl dense">
+                  <thead><tr><th></th><th>Vendor master</th><th>Requested</th></tr></thead>
+                  <tbody>
+                    <tr><td class="t2">Bank · IFSC</td><td class="mono xs">HDFC0000456</td><td><span class="row" style="gap: 4px; flex-wrap: nowrap"><i class="ic bad-t i-bad"></i><span class="mono xs">ICIC0000789</span></span></td></tr>
+                    <tr><td class="t2">Account</td><td class="mono xs">••••7120</td><td><span class="row" style="gap: 4px; flex-wrap: nowrap"><i class="ic bad-t i-bad"></i><span class="mono xs">••••3391</span></span></td></tr>
+                    <tr><td class="t2">Name at bank</td><td class="xs">KONKAN CHEMICALS PVT LTD</td><td><span class="row" style="gap: 4px; flex-wrap: nowrap"><i class="ic bad-t i-bad"></i><span class="xs">KONKAN CHEM TRADING CO</span></span><div class="xs t3">Penny-drop · 11-10-2026</div></td></tr>
+                    <tr><td class="t2">Sender</td><td class="xs">billing@konkanchem.example</td><td><span class="row" style="gap: 4px; flex-wrap: nowrap"><i class="ic bad-t i-bad"></i><span class="xs">accounts@konkanchem-in.example</span></span><div class="xs t3">Domain first seen 11-10-2026</div></td></tr>
+                    <tr><td class="t2">Cancelled cheque</td><td class="xs t3">On file 2024</td><td><span class="conf lo"><span class="cb"><s></s><s></s><s></s><s></s><s></s></span>58% · blurred photo</span></td></tr>
+                    <tr><td class="t2">Call-back</td><td class="xs">+91 22 0000 0418</td><td><span class="st none"><i class="ic i-none"></i>Not done</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="row" style="gap: 6px"><span class="src"><b>SAP</b>vendor master · 10 min ago</span><span class="src"><b>Bank</b>penny-drop</span><span class="src"><b>Extracted</b>email + cheque</span></div>
+
+              <div class="col" style="gap: 6px">
+                <div class="up">To release payments</div>
+                <label class="row sm" style="gap: 8px"><input class="chk" type="checkbox">Call back on the number in the vendor master, not the email</label>
+                <label class="row sm" style="gap: 8px"><input class="chk" type="checkbox">Confirmation on letterhead, signed by a director</label>
+                <label class="row sm" style="gap: 8px"><input class="chk" type="checkbox">Second approver (CFO) approves the master change</label>
+              </div>
+              <div class="row" style="gap: 8px">
+                <button class="btn pri" type="button"><i class="ic i-phone"></i>Record call-back</button>
+                <button class="btn dng" type="button">Reject change</button>
+                <button class="btn" type="button">Escalate</button>
+              </div>
+
+              <div class="hr"></div>
+              <div class="up">Comments</div>
+              <div class="cmt"><span class="av a4">FS</span><div class="cmt-b"><div class="xs t3"><span class="m" style="color: var(--text)">Farah Siddiqui</span> · 13-10-2026 11:05</div>Sender domain is konkanchem-in, not konkanchem. Holding all payments until call-back.</div></div>
+              <div class="cmt"><span class="av a2">RK</span><div class="cmt-b"><div class="xs t3"><span class="m" style="color: var(--text)">Rohan Kulkarni</span> · 13-10-2026 11:20</div>The number in the email signature goes to voicemail. I have not used it.</div></div>
+              <div class="cmt"><span class="av">PV</span><div class="cmt-b"><div class="xs t3"><span class="m" style="color: var(--text)">Pravah rule BANK-CHG-01</span> · 11-10-2026 16:02</div>Bank change request detected in email; vendor payments blocked automatically.</div></div>
+              <label class="search" style="max-width: none; background: var(--surface)"><input type="text" aria-label="Add a comment" placeholder="Comment, or @mention someone"><button class="ib" type="button" aria-label="Send comment"><i class="ic i-send"></i></button></label>
+
+              <div class="hr"></div>
+              <div class="up">History</div>
+              <div class="col xs t2" style="gap: 6px">
+                <div class="row" style="gap: 8px; flex-wrap: nowrap"><span class="t3 nowrap">13-10 11:05</span><span>Priority raised to Critical by Farah Siddiqui</span></div>
+                <div class="row" style="gap: 8px; flex-wrap: nowrap"><span class="t3 nowrap">12-10 09:15</span><span>Assigned to Farah Siddiqui by Arvind Nair</span></div>
+                <div class="row" style="gap: 8px; flex-wrap: nowrap"><span class="t3 nowrap">11-10 16:02</span><span>Payments to vendor 100448 blocked automatically</span></div>
+                <div class="row" style="gap: 8px; flex-wrap: nowrap"><span class="t3 nowrap">11-10 16:02</span><span>Created from email intake by rule BANK-CHG-01</span></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </sc-if>
+
+      <!-- ============ BOARD VIEW ============ -->
+      <sc-if value="{{isBoard}}" hint-placeholder-val="{{false}}">
+        <div class="tw">
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(210px, 1fr)); gap: 12px; min-width: 1100px; align-items: start">
+            <sc-for list="{{lanes}}" as="l" hint-placeholder-count="5">
+              <section class="lane" aria-label="{{l.t}}">
+                <div class="lane-h"><span>{{l.t}}</span><span class="cnt">{{l.n}}</span><span class="spacer"></span><span class="xs t3" style="font-weight: 400">{{l.amt}}</span></div>
+                <sc-for list="{{l.cards}}" as="x" hint-placeholder-count="3">
+                  <article class="{{x.cardCls}}">
+                    <div class="row" style="justify-content: space-between; flex-wrap: nowrap"><span class="xs t3 m">{{x.id}} · {{x.type}}</span><span class="{{x.pCls}}"><i class="bars"><s></s><s></s><s></s></i></span></div>
+                    <div class="t">{{x.title}}</div>
+                    <div class="mono xs"><a href="#">{{x.doc}}</a></div>
+                    <div class="row" style="justify-content: space-between"><span class="num m">{{x.amt}}</span><sc-if value="{{x.breach}}" hint-placeholder-val="{{false}}"><span class="sla"><i class="ic s i-warn"></i>SLA +{{x.over}}</span></sc-if></div>
+                    <div class="row" style="justify-content: space-between; flex-wrap: nowrap"><span class="row" style="gap: 5px; flex-wrap: nowrap"><span class="{{x.avCls}}" style="width: 20px; height: 20px; font-size: 9px">{{x.ini}}</span><span class="xs t2">{{x.owner}}</span></span><span class="xs t3 nowrap">Due {{x.due}}</span></div>
+                  </article>
+                </sc-for>
+                <button class="btn ghost sm" type="button" style="justify-content: flex-start">{{l.more}}</button>
+              </section>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"view":{"editor":"enum","options":["table","board"],"default":"table"},"$preview":{"width":1440,"height":1360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const view = this.state.view ?? this.props.view ?? 'table';
+    const st = { ok: ['st ok', 'ic i-ok'], warn: ['st warn', 'ic i-warn'], bad: ['st bad', 'ic i-bad'], none: ['st none', 'ic i-none'] };
+    const pc = { Critical: 'prio p1', High: 'prio p2', Medium: 'prio p3', Low: 'prio p4' };
+    const people = { FS: ['Farah Siddiqui', 'a4'], RK: ['Rohan Kulkarni', 'a2'], PN: ['Priya Nair', 'a3'], SU: ['Suresh Patil', 'a5'], VJ: ['Vikram Joshi', 'a1'], PV: ['Auto', ''] };
+    const x = (id, type, title, doc, ini, stTone, s, p, due, over, age, amt, opts) => {
+      const o = opts || {};
+      return {
+        id, type, title, doc, ini, owner: people[ini][0], avCls: 'av ' + people[ini][1],
+        st: s, stCls: st[stTone][0], stIc: st[stTone][1],
+        p, pCls: pc[p], due, over: over || '', breach: !!over, age, amt,
+        chk: !!o.chk, rowCls: o.sel ? 'sel' : '', cardCls: p === 'Critical' ? 'exc crit' : 'exc', lane: o.lane || 'open'
+      };
+    };
+    const items = [
+      x('EX-1031', 'Vendor bank details changed', 'Konkan Chemicals — new bank account requested by email', 'Vendor 100448', 'FS', 'warn', 'In progress', 'Critical', '14-10-2026', '', '2 d', '₹6,42,800.00', { sel: true, lane: 'prog' }),
+      x('EX-1019', 'GRN missing', 'Invoice received, no goods receipt in SAP', 'DST/1187', 'SU', 'none', 'Open', 'Critical', '09-10-2026', '4 d', '6 d', '₹4,72,000.00', { chk: true }),
+      x('EX-1038', 'MSME deadline risk', 'Sahyadri — 45-day limit on 15-10-2026', 'SPK/2026-27/0377', 'RK', 'none', 'Open', 'Critical', '15-10-2026', '', '5 d', '₹2,84,320.00', { chk: true }),
+      x('EX-1040', 'MSME deadline risk', 'Shakti Castings — 45-day limit on 19-10-2026', 'SC/226', 'RK', 'none', 'Open', 'Critical', '17-10-2026', '', '3 d', '₹1,92,400.00', { chk: true }),
+      x('EX-1017', 'MSME deadline risk', 'Om Sai Engineering — 45-day limit on 21-10-2026', 'OSE/0912', 'FS', 'warn', 'Awaiting approval', 'Critical', '18-10-2026', '', '8 d', '₹1,46,200.00', { lane: 'appr' }),
+      x('EX-1029', 'Not in GSTR-2B', 'Deccan Steel Aug invoice missing from 2B', 'DST/1102', 'PN', 'warn', 'Waiting on vendor', 'Critical', '10-10-2026', '3 d', '21 d', '₹84,960.00', { lane: 'vend' }),
+      x('EX-1027', 'Missing IRN', 'Patel Electricals invoice without IRN; e-invoicing applies', 'PE/26-27/071', 'RK', 'warn', 'Waiting on vendor', 'Critical', '11-10-2026', '2 d', '9 d', '₹41,300.00', { lane: 'vend' }),
+      x('EX-1035', 'Missing IRN', 'Patel Electricals invoice by post without IRN', 'PE/26-27/076', 'RK', 'none', 'Open', 'Critical', '16-10-2026', '', '1 d', '₹36,580.00'),
+      x('EX-1033', 'Not in GSTR-2B', 'Konkan Chemicals Sep invoice missing from 2B', 'KC/2026/0711', 'PN', 'none', 'Open', 'Critical', '12-10-2026', '1 d', '14 d', '₹18,000.00'),
+      x('EX-1042', 'Rate difference', 'Rate ₹87.00 on invoice vs ₹85.00 on PO', 'SPK/2026-27/0418', 'RK', 'warn', 'In progress', 'High', '15-10-2026', '', '0 d', '₹2,360.00', { lane: 'prog' }),
+      x('EX-1043', 'Freight not agreed', 'Freight ₹2,000.00 charged on FOR destination terms', 'SPK/2026-27/0418', 'RK', 'warn', 'In progress', 'High', '15-10-2026', '', '0 d', '₹2,360.00', { lane: 'prog' }),
+      x('EX-1008', 'Rate difference', 'Steel rate ₹62.40/kg vs ₹62.00 on PO', 'DST/1150', 'VJ', 'warn', 'Waiting on vendor', 'Medium', '11-10-2026', '2 d', '12 d', '₹3,540.00', { lane: 'vend' }),
+      x('EX-1044', 'HSN mismatch', 'HSN 3923 on invoice vs 3926 on PO', 'SPK/2026-27/0418', 'RK', 'none', 'Open', 'Low', '20-10-2026', '', '0 d', '₹0.00'),
+      x('EX-1045', 'Duplicate', 'WhatsApp copy of an emailed invoice', 'SPK/2026-27/0418', 'PV', 'ok', 'Proposed: close', 'Low', '14-10-2026', '', '0 d', '₹1,05,020.00', { lane: 'appr' })
+    ];
+    const pick = lane => items.filter(i => i.lane === lane).slice(0, 4);
+    const lanes = [
+      { t: 'Open', n: 16, amt: '₹9.86 L', cards: pick('open'), more: '+ 10 more' },
+      { t: 'In progress', n: 12, amt: '₹6.53 L', cards: pick('prog'), more: '+ 9 more' },
+      { t: 'Waiting on vendor', n: 9, amt: '₹1.84 L', cards: pick('vend'), more: '+ 6 more' },
+      { t: 'Awaiting approval', n: 4, amt: '₹2.51 L', cards: pick('appr'), more: '+ 2 more' },
+      { t: 'Resolved this week', n: 23, amt: '₹3.12 L', cards: [
+        x('EX-1002', 'Duplicate', 'Same invoice by post and email', 'DST/1139', 'PV', 'ok', 'Closed', 'Low', '08-10-2026', '', '—', '₹2,12,400.00'),
+        x('EX-1006', 'Not in GSTR-2B', 'Appeared in 2B after supplier amendment', 'PE/26-27/058', 'PN', 'ok', 'Closed', 'Medium', '09-10-2026', '', '—', '₹12,960.00'),
+        x('EX-1011', 'Freight not agreed', 'Vendor issued credit note KC/CN/0039', 'KC/2026/0698', 'RK', 'ok', 'Closed', 'High', '10-10-2026', '', '—', '₹4,720.00')
+      ], more: '+ 20 more' }
+    ];
+    const types = [['Rate difference', 7], ['HSN mismatch', 3], ['Freight not agreed', 4], ['Missing IRN', 5], ['Not in GSTR-2B', 9], ['Duplicate', 2], ['GRN missing', 4], ['MSME deadline risk', 5], ['Vendor bank details changed', 2]].map(([t, n]) => ({ t, n }));
+    return {
+      theme: this.props.theme ?? 'light',
+      isTable: view === 'table', isBoard: view === 'board',
+      segTable: view === 'table' ? 'on' : '', segBoard: view === 'board' ? 'on' : '',
+      showTable: () => this.setState({ view: 'table' }),
+      showBoard: () => this.setState({ view: 'board' }),
+      items, lanes, types
+    };
+  }
+}
+</script>
+</body>
+</html>
