@@ -133,3 +133,24 @@ export function hoursSince(iso: string): number {
 export function plural(n: number, one: string, many = one + 's'): string {
   return `${int(n)} ${n === 1 ? one : many}`
 }
+
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+function words99(n: number) { return n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '') }
+function words999(n: number) { return (n >= 100 ? ONES[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' : '') : '') + (n % 100 ? words99(n % 100) : '') }
+
+/** Indian system: 105020 → "Rupees One Lakh Five Thousand Twenty Only" */
+export function rupeesInWords(amount: number): string {
+  let n = Math.floor(Math.abs(amount))
+  const paise = Math.round((Math.abs(amount) - n) * 100)
+  if (n === 0 && !paise) return 'Rupees Zero Only'
+  const parts: string[] = []
+  const crore = Math.floor(n / 1e7); n %= 1e7
+  const lakh = Math.floor(n / 1e5); n %= 1e5
+  const thousand = Math.floor(n / 1e3); n %= 1e3
+  if (crore) parts.push(words999(crore) + ' Crore')
+  if (lakh) parts.push(words99(lakh) + ' Lakh')
+  if (thousand) parts.push(words99(thousand) + ' Thousand')
+  if (n) parts.push(words999(n))
+  return 'Rupees ' + parts.join(' ') + (paise ? ' and ' + words99(paise) + ' Paise' : '') + ' Only'
+}

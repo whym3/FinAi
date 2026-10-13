@@ -27,3 +27,12 @@ describe('format', () => {
     expect(ago('2026-10-12T17:40')).toBe('22 h ago')
   })
 })
+
+import { rupeesInWords } from './format'
+describe('rupeesInWords', () => {
+  it('uses lakh and crore', () => {
+    expect(rupeesInWords(105020)).toBe('Rupees One Lakh Five Thousand Twenty Only')
+    expect(rupeesInWords(34218450)).toBe('Rupees Three Crore Forty Two Lakh Eighteen Thousand Four Hundred Fifty Only')
+    expect(rupeesInWords(8010.5)).toBe('Rupees Eight Thousand Ten and Fifty Paise Only')
+  })
+})
