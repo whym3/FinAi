@@ -109,7 +109,7 @@ export default function P2PPage() {
               </Card>
 
               <Card aria-label="Documents and evidence">
-                <CardHeader title="Documents & evidence"><span className="text-[11px] text-text-3">{po.docs.length} documents · click a row to open it in the side viewer</span><Button size="sm" onClick={() => window.print()}><Download />Download all (ZIP)</Button></CardHeader>
+                <CardHeader title="Documents & evidence"><span className="text-[11px] text-text-3">{po.docs.length} documents · click a row to open it in the side viewer</span><Button size="sm" onClick={() => window.print()}><Download />Print all</Button></CardHeader>
                 <div className="overflow-auto">
                   <table className="w-full border-separate border-spacing-0 text-[12.5px] [&_td]:border-b [&_td]:border-border [&_td]:px-2.5 [&_td]:py-2 [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-2 [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:text-text-2">
                     <thead><tr><th>Document</th><th>Number</th><th>Date</th><th>Source</th><th>Linked by</th><th>Check</th></tr></thead>
