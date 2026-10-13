@@ -84,9 +84,9 @@ export function KV({ items, className }: { items: [ReactNode, ReactNode, string?
 
 /* ---------- filters, segmented, tabs, bulk bar ---------- */
 
-export function FilterChip({ on, children, onClick, icon }: { on?: boolean; children: ReactNode; onClick?: () => void; icon?: ReactNode }) {
+export function FilterChip({ on, children, icon, className, ...rest }: { on?: boolean; icon?: ReactNode } & ComponentProps<'button'>) {
   return (
-    <button type="button" aria-pressed={!!on} onClick={onClick} className={cn('inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium whitespace-nowrap', on ? 'border-solid border-acc bg-acc-weak text-acc' : 'border-dashed border-border-2 bg-surface text-text-2 hover:text-text')}>
+    <button type="button" aria-pressed={!!on} {...rest} className={cn(className, 'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium whitespace-nowrap', on ? 'border-solid border-acc bg-acc-weak text-acc' : 'border-dashed border-border-2 bg-surface text-text-2 hover:text-text')}>
       {icon}{children}
     </button>
   )

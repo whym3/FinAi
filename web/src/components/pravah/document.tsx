@@ -159,7 +159,7 @@ export function FieldRow({ f, on, onClick, value, action }: { f: ExtractedField;
   return (
     <div onClick={onClick} className={cn('grid grid-cols-[minmax(110px,34%)_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-md border border-transparent px-2 py-1.5', onClick && 'cursor-pointer hover:bg-surface-2', on && 'bg-acc-weak hover:bg-acc-weak')}>
       <span className="text-xs font-medium text-text-2">{f.label}</span>
-      <span className={cn('flex min-h-[30px] min-w-0 flex-wrap items-center gap-1.5 rounded-[5px] border px-2 py-1', low ? 'border-[1.5px] border-dashed border-warn bg-warn-bg' : 'border-border-2 bg-surface', on && !low && 'border-acc', f.mono && 'font-mono text-[12px]', f.num && 'justify-end tabular-nums')}>
+      <span className={cn('flex min-h-[30px] min-w-0 flex-wrap items-center gap-1.5 rounded-[5px] border px-2 py-1', low ? 'border-[1.5px] border-dashed border-warn bg-warn-bg' : 'border-border-2 bg-surface', on && !low && 'border-acc', value == null && f.mono && 'font-mono text-[12px]', f.num && 'justify-end tabular-nums')}>
         {value ?? f.value}{action}
       </span>
       {f.confirmedBy && f.confidence === 100 ? <Confidence value={100}>{f.edited ? 'Edited' : 'Confirmed'}</Confidence> : <Confidence value={f.confidence} />}

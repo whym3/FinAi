@@ -52,7 +52,7 @@ export function TimelineStage({ s, last }: { s: Stage; last?: boolean }) {
         <div className="flex items-center gap-[5px]">{s.ownerId && <Avatar id={s.ownerId} size="sm" />}<span className="min-w-0">{s.owner}</span></div>
         <div className="font-mono text-[11px] text-text-2">{s.ref}</div>
         {s.docs.length > 0 && <div className="mt-0.5 flex flex-wrap gap-x-1 gap-y-[3px]">{s.docs.map(d => <span key={d} className="inline-flex items-center gap-[3px] text-[11px] text-acc"><File className="size-3" aria-hidden />{d}</span>)}</div>}
-        <div className="mt-auto pt-1"><StatusPill tone={s.sla.tone} plain>{s.sla.label}</StatusPill></div>
+        <div className="mt-auto pt-1"><StatusPill tone={s.sla.tone} plain className="h-auto items-start whitespace-normal">{s.sla.label}</StatusPill></div>
       </div>
     </div>
   )

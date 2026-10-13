@@ -24,7 +24,7 @@ export function EntitySwitcher({ compact }: { compact?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label="Switch client entity" className={cn('flex min-w-0 cursor-pointer items-center gap-2.5 rounded-lg bg-surface text-left', compact ? 'min-h-11 flex-auto border-0 px-1 py-0.5' : 'border border-border py-1 pr-2.5 pl-1.5')}>
+        <button type="button" aria-label="Switch client entity" className={cn('flex min-w-0 xl:shrink-0 cursor-pointer items-center gap-2.5 rounded-lg bg-surface text-left', compact ? 'min-h-11 flex-auto border-0 px-1 py-0.5' : 'border border-border py-1 pr-2.5 pl-1.5')}>
           {!compact && <span className="grid size-[30px] flex-none place-items-center rounded-md bg-surface-3 text-text-2">{firmView ? <Users className="size-4" /> : <Building2 className="size-4" />}</span>}
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-[13px] leading-[18px] font-semibold">{firmView ? (compact ? 'All clients' : `All clients — ${firm.name}`) : compact ? entity.shortName : entity.name}</span>
@@ -185,10 +185,10 @@ export function UserMenu() {
 export function Topbar() {
   const [open, setOpen] = useSearchShortcut()
   return (
-    <header className="sticky top-0 z-20 hidden min-h-[60px] flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-border bg-surface px-6 py-2.5 md:flex">
+    <header className="sticky top-0 z-20 hidden min-h-[60px] flex-wrap items-center xl:flex-nowrap gap-x-3 gap-y-2.5 border-b border-border bg-surface px-6 py-2.5 md:flex">
       <EntitySwitcher />
       <PeriodPicker />
-      <button type="button" onClick={() => setOpen(true)} className="flex h-9 max-w-[460px] min-w-[180px] flex-[1_1_200px] cursor-text items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 text-left text-text-3">
+      <button type="button" onClick={() => setOpen(true)} className="flex h-9 max-w-[460px] min-w-[140px] xl:min-w-0 flex-[1_1_200px] cursor-text items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 text-left text-text-3">
         <Search className="size-4" /><span className="flex-1 truncate">Invoice no., GSTIN, PO, GRN, UTR, IRN</span>
         <span className="rounded-sm border border-border-2 bg-surface px-[5px] text-[11px] leading-4 whitespace-nowrap">Ctrl K</span>
       </button>
