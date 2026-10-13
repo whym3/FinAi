@@ -1,0 +1,194 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Pravah Finance Control tokens, ported 1:1 from design/assets/pravah.css.
+   Edit colours here only; both themes use the same names. */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* shadcn semantic colours */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Pravah tokens: bg-surface, text-text-3, border-ok-bd, … */
+  --color-bg: var(--background);
+  --color-surface: var(--card);
+  --color-surface-2: var(--muted);
+  --color-surface-3: var(--surface-3);
+  --color-border-2: var(--border-2);
+  --color-text: var(--foreground);
+  --color-text-2: var(--muted-foreground);
+  --color-text-3: var(--text-3);
+  --color-acc: var(--primary);
+  --color-acc-2: var(--acc-2);
+  --color-acc-weak: var(--accent);
+  --color-on-acc: var(--primary-foreground);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-ok-bd: var(--ok-bd);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-bd: var(--warn-bd);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --color-bad-bd: var(--bad-bd);
+  --color-none: var(--none);
+  --color-none-bg: var(--none-bg);
+  --color-none-bd: var(--none-bd);
+  --color-s-in: var(--s-in);
+  --color-s-out: var(--s-out);
+  --color-s-line: var(--s-line);
+  --color-grid: var(--grid);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-scrim: var(--scrim);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --shadow-pv: var(--shadow);
+  --animate-sk: pv-sk 1.4s ease-in-out infinite;
+  --breakpoint-md: 768px;
+}
+
+:root {
+  --background: #F5F6F8;
+  --foreground: #121821;
+  --card: #FFFFFF;
+  --card-foreground: #121821;
+  --popover: #FFFFFF;
+  --popover-foreground: #121821;
+  --primary: #1F5FBF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F2F5;
+  --secondary-foreground: #121821;
+  --muted: #F0F2F5;
+  --muted-foreground: #475262;
+  --accent: #EAF1FB;
+  --accent-foreground: #1F5FBF;
+  --destructive: #B42318;
+  --border: #E1E5EA;
+  --input: #C9D0D9;
+  --ring: #1F5FBF;
+  --radius: 8px;
+
+  --surface-3: #E7EAEF;
+  --border-2: #C9D0D9;
+  --text-3: #5F6978;
+  --acc-2: #174C99;
+  --ok: #146C3A;   --ok-bg: #E6F4EC;   --ok-bd: #A9D8BC;
+  --warn: #8A5300; --warn-bg: #FDF0DA; --warn-bd: #EFC983;
+  --bad: #B42318;  --bad-bg: #FDECEA;  --bad-bd: #F2B3AD;
+  --none: #586170; --none-bg: #EEF0F3; --none-bd: #C9D0D9;
+  --s-in: #2A78D6;
+  --s-out: #EB6834;
+  --s-line: #121821;
+  --grid: #E7EAEF;
+  --paper: #FFFFFF;
+  --ink: #1B1E23;
+  --scrim: rgba(18, 24, 33, .28);
+  --shadow: 0 1px 2px rgba(18, 24, 33, .06), 0 8px 24px rgba(18, 24, 33, .08);
+  --sla: #B42318;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0D1117;
+  --foreground: #E6EAF0;
+  --card: #141A22;
+  --card-foreground: #E6EAF0;
+  --popover: #141A22;
+  --popover-foreground: #E6EAF0;
+  --primary: #6FA6F0;
+  --primary-foreground: #0D1117;
+  --secondary: #1A212B;
+  --secondary-foreground: #E6EAF0;
+  --muted: #1A212B;
+  --muted-foreground: #B0B9C6;
+  --accent: #17283F;
+  --accent-foreground: #6FA6F0;
+  --destructive: #FF8A80;
+  --border: #252E3A;
+  --input: #364151;
+  --ring: #6FA6F0;
+
+  --surface-3: #222A35;
+  --border-2: #364151;
+  --text-3: #8E98A6;
+  --acc-2: #93BCF5;
+  --ok: #5BD08F;   --ok-bg: #10291C;   --ok-bd: #1F5136;
+  --warn: #F5B94F; --warn-bg: #2F220C; --warn-bd: #5C4317;
+  --bad: #FF8A80;  --bad-bg: #36171A;  --bad-bd: #6A2A2A;
+  --none: #A3ABB7; --none-bg: #222A33; --none-bd: #3A4452;
+  --s-in: #3987E5;
+  --s-out: #D95926;
+  --s-line: #E6EAF0;
+  --grid: #222A35;
+  --paper: #D9D7D1;
+  --ink: #16181C;
+  --scrim: rgba(0, 0, 0, .45);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+  --sla: #C9372C;
+  color-scheme: dark;
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { @apply font-sans; }
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums lining-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -.005em; }
+  h2 { font-size: 15px; line-height: 22px; font-weight: 600; }
+  h3 { font-size: 13px; line-height: 20px; font-weight: 600; }
+  a { color: var(--primary); }
+  a:hover { color: var(--acc-2); }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+}
+
+@keyframes pv-sk { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+/* Things that are awkward as utilities: the paper document mock and its field boxes. */
+@layer components {
+  .doc { position: relative; background: var(--paper); color: var(--ink); border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.18); font-size: 10.5px; line-height: 14px; }
+  .doc .dl { color: #5a5f66; }
+  .doc table { border-collapse: collapse; width: 100%; }
+  .doc th, .doc td { border: 1px solid #b9bcc2; padding: 3px 5px; text-align: left; font-size: 10px; }
+  .doc th { background: #eceef1; }
+  .hl { position: absolute; border: 1.5px solid #1F5FBF; background: rgba(31, 95, 191, .10); border-radius: 3px; pointer-events: none; }
+  .hl.lo { border: 1.5px dashed #B35C00; background: rgba(235, 150, 0, .14); }
+  .hl.cur { box-shadow: 0 0 0 3px rgba(31, 95, 191, .45); }
+  .hl-t { position: absolute; top: -9px; right: -1px; font-size: 9.5px; line-height: 13px; font-weight: 600; padding: 1px 4px; border-radius: 3px; background: #1F5FBF; color: #fff; white-space: nowrap; }
+  .hl.lo .hl-t { background: #B35C00; }
+  .hide-boxes .hl { display: none; }
+  .hatch { background-image: repeating-linear-gradient(135deg, transparent 0 6px, var(--muted) 6px 7px); }
+  .dash-line { background: repeating-linear-gradient(90deg, var(--border-2) 0 4px, transparent 4px 8px); }
+}
