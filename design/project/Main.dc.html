@@ -15,8 +15,8 @@ body{margin:0}
 </style>
 </helmet>
 <div class="pv app" data-theme="{{theme}}" style="font-family: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, sans-serif; color: var(--text)">
-  <div style="flex: 0 0 240px; background: var(--surface); border-right: 1px solid var(--border)">
-    <dc-import name="Sidebar" active="overview" theme="{{theme}}" hint-size="240px,1040px"></dc-import>
+  <div style="{{sideWrap}}">
+    <dc-import name="Sidebar" active="overview" theme="{{theme}}" collapsed="{{sideCollapsed}}" toggle-side="{{toggleSide}}" hint-size="100%,1040px"></dc-import>
   </div>
   <div class="main">
     <dc-import name="Topbar" theme="{{theme}}" firm="{{isFirm}}" hint-size="100%,64px"></dc-import>
@@ -345,7 +345,7 @@ body{margin:0}
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"view":{"editor":"enum","options":["entity","firm"],"default":"entity"},"$preview":{"width":1440,"height":2420}}'>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"view":{"editor":"enum","options":["entity","firm"],"default":"entity"},"sidebar":{"editor":"enum","options":["expanded","collapsed"],"default":"expanded"},"$preview":{"width":1440,"height":2420}}'>
 class Component extends DCLogic {
   renderVals() {
     const view = this.state.view ?? this.props.view ?? 'entity';
@@ -438,8 +438,12 @@ class Component extends DCLogic {
       cl('Medium', 58, 'Kaveri Foods LLP', 'Bengaluru', 'AAKFK0000K', [{ g: '29AAKFK0000K1Z4', s: '29 · Karnataka' }], '24,60,500.00', '2 breached', 'bad', '60', '1,12,800.00', '2,18,900.00', 'warn', 'Day 6 · 20 of 22 tasks', 'Bank reco pending'),
       cl('Medium', 41, 'Meridian Auto Components Pvt Ltd', 'Pune', 'AAACM0000M', [{ g: '27AAACM0000M1Z2', s: '27 · Maharashtra' }, { g: '24AAACM0000M1Z6', s: '24 · Gujarat' }], '18,90,000.00', '0 · 4 near limit', 'warn', '64', '3,82,940.00', '4,82,310.00', 'ok', 'Closed 08-10-2026', 'Signed off by F. Siddiqui')
     ];
+    const sideCollapsed = this.state.sideCollapsed ?? (this.props.sidebar === 'collapsed');
     return {
       theme: this.props.theme ?? 'light',
+      sideCollapsed,
+      sideWrap: 'flex: 0 0 ' + (sideCollapsed ? 64 : 240) + 'px; background: var(--surface); border-right: 1px solid var(--border); transition: flex-basis .18s ease',
+      toggleSide: () => this.setState({ sideCollapsed: !sideCollapsed }),
       isFirm, isEntity: !isFirm,
       segEntity: isFirm ? '' : 'on', segFirm: isFirm ? 'on' : '',
       showEntity: () => this.setState({ view: 'entity' }),
