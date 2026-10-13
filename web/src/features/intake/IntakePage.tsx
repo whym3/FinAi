@@ -51,7 +51,7 @@ export default function IntakePage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const { act } = useAct()
 
-  const all = q.data ?? []
+  const all = useMemo(() => q.data ?? [], [q.data])
   const counts = useMemo(() => Object.fromEntries(TABS.map(t => [t.value, t.value === 'all' ? all.length : all.filter(d => d.status === t.value).length])), [all])
   const filtered = all.filter(d =>
     (tab === 'all' || d.status === tab) &&

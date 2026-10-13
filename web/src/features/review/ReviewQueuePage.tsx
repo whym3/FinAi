@@ -23,7 +23,8 @@ type Tab = 'open' | 'second' | 'decided' | 'all'
 
 export default function ReviewQueuePage() {
   const q = useInvoices()
-  const vendors = useVendors().data ?? []
+  const vq = useVendors().data
+  const vendors = useMemo(() => vq ?? [], [vq])
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
   const tab = (sp.get('tab') ?? 'open') as Tab

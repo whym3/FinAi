@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# Pravah Finance Control — web app
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React front end for the design in `../design` (live canvas: https://claude.ai/artifact/TioE32uj9W317YGfGE2VcT).
+Every screen and workflow runs against an in-memory mock API, so the UI is complete before the backend exists.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev      # http://localhost:5173  (add ?theme=dark or ?theme=light)
+npm test         # format helpers + mock-API workflow tests
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Use the user menu (top right) to act as Rohan Kulkarni (AP, limit ₹5 L), Farah Siddiqui (Controller), Arvind Nair (CFO) or the read-only auditor. "Reset demo data" restores the seed; a page reload does the same.
+
+## Stack
+
+Vite · React 19 · TypeScript · Tailwind v4 · shadcn/ui (Radix) · TanStack Query and Table · react-router · lucide icons · IBM Plex fonts.
+
+## Layout
+
+| Path | What lives there |
+|---|---|
+| `src/index.css` | Design tokens from `design/assets/pravah.css`, light and dark. Change colours here only. |
+| `src/components/ui` | shadcn primitives, restyled to the design (button variants: `default` = primary, `outline` = standard). |
+| `src/components/pravah` | Design-system parts: status pill, source chip, KPI card, data table, document viewer and drawer, comparison cell, timeline stage, states. |
+| `src/layout` | Shell: sidebar, top bar (entity switcher, period, Ctrl K search, feed status, notifications, user menu), mobile top bar and tabs. |
+| `src/features/<area>` | One folder per route. |
+| `src/lib` | Types, Indian number and date formatting, CSV export. |
+| `src/mock` | `seed/*` data from the artboards, `api.ts` (the mock backend), `hooks.ts` (React Query wrappers). |
+
+## Connecting the backend
+
+Screens only call the hooks in `src/mock/hooks.ts`, and the hooks only call `src/mock/api.ts`.
+Replace the bodies in `api.ts` with `fetch` calls that return the types in `src/lib/types.ts`; nothing else changes.
+`api.test.ts` describes the behaviour each endpoint must keep (permissions, second approver, exception follow-through, IMS save).
+
+Known shortcuts (search for `shortcut:`): the demo clock is pinned to 13-10-2026 15:20 IST, sync clocks are shared across entities, the period picker is display-only, and every mutation refetches all queries.

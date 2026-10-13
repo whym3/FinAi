@@ -7,8 +7,7 @@ const L = 1e5
 
 /** One ₹ axis: collections up, payments down, closing balance as a line, minimum balance dashed. */
 export function CashForecastChart({ opening, minimum, weeks, compact }: { opening: number; minimum: number; weeks: CashWeek[]; compact?: boolean }) {
-  let bal = opening
-  const pts = weeks.map(w => { bal += w.inflow - w.outflow; return { ...w, closing: bal } })
+  const pts = closings(opening, weeks)
   const lowest = pts.reduce((a, b) => (b.closing < a.closing ? b : a))
   const [hover, setHover] = useState<number | null>(null)
   const active = hover ?? pts.indexOf(lowest)
@@ -77,19 +76,25 @@ export function CashForecastChart({ opening, minimum, weeks, compact }: { openin
 }
 
 export function CashForecastTable({ opening, weeks }: { opening: number; weeks: CashWeek[] }) {
-  let bal = opening
   return (
     <div className="max-h-[300px] overflow-auto">
       <table className="w-full border-separate border-spacing-0 text-[12.5px]">
         <thead><tr className="[&>th]:sticky [&>th]:top-0 [&>th]:border-b [&>th]:border-border [&>th]:bg-surface-2 [&>th]:px-2.5 [&>th]:py-2 [&>th]:text-right [&>th]:text-[11.5px] [&>th]:font-semibold [&>th]:text-text-2"><th className="text-left!">Week of</th><th>Collections</th><th>Payments</th><th>Closing</th></tr></thead>
-        <tbody>{weeks.map(w => { bal += w.inflow - w.outflow; return <tr key={w.week} className="[&>td]:border-b [&>td]:border-border [&>td]:px-2.5 [&>td]:py-1.5 [&>td]:text-right [&>td]:tabular-nums"><td className="text-left!">{date(w.week)}</td><td>{inr(w.inflow)}</td><td className="text-bad">{inr(-w.outflow)}</td><td className="font-medium">{inr(bal)}</td></tr> })}</tbody>
+        <tbody>{closings(opening, weeks).map(w => { return <tr key={w.week} className="[&>td]:border-b [&>td]:border-border [&>td]:px-2.5 [&>td]:py-1.5 [&>td]:text-right [&>td]:tabular-nums"><td className="text-left!">{date(w.week)}</td><td>{inr(w.inflow)}</td><td className="text-bad">{inr(-w.outflow)}</td><td className="font-medium">{inr(w.closing)}</td></tr> })}</tbody>
       </table>
     </div>
   )
 }
 
+/** Running closing balance per week. */
+function closings(opening: number, weeks: CashWeek[]) {
+  const out: (CashWeek & { closing: number })[] = []
+  for (const w of weeks) out.push({ ...w, closing: (out.at(-1)?.closing ?? opening) + w.inflow - w.outflow })
+  return out
+}
+
 export const forecastSummary = (opening: number, weeks: CashWeek[]) => {
-  let bal = opening; let low = { v: Infinity, week: '' }
-  for (const w of weeks) { bal += w.inflow - w.outflow; if (bal < low.v) low = { v: bal, week: w.week } }
-  return { closing: bal, low }
+  const pts = closings(opening, weeks)
+  const lowPt = pts.reduce((a, b) => (b.closing < a.closing ? b : a))
+  return { closing: pts.at(-1)!.closing, low: { v: lowPt.closing, week: lowPt.week } }
 }

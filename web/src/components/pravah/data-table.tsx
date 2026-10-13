@@ -23,7 +23,7 @@ declare module '@tanstack/react-table' {
 export const th = 'sticky top-0 z-[1] border-b border-border bg-surface-2 px-2.5 py-2 text-left text-[11.5px] font-semibold whitespace-nowrap text-text-2'
 export const td = 'border-b border-border px-2.5 py-2 align-middle'
 export const tableCls = 'w-full border-separate border-spacing-0 text-[12.5px] leading-[18px]'
-export const Chk = (p: React.ComponentProps<'input'>) => <input type="checkbox" className="size-[15px] cursor-pointer accent-[var(--primary)] align-middle" {...p} />
+export const Chk = ({ className, ...p }: React.ComponentProps<'input'>) => <input type="checkbox" className={cn('size-[15px] cursor-pointer accent-[var(--primary)] align-middle disabled:cursor-not-allowed', className)} {...p} />
 
 const load = (k: string) => { try { return JSON.parse(localStorage.getItem(k) ?? 'null') } catch { return null } }
 

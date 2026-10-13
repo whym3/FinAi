@@ -96,7 +96,7 @@ export const Spacer = () => <span className="flex-auto" />
 
 export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: ReactNode; icon?: ReactNode }[]; label: string }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex gap-0.5 rounded-lg bg-surface-3 p-0.5">
+    <div role="group" aria-label={label} className="inline-flex w-fit gap-0.5 rounded-lg bg-surface-3 p-0.5">
       {options.map(o => (
         <button key={o.value} type="button" aria-pressed={o.value === value} onClick={() => onChange(o.value)}
           className={cn('inline-flex min-h-7 cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-[12.5px] font-medium whitespace-nowrap', o.value === value ? 'bg-surface text-text shadow-[0_1px_2px_rgba(0,0,0,.12)]' : 'text-text-2 hover:text-text')}>
@@ -130,9 +130,9 @@ export function BulkBar({ children, label = 'Bulk actions' }: { children: ReactN
 /* ---------- KPI card ---------- */
 
 export function KpiCard({ k, compact }: { k: Kpi; compact?: boolean }) {
-  const scaled = k.unit === 'inr' ? lakhCr(k.value) : { v: String(k.value), u: k.unit === 'days' ? 'days' : '' }
+  const scaled = (k.unit ?? 'inr') === 'inr' ? lakhCr(k.value) : { v: String(k.value), u: k.unit === 'days' ? 'days' : '' }
   const body = (
-    <article title={k.exact ?? (k.unit === 'inr' ? inr(k.value) : undefined)} className={cn('flex h-full min-w-0 flex-col gap-1 rounded-lg border bg-surface', compact ? 'px-3 pt-2.5 pb-2' : 'px-3.5 pt-3 pb-2.5', k.tone === 'bad' ? 'border-bad-bd' : k.tone === 'warn' ? 'border-warn-bd' : 'border-border')}>
+    <article title={k.exact ?? ((k.unit ?? 'inr') === 'inr' ? inr(k.value) : undefined)} className={cn('flex h-full min-w-0 flex-col gap-1 rounded-lg border bg-surface', compact ? 'px-3 pt-2.5 pb-2' : 'px-3.5 pt-3 pb-2.5', k.tone === 'bad' ? 'border-bad-bd' : k.tone === 'warn' ? 'border-warn-bd' : 'border-border')}>
       <div className={cn('text-xs leading-4 font-medium text-text-2', compact ? 'min-h-8' : 'min-h-8')}>{k.label}</div>
       <div className={cn('font-semibold tracking-[-.01em] whitespace-nowrap', compact ? 'text-xl leading-[26px]' : 'text-[22px] leading-7')}>
         {scaled.v}{scaled.u && <small className="ml-0.5 text-[13px] font-medium text-text-2">{scaled.u}</small>}
