@@ -602,3 +602,13 @@ export async function runReport(id: string, entityId: string, userId: string) {
   log(userId, entityId, 'Generated report', r.name, r.format)
   return out(r)
 }
+
+export async function retryIrn(outwardId: string, userId: string) {
+  canAct(user(userId))
+  const o = db.outward.find(o => o.id === outwardId) ?? fail('Document not found')
+  o.irn = st('ok', 'IRN generated')
+  o.ewb = st('ok', 'EWB ' + (3410220013 + Math.floor(Math.random() * 900)).toString().replace(/(\d{4})(\d{4})(\d+)/, '$1 $2 $3'))
+  o.gstr1 = st('ok', 'Ready')
+  log(userId, o.entityId, 'Regenerated IRN', o.docNo, 'IRP accepted after correction')
+  return out(o)
+}
