@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Banner, Card, CardBody, CardHeader, Gstin, KV, PageHeader, Restricted } from '@/components/pravah'
 import { useSession } from '@/app/session'
@@ -35,16 +34,6 @@ export default function OnboardClientPage() {
     setC({ legal_name: e.name, short_name: e.shortName, city: e.city, pan: e.pan, tan: e.tan, cin: e.cin, sap_company_code: e.sapCompanyCode, einvoice_band: e.einvoiceBand, msme_status: e.msmeStatus, fy_start_month: e.fyStartMonth })
     setGst(e.gstins.map(g => ({ gstin: g.gstin, place_of_business: g.placeOfBusiness, filing_frequency: g.filingFrequency, einvoice_applicable: g.einvoiceApplicable })))
   }, [existing.data])
-
-  useEffect(() => { // result of the mailbox OAuth round-trip
-    const ok = sp.get('mailbox'), err = sp.get('mailbox_error')
-    if (!ok && !err) return
-    if (ok) toast.success(`Connected ${sp.get('address')}. First check is running.`)
-    else toast.error(err)
-    const next = new URLSearchParams(sp)
-    ;['mailbox', 'mailbox_error', 'address'].forEach(k => next.delete(k))
-    setSp(next, { replace: true })
-  }, [sp, setSp])
 
   const go = (s: number, newId = id) => setSp(newId ? { id: newId, step: String(s) } : { step: String(s) })
 

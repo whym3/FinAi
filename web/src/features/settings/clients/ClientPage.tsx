@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useState } from 'react'
+import { useParams } from 'react-router'
 import { Pencil } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Banner, Card, CardBody, CardHeader, Gstin, KV, PageHeader, Q, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
@@ -16,14 +15,6 @@ const BAND = { 'above-5cr': 'Above ₹5 Cr · e-invoice required', 'below-5cr': 
 export default function ClientPage() {
   const { id = '' } = useParams()
   const q = useEntity(id)
-  const [sp, setSp] = useSearchParams()
-  useEffect(() => {
-    const ok = sp.get('mailbox'), err = sp.get('mailbox_error')
-    if (!ok && !err) return
-    if (ok) toast.success(`Connected ${sp.get('address')}. First check is running.`)
-    else toast.error(err)
-    setSp({}, { replace: true })
-  }, [sp, setSp])
   return <Q q={q}>{e => <Client e={e} />}</Q>
 }
 

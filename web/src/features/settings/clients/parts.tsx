@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import { Mail, Pause, Play, Plus, RefreshCw, Trash2, Unplug, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -117,11 +118,21 @@ const MB_TONE: Record<Mailbox['status'], [Tone, string]> = { active: ['ok', 'Liv
 export function ConnectMailbox({ entityId, ret, disabled }: { entityId: string; ret: string; disabled?: boolean }) {
   const [backfill, setBackfill] = useState('7')
   const health = useIntegrations().data?.oauth
+  const [sp, setSp] = useSearchParams()
+  useEffect(() => { // result of the OAuth round-trip
+    const ok = sp.get('mailbox'), err = sp.get('mailbox_error')
+    if (!ok && !err) return
+    if (ok) toast.success(`Connected ${sp.get('address')}. First check is running.`)
+    else toast.error(err)
+    const next = new URLSearchParams(sp)
+    ;['mailbox', 'mailbox_error', 'address'].forEach(k => next.delete(k))
+    setSp(next, { replace: true })
+  }, [sp, setSp])
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-end gap-2">
-        <Button disabled={disabled} onClick={() => api.connectMailbox('gmail', entityId, ret, Number(backfill))}><Mail />Connect Gmail</Button>
-        <Button disabled={disabled} onClick={() => api.connectMailbox('outlook', entityId, ret, Number(backfill))}><Mail />Connect Outlook</Button>
+        <Button disabled={disabled || health?.gmail === false} onClick={() => api.connectMailbox('gmail', entityId, ret, Number(backfill))}><Mail />Connect Gmail</Button>
+        <Button disabled={disabled || health?.outlook === false} onClick={() => api.connectMailbox('outlook', entityId, ret, Number(backfill))}><Mail />Connect Outlook</Button>
         <Field label="Read past mail" className="ml-1"><NativeSelect label="Backfill" value={backfill} onChange={setBackfill} options={[['0', 'New mail only'], ['7', 'Last 7 days'], ['30', 'Last 30 days']]} /></Field>
       </div>
       <div className="text-[11px] text-text-3">
