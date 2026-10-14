@@ -1,0 +1,4 @@
+# Dark variants duplicate the light artboards; icons carry no knowledge.
+design/project/*Dark.dc.html
+web/public/
+web/index.html

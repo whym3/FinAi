@@ -1,0 +1,29 @@
+# Production-like run: `docker compose -f docker-compose.prod.yml up --build` → http://localhost:8080
+# Set PUBLIC_URL in server/.env to the address users open (OAuth redirect URIs must match it).
+services:
+  db:
+    image: postgres:17-alpine
+    environment: { POSTGRES_USER: pravah, POSTGRES_PASSWORD: pravah, POSTGRES_DB: pravah }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U pravah"], interval: 3s, retries: 20 }
+    restart: unless-stopped
+
+  server:
+    build: ./server
+    env_file: [server/.env]
+    environment:
+      DATABASE_URL: postgresql+psycopg://pravah:pravah@db:5432/pravah
+      STORAGE_DIR: /data/storage
+    volumes: [storage:/data/storage]
+    depends_on: { db: { condition: service_healthy } }
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports: ["8080:80"]
+    depends_on: [server]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  storage:

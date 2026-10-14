@@ -13,7 +13,7 @@ export const useNotifications = () => { const e = useEntityId(); return useQuery
 export const useAudit = () => { const e = useEntityId(); return useQuery({ queryKey: ['audit', e], queryFn: () => api.listAudit(e) }) }
 export const useSearch = (q: string) => { const e = useEntityId(); return useQuery({ queryKey: ['search', e, q], queryFn: () => api.search(e, q), enabled: q.trim().length >= 2 }) }
 
-export const useIntake = () => { const e = useEntityId(); return useQuery({ queryKey: ['intake', e], queryFn: () => api.listIntake(e) }) }
+export const useIntake = () => { const e = useEntityId(); return useQuery({ queryKey: ['intake', e], queryFn: () => api.listIntake(e), refetchInterval: 30_000 }) } // polls so emailed invoices appear live
 export const usePOs = () => { const e = useEntityId(); return useQuery({ queryKey: ['pos', e], queryFn: () => api.listPOs(e) }) }
 export const usePO = (id: string) => useQuery({ queryKey: ['po', id], queryFn: () => api.getPO(id) })
 export const useInvoices = () => { const e = useEntityId(); return useQuery({ queryKey: ['invoices', e], queryFn: () => api.listInvoices(e) }) }
@@ -34,6 +34,13 @@ export const useTds = () => { const e = useEntityId(); return useQuery({ queryKe
 export const useMsme = () => { const e = useEntityId(); return useQuery({ queryKey: ['msme', e], queryFn: () => api.listMsme(e) }) }
 export const useClose = () => { const e = useEntityId(); return useQuery({ queryKey: ['close', e], queryFn: () => api.listClose(e) }) }
 export const useReports = () => useQuery({ queryKey: ['reports'], queryFn: api.listReports })
+
+/* server-backed: clients, mailboxes, AI settings */
+export const useServerEntity = (id: string) => useQuery({ queryKey: ['server-entity', id], queryFn: () => api.getServerEntity(id), retry: false, enabled: !!id })
+export const useMailboxes = (entityId: string) => useQuery({ queryKey: ['mailboxes', entityId], queryFn: () => api.listMailboxes(entityId), retry: false, refetchInterval: 30_000, enabled: !!entityId })
+export const useMailboxRecent = (id: number) => useQuery({ queryKey: ['mailbox-recent', id], queryFn: () => api.mailboxRecent(id), refetchInterval: 30_000 })
+export const useAiSettings = () => useQuery({ queryKey: ['ai-settings'], queryFn: api.getAiSettings, retry: false })
+export const useServerHealth = () => useQuery({ queryKey: ['health'], queryFn: api.serverHealth, retry: false })
 
 /**
  * Run any API mutation: `act(() => api.x(...), 'Saved')`.

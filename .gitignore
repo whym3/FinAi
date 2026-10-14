@@ -1,0 +1,6 @@
+graphify-out/
+.env
+server/.venv/
+server/storage/
+__pycache__/
+.pytest_cache/

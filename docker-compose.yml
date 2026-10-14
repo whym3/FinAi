@@ -1,0 +1,48 @@
+# Dev stack: `docker compose up --build` → http://localhost:5173 (live reload for web and server).
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: pravah
+      POSTGRES_PASSWORD: pravah
+      POSTGRES_DB: pravah
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pravah"]
+      interval: 3s
+      retries: 20
+
+  server:
+    build: ./server
+    env_file:
+      - path: server/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://pravah:pravah@db:5432/pravah
+      STORAGE_DIR: /data/storage
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"
+    volumes:
+      - ./server/app:/srv/app
+      - ./server/alembic:/srv/alembic
+      - storage:/data/storage
+    ports: ["8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    image: node:25-alpine
+    working_dir: /web
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    environment:
+      API_URL: http://server:8000
+    volumes:
+      - ./web:/web
+      - web_node_modules:/web/node_modules  # keep Linux node_modules out of the host folder
+    ports: ["5173:5173"]
+    depends_on: [server]
+
+volumes:
+  pgdata:
+  storage:
+  web_node_modules:

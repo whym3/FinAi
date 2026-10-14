@@ -1,0 +1,25 @@
+[project]
+name = "pravah-server"
+version = "0.1.0"
+description = "Pravah Finance Control API"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.0",
+    "anthropic>=1.13.0",
+    "cryptography>=50.0.2",
+    "fastapi>=0.143.0",
+    "google-genai>=2.30.1",
+    "httpx>=0.28.1",
+    "openai>=3.31.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.15.0",
+    "python-multipart>=0.0.32",
+    "sqlalchemy>=2",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "respx>=0.23.1",
+]

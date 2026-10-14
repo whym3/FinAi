@@ -23,6 +23,8 @@ import VendorsPage from '@/features/vendors/VendorsPage'
 import VendorPage from '@/features/vendors/VendorPage'
 import CustomersPage from '@/features/customers/CustomersPage'
 import SettingsPage from '@/features/settings/SettingsPage'
+import OnboardClientPage from '@/features/settings/clients/OnboardClientPage'
+import ClientPage from '@/features/settings/clients/ClientPage'
 import ComponentsPage from '@/features/dev/ComponentsPage'
 
 function NotFound() {
@@ -55,6 +57,8 @@ export const router = createBrowserRouter([
       { path: '/vendors/:vendorId', element: <VendorPage /> },
       { path: '/customers', element: <CustomersPage /> },
       { path: '/settings', element: <SettingsPage /> },
+      { path: '/settings/clients/new', element: <OnboardClientPage /> },
+      { path: '/settings/clients/:id', element: <ClientPage /> },
       { path: '/dev/components', element: <ComponentsPage /> },
       { path: '*', element: <NotFound /> },
     ],

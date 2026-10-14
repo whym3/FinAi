@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Check, ChevronLeft, ChevronRight, Columns3, Copy, Database, Filter, Link2, Mail, Mailbox, MessageCircle, Pencil, Send, Upload, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Columns3, Copy, Database, ExternalLink, Filter, Link2, Mail, Mailbox, MessageCircle, Pencil, RefreshCw, Send, Sparkles, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -159,7 +159,7 @@ function ReviewPanel({ d, all, pos, prev, next, onClose }: { d: IntakeDoc; all: 
   const [linkOpen, setLinkOpen] = useState(false)
   const [askOpen, setAskOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
-  const twin = all.find(x => x.id !== d.id && x.docNo === d.docNo && x.vendorId === d.vendorId && d.docNo !== '—')
+  const twin = d.server ? undefined : all.find(x => x.id !== d.id && !x.server && x.docNo === d.docNo && x.vendorId === d.vendorId && d.docNo !== '—')
   const isDupOfTwin = d.status === 'duplicate' && twin
   const fields = d.fields
   const head = fields.filter(f => !TOTAL_KEYS.includes(f.key))
@@ -190,7 +190,7 @@ function ReviewPanel({ d, all, pos, prev, next, onClose }: { d: IntakeDoc; all: 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-3">
         <div className="mr-auto flex min-w-0 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2"><h2>{d.docNo === '—' ? d.type : d.docNo}</h2><Pill s={docStatus(d)} />{vendor?.msme && <MsmeBadge cls={vendor.msme} udyam />}</div>
-          <div className="text-[11px] text-text-3">{d.vendorName} · {d.channel === 'Email' ? 'emailed' : d.channel === 'WhatsApp' ? 'sent on WhatsApp' : d.channel === 'Post' ? 'received by post' : d.channel === 'SAP' ? 'from SAP' : 'uploaded'} by {d.from} on {dateTime(d.receivedAt)} · {d.pages} page{d.pages > 1 ? 's' : ''}, {d.sizeKb} KB</div>
+          <div className="text-[11px] text-text-3">{d.vendorName} · {d.channel === 'Email' ? 'emailed' : d.channel === 'WhatsApp' ? 'sent on WhatsApp' : d.channel === 'Post' ? 'received by post' : d.channel === 'SAP' ? 'from SAP' : 'uploaded'} by {d.from} on {dateTime(d.receivedAt)} · {d.server ? `${d.filename}, ` : `${d.pages} page${d.pages > 1 ? 's' : ''}, `}{d.sizeKb} KB{d.subject && <> · “{d.subject}”</>}</div>
         </div>
         <Button size="icon" className="border-border-2 bg-surface" aria-label="Previous document" disabled={!prev} onClick={prev}><ChevronLeft /></Button>
         <span className="text-[11px] text-text-3">{pos}</span>
@@ -216,24 +216,38 @@ function ReviewPanel({ d, all, pos, prev, next, onClose }: { d: IntakeDoc; all: 
         </div>
       )}
 
-      {!d.paper ? (
+      {d.server && d.status === 'duplicate' && d.duplicateOf && (
+        <div className="px-4 pt-3">
+          <Banner tone="info" actions={<Button size="sm" disabled={disabled} onClick={() => act(() => api.setIntakeStatus(d.id, 'new', user.id), 'Moved back to New')}>Not a duplicate</Button>}>
+            The same file already came in by email ({d.duplicateOf}). This copy is kept for the audit trail and will not be extracted again.
+          </Banner>
+        </div>
+      )}
+
+      {!d.paper && !d.server ? (
         <div className="p-4"><EmptyState title={d.channel === 'SAP' ? 'Document came from SAP' : d.statusNote ?? 'No preview'} icon={d.channel === 'SAP' ? <Database className="size-5" /> : undefined}>
           {d.channel === 'SAP' ? `Parked in SAP as ${d.from}. Linked to PO ${d.linkedPoId ?? '—'}; it follows the review queue.` : d.status === 'notfinance' ? 'Marked as not a finance document. It stays here for 90 days.' : 'Extraction runs as soon as the file is processed; fields and a preview will appear here.'}
         </EmptyState></div>
       ) : (
         <div className="flex flex-wrap items-stretch gap-4 px-4 pt-3 pb-4">
           <div className="min-w-0 flex-[1_1_540px]">
-            <DocumentViewer doc={d.paper} label={`Original · ${d.channel === 'WhatsApp' ? 'photo' : 'PDF'}`} source={<Source name={d.channel} text={dateTime(d.receivedAt)} />} focus={focus} onPick={setFocus} />
+            {d.server ? <FileView d={d} /> : <DocumentViewer doc={d.paper!} label={`Original · ${d.channel === 'WhatsApp' ? 'photo' : 'PDF'}`} source={<Source name={d.channel} text={dateTime(d.receivedAt)} />} focus={focus} onPick={setFocus} />}
           </div>
           <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3>Extracted fields</h3>
-              <span className="flex items-center gap-2"><Source name="Extracted" text={`OCR${d.paper.irn ? ' + e-invoice QR' : ''} · ${dateTime(d.receivedAt).slice(11)}`} />{d.confidence != null && <Confidence value={d.confidence}>{d.confidence}% overall</Confidence>}</span>
+              <span className="flex items-center gap-2"><Source name="Extracted" text={d.server ? 'AI extraction' : `OCR${d.paper?.irn ? ' + e-invoice QR' : ''} · ${dateTime(d.receivedAt).slice(11)}`} />{d.confidence != null && <Confidence value={d.confidence}>{d.confidence}% overall</Confidence>}</span>
             </div>
             <div className="flex flex-wrap gap-3 text-[11px] text-text-2">
               <span className="flex items-center gap-1"><span className="h-2.5 w-3.5 rounded-[2px] border-[1.5px] border-dashed border-warn" />Low confidence, not yet confirmed ({low})</span>
               <span>Click a field to see it on the document</span>
             </div>
+            {d.server && !fields.length && (
+              <EmptyState title={d.statusNote ?? 'Not extracted yet'} icon={<Sparkles className="size-5" />}
+                action={!readOnly && !done && <Button size="sm" disabled={disabled} onClick={() => act(() => api.reExtract(d.id), 'Extraction queued · fields appear in a few seconds')}><RefreshCw />Run extraction</Button>}>
+                The AI model in Settings → AI extraction reads the file. Every value stays unconfirmed until you check it.
+              </EmptyState>
+            )}
             <div className="flex flex-col gap-0.5">{head.map(fieldRow)}</div>
             {d.lines.length > 0 && (
               <div className="overflow-hidden rounded-md border border-border">
@@ -266,7 +280,8 @@ function ReviewPanel({ d, all, pos, prev, next, onClose }: { d: IntakeDoc; all: 
               <>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Button variant="default" disabled={disabled || !!d.confirmedBy} onClick={() => act(() => api.confirmFields(d.id, user.id), low ? `Fields confirmed · ${low} low-confidence field${low > 1 ? 's' : ''} logged under your name` : 'Fields confirmed')}><Check />{d.confirmedBy ? 'Fields confirmed' : 'Confirm fields'}</Button>
-                  <Button disabled={disabled} onClick={() => setLinkOpen(true)}><Link2 />Link to PO</Button>
+                  <Button disabled={disabled || d.server} title={d.server ? 'Available once SAP purchase orders sync' : undefined} onClick={() => setLinkOpen(true)}><Link2 />Link to PO</Button>
+                  {d.server && !d.confirmedBy && fields.length > 0 && <Button disabled={disabled} onClick={() => act(() => api.reExtract(d.id), 'Extraction queued')}><RefreshCw />Re-run extraction</Button>}
                   {twin && <Button disabled={disabled} onClick={() => act(() => api.markDuplicate(d.id, user.id, twin.id), 'Marked duplicate')}><Copy />Mark duplicate</Button>}
                   <Button disabled={disabled} onClick={() => act(() => api.setIntakeStatus(d.id, 'notfinance', user.id), 'Marked not an invoice')}>Not an invoice</Button>
                   <Button disabled={disabled} onClick={() => setAskOpen(true)}><Send />Ask vendor</Button>
@@ -287,6 +302,22 @@ function ReviewPanel({ d, all, pos, prev, next, onClose }: { d: IntakeDoc; all: 
         body={`Dear ${d.vendorName},\n\nWe received ${d.type.toLowerCase()} ${d.docNo}${d.amount != null ? ' for ' + inr(d.amount) : ''}. Before we can process it, please confirm the following:\n\n- \n\nRegards,\n${user.name}\n${user.title}`} />
       <RejectDialog open={rejectOpen} onOpenChange={setRejectOpen} onReject={reason => act(() => api.setIntakeStatus(d.id, 'rejected', user.id, reason), 'Document rejected')} />
     </Card>
+  )
+}
+
+/** The original file as received, served by the server. PDFs and text in a frame, images inline. */
+function FileView({ d }: { d: IntakeDoc }) {
+  const url = api.fileUrl(d)
+  return (
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span className="flex items-center gap-2"><span className="font-medium">Original</span><Source name="Email" text={dateTime(d.receivedAt)} /></span>
+        <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-acc"><ExternalLink className="size-3.5" />Open in new tab</a>
+      </div>
+      {d.mime?.startsWith('image/')
+        ? <img src={url} alt={`Original ${d.filename}`} className="max-h-[760px] w-full rounded-lg border border-border bg-surface-3 object-contain" />
+        : <iframe src={url} title={`Original ${d.filename}`} className="h-[760px] w-full rounded-lg border border-border bg-surface-3" />}
+    </div>
   )
 }
 

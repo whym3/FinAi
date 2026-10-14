@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { setApiUser } from '@/api/http'
 import * as api from '@/mock/api'
 import type { Entity, Firm, SyncState, User, ExceptionRule } from '@/lib/types'
 
@@ -20,6 +21,8 @@ export interface Session {
   period: string
   setPeriod: (p: string) => void
   readOnly: boolean
+  /** False when the FastAPI server is unreachable; the app then runs on mock data only. */
+  serverOnline: boolean
 }
 
 const Ctx = createContext<Session | null>(null)
@@ -28,8 +31,9 @@ const load = (k: string, d: string) => { try { return localStorage.getItem(k) ??
 const save = (k: string, v: string) => { try { localStorage.setItem(k, v) } catch { /* not remembered */ } }
 
 export function SessionProvider({ children, fallback }: { children: ReactNode; fallback: ReactNode }) {
-  const boot = useQuery({ queryKey: ['bootstrap'], queryFn: api.getBootstrap })
   const [userId, setUserId] = useState(() => load('pv-user', 'RK'))
+  setApiUser(userId) // before any query runs as this user
+  const boot = useQuery({ queryKey: ['bootstrap', userId], queryFn: api.getBootstrap, placeholderData: keepPreviousData })
   const [entityId, setEntityId] = useState(() => load('pv-entity', 'meridian'))
   const [scope, setScope] = useState<'entity' | 'firm'>('entity')
   const [period, setPeriod] = useState('Oct 2026')
@@ -38,13 +42,13 @@ export function SessionProvider({ children, fallback }: { children: ReactNode; f
 
   const value = useMemo<Session | null>(() => {
     if (!boot.data) return null
-    const { users, entities, firm, sync, rules } = boot.data
+    const { users, entities, firm, sync, rules, serverOnline } = boot.data
     const user = users.find(u => u.id === userId) ?? users[0]
     const entity = entities.find(e => e.id === entityId) ?? entities[0]
     return {
       user, entity, firm, users: users.filter(u => u.id !== 'PV'), entities, sync, rules, scope,
       setUserId, setEntityId: id => { setEntityId(id); setScope('entity') }, setScope, period, setPeriod,
-      readOnly: user.role === 'auditor',
+      readOnly: user.role === 'auditor', serverOnline,
     }
   }, [boot.data, userId, entityId, scope, period])
 

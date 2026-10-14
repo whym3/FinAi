@@ -22,7 +22,32 @@ export interface User {
   entityIds: string[] | 'all'
 }
 
-export interface Gstin { gstin: string; code: string; state: string }
+export interface Gstin { gstin: string; code: string; state: string; placeOfBusiness?: string; filingFrequency?: 'monthly' | 'qrmp'; einvoiceApplicable?: boolean }
+
+export type MailProvider = 'gmail' | 'outlook'
+/** A connected invoice mailbox (server). */
+export interface Mailbox {
+  id: number
+  entityId: string
+  provider: MailProvider
+  address: string
+  status: 'active' | 'paused' | 'error' | 'disconnected'
+  lastSyncAt: string | null
+  lastError: string | null
+  backfillDays: number
+  senderAllow: string[]
+  senderBlock: string[]
+  connectedBy: string | null
+  documents: number
+}
+
+export type AiProvider = 'anthropic' | 'openai' | 'gemini'
+export interface AiSettings {
+  activeProvider: AiProvider
+  autoExtract: boolean
+  models: Partial<Record<AiProvider, string>>
+  keys: Record<AiProvider, { set: boolean; setOn: string | null; fromEnv: boolean }>
+}
 
 export interface Entity {
   id: string
@@ -36,6 +61,14 @@ export interface Entity {
   riskScore: number
   intakeEmail: string
   whatsapp: string
+  /** Fields below come from the server; seeded demo entities may lack them when the server is offline. */
+  status?: 'onboarding' | 'active'
+  tan?: string | null
+  cin?: string | null
+  fyStartMonth?: number
+  einvoiceBand?: 'above-5cr' | 'below-5cr' | 'exempt'
+  msmeStatus?: 'none' | 'micro' | 'small' | 'medium'
+  mailboxes?: Mailbox[]
 }
 
 export interface Firm { name: string; short: string; entityIds: string[] }
@@ -209,6 +242,12 @@ export interface IntakeDoc {
   linkedPoId?: string
   invoiceId?: string
   confirmedBy?: string
+  /** Set on documents ingested by the server (real email); ids start with 'em-'. */
+  server?: boolean
+  fileUrl?: string
+  mime?: string
+  filename?: string
+  subject?: string
 }
 
 /* ---------------- purchase-to-pay ---------------- */

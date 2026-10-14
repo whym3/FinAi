@@ -2,15 +2,19 @@
 // The backend phase replaces these bodies with fetch() calls; signatures stay.
 import { addDays, daysBetween, int, inr, nowIso, todayIso } from '@/lib/format'
 import type {
-  Channel, DecisionKind, ExceptionItem, ExceptionStatus, ImsAction, IntakeDoc, Invoice, Notification, Priority, SearchHit, Status, Tone, User,
+  Channel, DecisionKind, Entity, OverviewSnapshot, ExceptionItem, ExceptionStatus, ImsAction, IntakeDoc, Invoice, Notification, Priority, SearchHit, Status, Tone, User,
 } from '@/lib/types'
 import { db, resetDb } from './db'
+import { ApiError } from '@/api/http'
+import * as srv from '@/api/server'
+
+export { ApiError }
+export * from '@/api/server'
 
 const wait = () => new Promise(r => setTimeout(r, 150 + Math.random() * 250))
 const out = async <T,>(v: T): Promise<T> => { await wait(); return structuredClone(v) }
 const st = (tone: Tone, label: string): Status => ({ tone, label })
 
-export class ApiError extends Error {}
 const fail = (msg: string): never => { throw new ApiError(msg) }
 
 function user(id: string): User { return db.users.find(u => u.id === id) ?? fail('Unknown user') }
@@ -26,7 +30,14 @@ function notify(n: Omit<Notification, 'id' | 'at' | 'read'>) {
 
 /* ================= bootstrap & session ================= */
 
-export const getBootstrap = () => out({ firm: db.firm, entities: db.entities, users: db.users, sync: db.sync, rules: db.rules })
+/** Seeded demo entities merged with clients from the server (server wins on shared ids). Works mock-only when the server is down. */
+export async function getBootstrap() {
+  const remote = await srv.listServerEntities().then(r => ({ online: true, list: r }), () => ({ online: false, list: [] as Entity[] }))
+  const merged = db.entities.map(e => ({ ...e, ...remote.list.find(r => r.id === e.id) }))
+  const extra = remote.list.filter(r => !db.entities.some(e => e.id === r.id))
+  const base = await out({ firm: db.firm, users: db.users, sync: db.sync, rules: db.rules })
+  return { ...base, entities: [...merged, ...extra], serverOnline: remote.online }
+}
 export async function resetDemo() { resetDb(); await wait() }
 
 export async function retrySync(key: 'sap' | 'gst' | 'bank', userId: string) {
@@ -42,12 +53,17 @@ export async function retrySync(key: 'sap' | 'gst' | 'bank', userId: string) {
 /* ================= overview ================= */
 
 export const getOverview = (entityId: string) => out({
-  snapshot: db.overview.find(o => o.entityId === entityId) ?? fail('No overview for entity'),
+  snapshot: db.overview.find(o => o.entityId === entityId) ?? emptySnapshot(entityId),
   deadlines: db.deadlines.filter(d => d.entityId === entityId),
   vendors: db.vendors.filter(v => v.entityId === entityId).sort((a, b) => b.outstanding - a.outstanding).slice(0, 10),
   customers: db.customers.filter(c => c.entityId === entityId && c.overdue > 0).sort((a, b) => b.overdue - a.overdue).slice(0, 10),
   pendingRun: db.paymentRuns.find(r => r.entityId === entityId && r.status === 'awaiting-approval') ?? null,
 })
+
+// A newly onboarded client has no SAP data yet: zeros, so screens show empty states instead of errors.
+function emptySnapshot(entityId: string): OverviewSnapshot {
+  return { entityId, asOf: nowIso(), kpiPay: [], kpiRec: [], critical: { open: 0, pastSla: 0, blocked: 0, breakdown: [] }, cash: { opening: 0, minimum: 0, weeks: [] }, apAgeing: [], apNote: '', arAgeing: [], arNote: '' }
+}
 
 export const getFirmOverview = () => out({
   rows: db.firmRows.map(r => ({ ...r, entity: db.entities.find(e => e.id === r.entityId)! })),
@@ -101,16 +117,24 @@ export async function markNotificationsRead(entityId: string, id?: string) {
   db.notifications.filter(n => n.entityId === entityId && (!id || n.id === id)).forEach(n => (n.read = true))
   await wait()
 }
-export const listAudit = (entityId: string) => out(db.audit.filter(a => a.entityId === entityId))
+export async function listAudit(entityId: string) {
+  const [local, remote] = await Promise.all([out(db.audit.filter(a => a.entityId === entityId)), srv.listServerAudit(entityId).catch(() => [])])
+  return [...remote, ...local].sort((a, b) => b.at.localeCompare(a.at))
+}
 
 /* ================= intake ================= */
 
-export const listIntake = (entityId: string) => out(db.intake.filter(d => d.entityId === entityId).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt)))
+export async function listIntake(entityId: string) {
+  // shortcut: a server outage hides email documents silently here; the Settings page shows the server status.
+  const [local, remote] = await Promise.all([out(db.intake.filter(d => d.entityId === entityId)), srv.listServerIntake(entityId).catch(() => [])])
+  return [...remote, ...local].sort((a, b) => b.receivedAt.localeCompare(a.receivedAt))
+}
 
 function doc(id: string): IntakeDoc { return db.intake.find(d => d.id === id) ?? fail('Document not found') }
 
 export async function editField(docId: string, key: string, value: string, userId: string) {
   canAct(user(userId))
+  if (srv.isServerDoc(docId)) return srv.serverEditField(docId, key, value)
   const d = doc(docId)
   const f = d.fields.find(f => f.key === key) ?? fail('Unknown field')
   const before = f.value
@@ -121,6 +145,7 @@ export async function editField(docId: string, key: string, value: string, userI
 
 export async function confirmFields(docId: string, userId: string) {
   canAct(user(userId))
+  if (srv.isServerDoc(docId)) return srv.serverConfirm(docId)
   const d = doc(docId)
   const low = d.fields.filter(f => f.confidence < 90 && !f.confirmedBy)
   d.fields.forEach(f => { if (!f.confirmedBy) f.confirmedBy = userId })
@@ -204,6 +229,7 @@ export async function keepOriginal(docId: string, userId: string) {
 
 export async function setIntakeStatus(docId: string, status: 'notfinance' | 'rejected' | 'new', userId: string, note?: string) {
   canAct(user(userId))
+  if (srv.isServerDoc(docId)) return srv.serverSetStatus(docId, status, note)
   const d = doc(docId)
   d.status = status
   d.statusNote = note

@@ -1,7 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Moon, RotateCcw, Sun } from 'lucide-react'
+import { Link } from 'react-router'
+import { Building2, Moon, Plus, RotateCcw, Server, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Avatar, Card, CardBody, CardHeader, Chk, KV, PageHeader, Prio, Segmented } from '@/components/pravah'
+import { Avatar, Banner, Card, CardBody, CardHeader, Chk, KV, PageHeader, Prio, Segmented, StatusPill } from '@/components/pravah'
+import { AiCard } from './AiCard'
 import { useSession } from '@/app/session'
 import { useTheme } from '@/app/theme'
 import { useAct, useRules } from '@/mock/hooks'
@@ -10,7 +12,7 @@ import { inr } from '@/lib/format'
 import { toast } from 'sonner'
 
 export default function SettingsPage() {
-  const { user, users, entity, setUserId, readOnly } = useSession()
+  const { user, users, entity, entities, setUserId, readOnly, serverOnline } = useSession()
   const { theme, setTheme } = useTheme()
   const rules = useRules().data ?? []
   const { act } = useAct()
@@ -18,7 +20,22 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" sub={`${entity.name} · signed in as ${user.name}`} />
+      {!serverOnline && <Banner tone="warn" className="mb-4" icon={<Server className="size-4" />}>The Pravah server is not reachable, so the app is running on demo data only. Start it with <code>docker compose up</code> to onboard clients and connect mailboxes.</Banner>}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] items-start gap-4">
+        <Card>
+          <CardHeader title="Clients" as="h3">
+            {user.role === 'partner' && serverOnline && <Button size="sm" variant="default" asChild><Link to="/settings/clients/new"><Plus />Onboard client</Link></Button>}
+          </CardHeader>
+          {entities.map(e => (
+            <Link key={e.id} to={serverOnline ? `/settings/clients/${e.id}` : '/settings'} className="flex items-center gap-2.5 border-b border-border px-4 py-2 last:border-b-0 hover:bg-surface-2">
+              <Building2 className="size-4 text-text-3" />
+              <span className="min-w-0 flex-1 text-xs"><span className="font-medium">{e.shortName}</span> <span className="text-text-3">· {e.city || e.pan}</span>
+                <span className="block truncate text-[11px] text-text-3">{e.intakeEmail ? `Mailbox ${e.intakeEmail}` : 'No mailbox connected'}</span></span>
+              {e.status === 'onboarding' ? <StatusPill tone="warn" plain>Onboarding</StatusPill> : <StatusPill tone="ok" plain>Active</StatusPill>}
+            </Link>
+          ))}
+        </Card>
+        <AiCard />
         <Card>
           <CardHeader title="Appearance" as="h3" />
           <CardBody className="flex flex-col gap-3">

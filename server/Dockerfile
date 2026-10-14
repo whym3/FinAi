@@ -1,0 +1,11 @@
+FROM python:3.13-slim
+COPY --from=ghcr.io/astral-sh/uv:0.10.7 /uv /usr/local/bin/uv
+WORKDIR /srv
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv UV_COMPILE_BYTECODE=1 PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY app ./app
+EXPOSE 8000
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

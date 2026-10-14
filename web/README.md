@@ -33,7 +33,8 @@ Vite · React 19 · TypeScript · Tailwind v4 · shadcn/ui (Radix) · TanStack Q
 ## Connecting the backend
 
 Screens only call the hooks in `src/mock/hooks.ts`, and the hooks only call `src/mock/api.ts`.
-Replace the bodies in `api.ts` with `fetch` calls that return the types in `src/lib/types.ts`; nothing else changes.
+Features move to the real server (`../server`) one at a time: `src/api/server.ts` holds the real endpoints and `src/api/http.ts` the fetch wrapper, and `api.ts` merges server data with the mock.
+Already live: clients and onboarding, invoice mailboxes, intake documents from email (ids `em-…`), AI extraction settings and the server audit log. Without the server the app falls back to mock data.
 `api.test.ts` describes the behaviour each endpoint must keep (permissions, second approver, exception follow-through, IMS save).
 
 Known shortcuts (search for `shortcut:`): the demo clock is pinned to 13-10-2026 15:20 IST, sync clocks are shared across entities, the period picker is display-only, and every mutation refetches all queries.

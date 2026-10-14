@@ -79,12 +79,28 @@ function KpiGrid({ title, hint, kpis }: { title: string; hint: string; kpis: Kpi
   )
 }
 
+/** A newly onboarded client: nothing from SAP, the bank or the GST portal yet. */
+function NoDataYet() {
+  const { entity } = useSession()
+  return (
+    <Card>
+      <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
+        <span className="grid size-11 place-items-center rounded-full bg-surface-2 text-text-2"><Building2 className="size-5" /></span>
+        <h2>No figures for {entity.shortName} yet</h2>
+        <p className="max-w-[520px] text-xs text-text-2">The overview fills in once SAP, the bank feed and the GST portal are connected. Emailed invoices already arrive in the Intake inbox.</p>
+        <div className="flex gap-2 pt-1"><Button size="sm" asChild><Link to="/intake">Open Intake inbox</Link></Button><Button size="sm" asChild><Link to={`/settings/clients/${entity.id}`}>Client settings</Link></Button></div>
+      </div>
+    </Card>
+  )
+}
+
 function EntityView({ hidden }: { hidden: SectionKey[] }) {
   const q = useOverview()
   const [view, setView] = useState<'chart' | 'table'>('chart')
   const show = (k: SectionKey) => !hidden.includes(k)
   return (
     <Q q={q}>{({ snapshot: s, deadlines, vendors, customers }) => {
+      if (!s.cash.weeks.length) return <NoDataYet />
       const fc = forecastSummary(s.cash.opening, s.cash.weeks)
       const apMax = Math.max(...s.apAgeing.map(r => r.msme + r.others))
       const arMax = Math.max(...s.arAgeing.map(r => r.amount))
@@ -292,6 +308,7 @@ function MobileOverview() {
   const [all, setAll] = useState(false)
   return (
     <Q q={q}>{({ snapshot: s, deadlines, customers, pendingRun }) => {
+      if (!s.cash.weeks.length) return <NoDataYet />
       const kpis = [...s.kpiPay, ...s.kpiRec]
       const pick = ['due7', 'apod', 'msme', 'bank', 'arod', 'itc', 'dso', 'dpo']
       const shown = all ? kpis : pick.map(id => kpis.find(k => k.id === id)!).filter(Boolean)
