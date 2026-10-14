@@ -16,7 +16,7 @@ export function AccountSection() {
     <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] items-start gap-4">
       <Card>
         <CardHeader title="My account" as="h3" />
-        <CardBody><KV items={[['Name', user.name], ['Email', user.email ?? ''], ['Authenticator', user.mfaEnabled ? 'Set up' : 'Not set up']]} /></CardBody>
+        <CardBody><KV items={[['Name', user.name], ['Email', user.email ?? ''], ['Two-step sign-in', user.mfaEnabled ? 'Authenticator set up' : 'Off']]} /></CardBody>
       </Card>
       <Card>
         <CardHeader title="Change password" as="h3" />

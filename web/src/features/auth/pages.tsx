@@ -20,11 +20,14 @@ function useSubmit<T, A = void>(job: (arg: A) => Promise<T>, onDone: (r: T) => v
   return { busy, error, submit, run }
 }
 
+/** Where to go once the password step is done: the app, or the authenticator step when the server requires it. */
+const after = (next: string, from?: string | null) => next === 'mfa_verify' ? '/mfa' : next === 'mfa_enrol' ? '/mfa/enrol' : (from && from.startsWith('/') && !from.startsWith('//') ? from : '/')
+
 export function SetupPage() {
   const nav = useNavigate()
   const status = useQuery({ queryKey: ['auth-status'], queryFn: api.authStatus })
   const [f, setF] = useState({ firm_name: '', firm_short: '', frn: '', name: '', email: '', password: '' })
-  const { busy, error, submit } = useSubmit(() => api.setup(f), () => nav('/mfa/enrol', { replace: true }))
+  const { busy, error, submit } = useSubmit(() => api.setup(f), r => nav(after(r.next), { replace: true }))
   useEffect(() => { if (status.data && !status.data.needsSetup) nav('/login', { replace: true }) }, [status.data, nav])
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
   return (
@@ -37,7 +40,7 @@ export function SetupPage() {
         </div>
         <Field label="Your name"><Input value={f.name} onChange={set('name')} required /></Field>
         <Field label="Work email"><Input type="email" value={f.email} onChange={set('email')} required autoComplete="username" /></Field>
-        <Field label="Password" hint="At least 12 characters. An authenticator app is set up next."><Input type="password" value={f.password} onChange={set('password')} required minLength={12} autoComplete="new-password" /></Field>
+        <Field label="Password" hint="At least 12 characters."><Input type="password" value={f.password} onChange={set('password')} required minLength={12} autoComplete="new-password" /></Field>
         {error && <Banner tone="bad" role="alert">{error}</Banner>}
         <Button variant="default" type="submit" disabled={busy} className="mt-1">Create firm and admin</Button>
       </form>
@@ -47,11 +50,12 @@ export function SetupPage() {
 
 export function LoginPage() {
   const nav = useNavigate()
+  const qc = useQueryClient()
   const [sp] = useSearchParams()
   const status = useQuery({ queryKey: ['auth-status'], queryFn: api.authStatus })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const { busy, error, submit } = useSubmit(() => api.login(email, password), r => nav(r.next === 'mfa_verify' ? '/mfa' : '/mfa/enrol', { replace: true }))
+  const { busy, error, submit } = useSubmit(() => api.login(email, password), r => { qc.clear(); nav(after(r.next, sp.get('from')), { replace: true }) })
   useEffect(() => { if (status.data?.needsSetup) nav('/setup', { replace: true }) }, [status.data, nav])
   return (
     <AuthShell title="Sign in" sub={sp.get('why') === 'expired' ? 'Your session ended. Sign in again.' : undefined} footer={<Link to="/forgot">Forgot your password?</Link>}>
@@ -151,10 +155,10 @@ export function InvitePage() {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   useEffect(() => { if (info.data) setName(info.data.name) }, [info.data])
-  const { busy, error, submit } = useSubmit(() => api.acceptInvite(token, name, password), () => nav('/mfa/enrol', { replace: true }))
+  const { busy, error, submit } = useSubmit(() => api.acceptInvite(token, name, password), r => nav(after(r.next), { replace: true }))
   if (info.error) return <AuthShell title="Invite not valid"><Banner tone="bad">{(info.error as Error).message}</Banner></AuthShell>
   return (
-    <AuthShell title={info.data ? `Join ${info.data.firm}` : 'Join Pravah'} sub={info.data && <>Your account is <b>{info.data.email}</b>. Choose a password; an authenticator app is set up next.</>}>
+    <AuthShell title={info.data ? `Join ${info.data.firm}` : 'Join Pravah'} sub={info.data && <>Your account is <b>{info.data.email}</b>. Choose a password.</>}>
       <form onSubmit={submit} className="flex flex-col gap-3">
         <Field label="Your name"><Input value={name} onChange={e => setName(e.target.value)} required /></Field>
         <Field label="Password" hint="At least 12 characters"><Input type="password" value={password} onChange={e => setPassword(e.target.value)} minLength={12} required autoComplete="new-password" /></Field>

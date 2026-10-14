@@ -80,3 +80,10 @@ def test_enrol_is_idempotent_until_confirmed(client):
     b = client.post('/api/auth/mfa/enrol').json()
     assert a['secret'] == b['secret']
     assert client.post('/api/auth/mfa/confirm', json={'code': pyotp.TOTP(a['secret']).now()}).status_code == 200
+
+
+def test_mfa_off_signs_straight_in(client, firm, monkeypatch):
+    monkeypatch.setattr('app.routers.auth.settings.require_mfa', False)
+    r = client.post('/api/auth/login', json={'email': 'admin@mehtarao.in', 'password': 'correct horse battery'})
+    assert r.json()['next'] == 'done'
+    assert client.get('/api/auth/me').status_code == 200

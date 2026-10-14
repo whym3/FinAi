@@ -10,7 +10,7 @@ export { ApiError }
 /* ---------------- auth ---------------- */
 export const authStatus = () => http<{ needsSetup: boolean; smtp: boolean; claude: boolean }>('/auth/status')
 export const setup = (body: { firm_name: string; firm_short: string; frn?: string; name: string; email: string; password: string }) => http<{ next: string }>('/auth/setup', { method: 'POST', json: body })
-export const login = (email: string, password: string) => http<{ next: 'mfa_verify' | 'mfa_enrol' }>('/auth/login', { method: 'POST', json: { email, password } })
+export const login = (email: string, password: string) => http<{ next: 'mfa_verify' | 'mfa_enrol' | 'done' }>('/auth/login', { method: 'POST', json: { email, password } })
 export const logout = () => http<{ ok: boolean }>('/auth/logout', { method: 'POST' })
 export const me = () => http<Me>('/auth/me')
 export const mfaEnrol = () => http<{ secret: string; otpauth: string }>('/auth/mfa/enrol', { method: 'POST' })

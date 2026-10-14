@@ -55,9 +55,20 @@ def setup(body: SetupIn, request: Request, response: Response, db: DbSession = D
     db.add(u)
     db.flush()
     audit(db, u.id, None, 'Set up Pravah', firm.name, f'First admin {u.email}', request=request)
+    return _signed_in(db, u, request, response)
+
+
+def _signed_in(db: DbSession, u: User, request: Request, response: Response) -> dict:
+    """Password accepted: start the session. With REQUIRE_MFA off it is complete; otherwise the authenticator step follows."""
+    if not settings.require_mfa:
+        start_session(db, u, request, response, mfa_passed=True)
+        u.last_login_at = now()
+        audit(db, u.id, None, 'Signed in', u.email, request=request)
+        db.commit()
+        return {'next': 'done'}
     start_session(db, u, request, response, mfa_passed=False)
     db.commit()
-    return {'next': 'mfa_enrol'}
+    return {'next': 'mfa_verify' if u.mfa_enabled else 'mfa_enrol'}
 
 
 class LoginIn(BaseModel):
@@ -84,9 +95,7 @@ def login(body: LoginIn, request: Request, response: Response, db: DbSession = D
         db.commit()
         raise generic
     u.failed_logins, u.locked_until = 0, None
-    start_session(db, u, request, response, mfa_passed=False)
-    db.commit()
-    return {'next': 'mfa_verify' if u.mfa_enabled else 'mfa_enrol'}
+    return _signed_in(db, u, request, response)
 
 
 @router.post('/logout')
@@ -244,9 +253,7 @@ def invite_accept(body: AcceptIn, request: Request, response: Response, db: DbSe
     u = db.get(User, t.user_id)
     u.name, u.password_hash, u.status = body.name.strip(), hash_password(body.password), 'active'
     audit(db, u.id, None, 'Accepted invite', u.email, request=request)
-    start_session(db, u, request, response, mfa_passed=False)
-    db.commit()
-    return {'next': 'mfa_enrol'}
+    return _signed_in(db, u, request, response)
 
 
 class ChangeIn(BaseModel):

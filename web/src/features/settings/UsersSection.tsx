@@ -104,7 +104,7 @@ export function UsersSection() {
             <div className="text-[11px] text-text-3">{u.email}{u.title ? ` · ${u.title}` : ''}{u.lastLoginAt ? ` · last sign-in ${dateTime(u.lastLoginAt)}` : ''}</div>
             <div className="text-[11px] text-text-2">{(u.assignments ?? []).map(a => `${name(a.entityId)}: ${a.role}${a.approvalLimit ? ` (up to ${inr(a.approvalLimit)})` : ''}`).join(' · ') || (u.isAdmin ? 'All clients' : 'No client access')}</div>
           </div>
-          <StatusPill tone={u.status === 'active' ? 'ok' : u.status === 'invited' ? 'warn' : 'none'} plain>{u.status === 'active' ? (u.mfaEnabled ? 'Active' : 'Active · MFA pending') : u.status === 'invited' ? 'Invited' : 'Disabled'}</StatusPill>
+          <StatusPill tone={u.status === 'active' ? 'ok' : u.status === 'invited' ? 'warn' : 'none'} plain>{u.status === 'active' ? 'Active' : u.status === 'invited' ? 'Invited' : 'Disabled'}</StatusPill>
           <div className="flex gap-1">
             <Button size="sm" onClick={() => setEdit(u)}>Access</Button>
             {u.status === 'invited' && <Button size="sm" onClick={async () => { const r = await act(() => api.reinviteUser(u.id), r => r.link ? 'Invite link ready' : 'Invite re-sent'); if (r?.link) { navigator.clipboard?.writeText(r.link); toast.info('Invite link copied') } }}><RefreshCw />Re-invite</Button>}

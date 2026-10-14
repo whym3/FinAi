@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     public_url: str = 'http://localhost:5173'  # the address users open; OAuth redirects and emailed links use it
     storage_dir: str = './storage'
     session_hours: int = 12
+    # shortcut: two-factor sign-in is off for now; set REQUIRE_MFA=true before real client data goes in.
+    require_mfa: bool = False
     google_client_id: str = ''
     google_client_secret: str = ''
     ms_client_id: str = ''
