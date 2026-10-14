@@ -1,5 +1,5 @@
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -24,8 +24,17 @@ def get_mailbox(db: Session, u: User, mailbox_id: int, manage: bool = False) -> 
         raise HTTPException(404, 'Mailbox not found')
     require_entity(u, mb.entity_id)
     if manage:
-        require_role(u, ADMIN_ROLES, 'manage mailboxes')
+        require_role(u, mb.entity_id, ADMIN_ROLES, 'manage mailboxes')
     return mb
+
+
+@router.get('/mailboxes')
+def all_mailboxes(u: User = Depends(current_user), db: Session = Depends(get_db)):
+    from ..auth import visible_entities
+    ids = [e.id for e in visible_entities(db, u)]
+    mbs = db.scalars(select(Mailbox).where(Mailbox.entity_id.in_(ids), Mailbox.status != 'disconnected').order_by(Mailbox.entity_id, Mailbox.id)).all()
+    counts = _counts(db, [m.id for m in mbs])
+    return [mailbox_out(m, counts.get(m.id, 0)) for m in mbs]
 
 
 @router.get('/entities/{entity_id}/mailboxes')
@@ -51,30 +60,30 @@ class MailboxPatch(BaseModel):
 
 
 @router.patch('/mailboxes/{mailbox_id}')
-def update_mailbox(mailbox_id: int, body: MailboxPatch, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def update_mailbox(mailbox_id: int, body: MailboxPatch, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
     mb = get_mailbox(db, u, mailbox_id, manage=True)
     before = mailbox_out(mb)
     for k, v in body.model_dump(exclude_unset=True).items():
         setattr(mb, k, [s.strip().lower() for s in v if s.strip()] if isinstance(v, list) else v)
     action = {'paused': 'Paused mailbox', 'active': 'Resumed mailbox'}.get(body.status or '', 'Changed mailbox settings')
-    audit(db, u.id, mb.entity_id, action, mb.address, before=before, after=mailbox_out(mb))
+    audit(db, u.id, mb.entity_id, action, mb.address, before=before, after=mailbox_out(mb), request=request)
     db.commit()
     return mailbox_out(mb, _counts(db, [mb.id]).get(mb.id, 0))
 
 
 @router.post('/mailboxes/{mailbox_id}/sync')
-def sync_now(mailbox_id: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def sync_now(mailbox_id: int, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
     mb = get_mailbox(db, u, mailbox_id, manage=True)
     if not mb.enc_refresh_token or mb.status == 'disconnected':
         raise HTTPException(409, 'Reconnect this mailbox first')
     n = sync_mailbox(db, mb)
-    audit(db, u.id, mb.entity_id, 'Synced mailbox', mb.address, f'{n} new document(s)')
+    audit(db, u.id, mb.entity_id, 'Synced mailbox', mb.address, f'{n} new document(s)', request=request)
     db.commit()
     return {'new': n, 'mailbox': mailbox_out(mb, _counts(db, [mb.id]).get(mb.id, 0))}
 
 
 @router.post('/mailboxes/{mailbox_id}/disconnect')
-def disconnect(mailbox_id: int, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def disconnect(mailbox_id: int, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
     mb = get_mailbox(db, u, mailbox_id, manage=True)
     if mb.provider == 'gmail' and mb.enc_refresh_token:
         try:  # best effort: also revoke at Google so the token is useless if leaked
@@ -82,6 +91,6 @@ def disconnect(mailbox_id: int, u: User = Depends(current_user), db: Session = D
         except Exception:
             pass
     mb.status, mb.enc_refresh_token, mb.cursor = 'disconnected', None, None
-    audit(db, u.id, mb.entity_id, 'Disconnected mailbox', mb.address, 'Ingested documents are kept')
+    audit(db, u.id, mb.entity_id, 'Disconnected mailbox', mb.address, 'Ingested documents are kept', request=request)
     db.commit()
     return {'ok': True}

@@ -87,9 +87,9 @@ def test_sender_rules():
     assert sender_allowed('a@deccan.in', ['deccan.in'], []) and not sender_allowed('a@other.in', ['deccan.in'], [])
 
 
-def test_ingest_dedupes_and_queues(db, tmp_path, monkeypatch):
+def test_ingest_dedupes_and_queues(db, firm, tmp_path, monkeypatch):
     monkeypatch.setattr('app.mail.ingest.settings.storage_dir', str(tmp_path))
-    mb = Mailbox(entity_id='meridian', provider='gmail', address='test-ingest@x.in', sender_allow=[], sender_block=[])
+    mb = Mailbox(entity_id='apollo', provider='gmail', address='test-ingest@x.in', sender_allow=[], sender_block=[])
     db.add(mb)
     db.flush()
     att = Attachment('a1', 'SPK-0418.pdf', 'application/pdf', PDF)
@@ -100,8 +100,8 @@ def test_ingest_dedupes_and_queues(db, tmp_path, monkeypatch):
     assert ingest(db, mb, [copy]) == 1
     docs = db.query(SourceDocument).filter_by(mailbox_id=mb.id).order_by(SourceDocument.id).all()
     assert [d.status for d in docs] == ['new', 'duplicate'] and docs[1].duplicate_of == docs[0].id
-    assert (tmp_path / 'meridian' / docs[0].sha256).read_bytes() == PDF
-    jobs = db.query(Job).filter(Job.payload['document_id'].as_integer().in_([d.id for d in docs])).all()
+    assert (tmp_path / 'apollo' / docs[0].sha256).read_bytes() == PDF
+    jobs = db.query(Job).filter(Job.kind == 'process', Job.payload['document_id'].as_integer().in_([d.id for d in docs])).all()
     assert len(jobs) == 1  # duplicates are not extracted again
 
 
@@ -109,7 +109,7 @@ def test_audit_log_is_append_only(db):
     import pytest
     from sqlalchemy import text
     from sqlalchemy.exc import DBAPIError
-    db.execute(text("INSERT INTO audit_log (user_id, action, target, detail) VALUES ('KM', 't', '', '')"))
+    db.execute(text("INSERT INTO audit_log (action, target, detail) VALUES ('t', '', '')"))
     with pytest.raises(DBAPIError, match='append-only'):
         with db.begin_nested():
             db.execute(text("UPDATE audit_log SET action = 'changed'"))

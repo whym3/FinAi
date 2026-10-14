@@ -108,10 +108,10 @@ export function Paper({ doc, focus, onPick, width = 540 }: { doc: PaperDoc; focu
 }
 
 /** Paper for a document we only know by metadata (no extraction yet). */
-export function placeholderPaper(d: { title: string; number: string; date: string; source: string; linkedBy?: string }): PaperDoc {
+export function placeholderPaper(d: { title: string; number: string; date: string; source: string; linkedBy?: string; billTo?: string }): PaperDoc {
   return {
     kind: 'LETTER', supplier: d.title, address: `Source: ${d.source}${d.linkedBy ? ' · linked by ' + d.linkedBy : ''}`, number: d.number, date: d.date.split('-').reverse().join('-'),
-    billTo: 'Meridian Auto Components Pvt Ltd', billToAddress: 'Gat 412, Chakan Industrial Area, Pune 410501', lines: [], taxable: 0, cgst: 0, sgst: 0, igst: 0, total: 0,
+    billTo: d.billTo ?? '', billToAddress: '', lines: [], taxable: 0, cgst: 0, sgst: 0, igst: 0, total: 0,
     body: 'No fields have been extracted from this document. The original file is kept as received.', boxes: {},
   }
 }
@@ -185,7 +185,9 @@ export function DocumentDrawer({ docs, index, onIndex, kicker }: { docs: Evidenc
           </div>
           <div className="px-4"><LineTabs label="Document sections" value={tab} onChange={setTab} items={[{ value: 'doc', label: 'Document' }, { value: 'fields', label: 'Fields' }, { value: 'links', label: 'Links' }, { value: 'history', label: 'History' }]} /></div>
           <div className="flex-1 overflow-auto p-4">
-            {tab === 'doc' && <DocumentViewer doc={paper} label={`Page 1 of 1`} compact />}
+            {tab === 'doc' && (d.fileUrl
+              ? <div className="flex h-full flex-col gap-2"><a href={d.fileUrl} target="_blank" rel="noreferrer" className="self-end text-xs text-acc">Open in new tab</a><iframe src={d.fileUrl} title={`${d.title} ${d.number}`} className="min-h-[640px] w-full flex-1 rounded-lg border border-border bg-surface-3" /></div>
+              : <DocumentViewer doc={paper} label={`Page 1 of 1`} compact />)}
             {tab === 'fields' && (
               <div className="flex flex-col gap-1">
                 {Object.entries(paper.boxes).length ? Object.entries(paper.boxes).map(([k, c]) => (
@@ -197,7 +199,7 @@ export function DocumentDrawer({ docs, index, onIndex, kicker }: { docs: Evidenc
             {tab === 'history' && <ul className="flex flex-col gap-1.5 text-xs text-text-2"><li>{d.date} · received by {d.source}</li><li>{d.date} · linked by {d.linkedBy}</li><li>Check: {d.check.label}</li></ul>}
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-2.5">
-            <Button size="sm" onClick={() => window.print()}><Download />Print</Button>
+            {d.fileUrl ? <Button size="sm" asChild><a href={`${d.fileUrl}?download=true`}><Download />Download</a></Button> : <Button size="sm" onClick={() => window.print()}><Download />Print</Button>}
             <Spacer />
             <Button size="sm" variant="ghost" disabled={index === 0} onClick={() => onIndex(index! - 1)}><ChevronLeft />Prev</Button>
             <span className="text-[11px] text-text-3">{index! + 1} of {docs.length}</span>

@@ -5,9 +5,9 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Banner, Card, CardBody, CardHeader, Gstin, KV, PageHeader, Restricted } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useMailboxes, useServerEntity } from '@/mock/hooks'
-import * as api from '@/mock/api'
-import type { EntityInput, GstInput } from '@/mock/api'
+import { useAct, useEntity, useMailboxes } from '@/api/hooks'
+import * as api from '@/api'
+import type { EntityInput, GstInput } from '@/api'
 import { cn } from '@/lib/utils'
 import { CompanyFields, ConnectMailbox, GstinEditor, MailboxesCard, companyErrors, gstinRowError } from './parts'
 
@@ -17,12 +17,12 @@ const BLANK: EntityInput = { legal_name: '', short_name: '', city: '', pan: '', 
 /** Four steps. The client is created when leaving step 2, so the mailbox OAuth round-trip has an entity to attach to;
  * the page reads ?id=&step= so it resumes where it left off after the provider redirects back. */
 export default function OnboardClientPage() {
-  const { user, serverOnline, setEntityId } = useSession()
+  const { isAdmin, firmWide, setEntityId, refresh } = useSession()
   const [sp, setSp] = useSearchParams()
   const nav = useNavigate()
   const id = sp.get('id')
   const step = Math.min(Number(sp.get('step') ?? (id ? 3 : 1)), 4)
-  const existing = useServerEntity(id ?? '')
+  const existing = useEntity(id ?? '')
   const { act, pending } = useAct()
   const [c, setC] = useState<EntityInput>(BLANK)
   const [gst, setGst] = useState<GstInput[]>([{ gstin: '', place_of_business: '', filing_frequency: 'monthly', einvoice_applicable: true }])
@@ -48,8 +48,7 @@ export default function OnboardClientPage() {
 
   const go = (s: number, newId = id) => setSp(newId ? { id: newId, step: String(s) } : { step: String(s) })
 
-  if (user.role !== 'partner') return <><PageHeader title="Onboard a client" crumbs={[{ label: 'Settings', to: '/settings' }]} /><Card><Restricted>Only a CA firm partner can onboard new clients. Switch to Kiran Mehta in the user menu to try it.</Restricted></Card></>
-  if (!serverOnline) return <><PageHeader title="Onboard a client" crumbs={[{ label: 'Settings', to: '/settings' }]} /><Card><Restricted>The Pravah server is not running. Start it with docker compose up, then reload.</Restricted></Card></>
+  if (!(isAdmin || firmWide)) return <><PageHeader title="Onboard a client" crumbs={[{ label: 'Settings', to: '/settings' }]} /><Card><Restricted>Only a firm admin or partner can onboard new clients.</Restricted></Card></>
 
   const companyOk = !Object.keys(companyErrors(c)).length
   const gstErr = gst.length ? gstinRowError(gst, c.pan) : 'Add at least one GSTIN'
@@ -59,7 +58,7 @@ export default function OnboardClientPage() {
     if (gstErr) return
     const body = { ...c, gstins: gst }
     const e = id ? await act(() => api.updateEntity(id, { ...body, pan: undefined })) : await act(() => api.createEntity(body), 'Client created · now connect their invoice mailbox')
-    if (e) go(3, e.id)
+    if (e) { refresh(); go(3, e.id) }
   }
 
   return (
@@ -124,7 +123,7 @@ export default function OnboardClientPage() {
               <Banner tone="info">Activating makes the client available to its team. SAP, GST portal and bank feeds are connected later from the client page.</Banner>
               <div className="flex justify-between gap-2"><Button onClick={() => go(3)}><ArrowLeft />Back</Button>
                 <Button variant="default" disabled={pending} onClick={async () => {
-                  if (await act(() => api.activateEntity(id), `${c.short_name} is active`)) { setEntityId(id); nav(`/settings/clients/${id}`) }
+                  if (await act(() => api.activateEntity(id), `${c.short_name} is active`)) { refresh(); setEntityId(id); nav(`/settings/clients/${id}`) }
                 }}><Check />Activate client</Button></div>
             </CardBody>
           </Card>

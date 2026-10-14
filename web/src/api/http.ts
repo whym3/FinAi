@@ -1,27 +1,39 @@
-// Fetch wrapper for the FastAPI server (proxied at /api by Vite and nginx).
-export class ApiError extends Error {}
+// Fetch wrapper for the FastAPI server (same origin: Vite proxy in dev, nginx in production).
+// Auth is a session cookie; every mutating call carries X-Pravah so cross-site forms cannot forge it.
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status = 0) { super(message); this.status = status }
+}
 
-let userId = 'RK'
-/** shortcut: the server trusts this header (dev auth) until SSO lands. Set by SessionProvider on every user switch. */
-export const setApiUser = (id: string) => { userId = id }
-export const apiUser = () => userId
+/** Fired on 401 so the session provider can send the person to /login. */
+export const AUTH_EVENT = 'pv-auth'
 
-export async function http<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
-  const { json, ...rest } = init
+export async function http<T>(path: string, init: RequestInit & { json?: unknown; form?: FormData } = {}): Promise<T> {
+  const { json, form, ...rest } = init
   let r: Response
   try {
     r = await fetch('/api' + path, {
       ...rest,
-      headers: { 'X-User-Id': userId, ...(json !== undefined ? { 'Content-Type': 'application/json' } : {}), ...rest.headers },
-      body: json !== undefined ? JSON.stringify(json) : rest.body,
+      credentials: 'same-origin',
+      headers: { 'X-Pravah': '1', ...(json !== undefined ? { 'Content-Type': 'application/json' } : {}), ...rest.headers },
+      body: json !== undefined ? JSON.stringify(json) : form ?? rest.body,
     })
   } catch {
-    throw new ApiError('The Pravah server is not reachable. Start it with `docker compose up`.')
+    throw new ApiError('The Pravah server is not reachable.', 0)
+  }
+  if (r.status === 401) {
+    const body = await r.json().catch(() => ({}))
+    window.dispatchEvent(new CustomEvent(AUTH_EVENT, { detail: body?.detail ?? 'unauthenticated' }))
+    throw new ApiError('Please sign in again.', 401)
   }
   if (!r.ok) {
     const body = await r.json().catch(() => null)
     const d = body?.detail
-    throw new ApiError(typeof d === 'string' ? d : Array.isArray(d) ? d.map((x: { msg: string; loc: string[] }) => `${x.loc.at(-1)}: ${x.msg}`).join('; ') : `Server error ${r.status}`)
+    throw new ApiError(typeof d === 'string' ? d : Array.isArray(d) ? d.map((x: { msg: string; loc: string[] }) => `${x.loc.at(-1)}: ${x.msg}`).join('; ') : `Server error ${r.status}`, r.status)
   }
-  return r.status === 204 ? (undefined as T) : r.json()
+  if (r.status === 204) return undefined as T
+  return r.json()
 }
+
+export const q = (o: Record<string, string | number | boolean | undefined | null>) =>
+  '?' + Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&')

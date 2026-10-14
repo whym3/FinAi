@@ -6,15 +6,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Banner, Card, CardHeader, EmptyState, Gstin, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useMailboxes, useMailboxRecent, useServerHealth } from '@/mock/hooks'
-import * as api from '@/mock/api'
-import type { EntityInput, GstInput } from '@/mock/api'
+import { useAct, useIntegrations, useMailboxes, useMailboxRecent } from '@/api/hooks'
+import * as api from '@/api'
+import type { EntityInput, GstInput } from '@/api'
 import { CIN_RE, PAN_RE, TAN_RE, checkGstin } from '@/lib/gstin'
 import { ago, dateTime } from '@/lib/format'
 import type { Mailbox, MailProvider, Tone } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 export const ADMIN = ['partner', 'cfo', 'controller']
+/** Firm admins and partners manage everything; CFOs and controllers manage their own client. */
+export function useCanManage() { const { isAdmin, firmWide, role } = useSession(); return isAdmin || firmWide || ADMIN.includes(role ?? '') }
 
 export function Field({ label, hint, error, children, className }: { label: string; hint?: ReactNode; error?: string | null; children: ReactNode; className?: string }) {
   return (
@@ -114,7 +116,7 @@ const MB_TONE: Record<Mailbox['status'], [Tone, string]> = { active: ['ok', 'Liv
 /** Connect buttons with the backfill choice. Navigates away to the provider and comes back to `ret`. */
 export function ConnectMailbox({ entityId, ret, disabled }: { entityId: string; ret: string; disabled?: boolean }) {
   const [backfill, setBackfill] = useState('7')
-  const health = useServerHealth().data
+  const health = useIntegrations().data?.oauth
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-end gap-2">
@@ -150,7 +152,7 @@ function SenderRulesDialog({ mb, open, onOpenChange }: { mb: Mailbox; open: bool
   )
 }
 
-function MailboxRow({ mb, canManage }: { mb: Mailbox; canManage: boolean }) {
+export function MailboxRow({ mb, canManage, entityName }: { mb: Mailbox; canManage: boolean; entityName?: string }) {
   const { act, pending } = useAct()
   const [rules, setRules] = useState(false)
   const [confirmOff, setConfirmOff] = useState(false)
@@ -160,7 +162,7 @@ function MailboxRow({ mb, canManage }: { mb: Mailbox; canManage: boolean }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <Mail className="size-4 text-text-2" />
         <div className="mr-auto min-w-0">
-          <div className="font-mono text-[12.5px] break-all">{mb.address}</div>
+          <div className="font-mono text-[12.5px] break-all">{mb.address}{entityName && <span className="ml-2 font-sans text-[11px] text-text-3">{entityName}</span>}</div>
           <div className="text-[11px] text-text-3">{PROVIDER[mb.provider]} · {mb.documents} document{mb.documents === 1 ? '' : 's'} taken in · {mb.lastSyncAt ? `checked ${ago(mb.lastSyncAt)} (${dateTime(mb.lastSyncAt)})` : 'first check running'}</div>
         </div>
         <StatusPill tone={tone}>{label}</StatusPill>
@@ -207,20 +209,16 @@ function RecentIngest({ id }: { id: number }) {
 }
 
 export function MailboxesCard({ entityId, ret }: { entityId: string; ret: string }) {
-  const { user, serverOnline } = useSession()
   const q = useMailboxes(entityId)
-  const canManage = ADMIN.includes(user.role)
+  const canManage = useCanManage()
   return (
     <Card>
       <CardHeader title="Invoice mailboxes" as="h3"><span className="text-[11px] text-text-3">Email intake for this client</span></CardHeader>
-      {!serverOnline ? <EmptyState title="Server offline">Start the backend (docker compose up) to connect mailboxes.</EmptyState>
-        : (q.data ?? []).map(mb => <MailboxRow key={mb.id} mb={mb} canManage={canManage} />)}
-      {serverOnline && !q.isLoading && !q.data?.length && <EmptyState title="No mailbox connected" icon={<Mail className="size-5" />}>Connect the AP inbox where suppliers send invoices.</EmptyState>}
-      {serverOnline && (
-        <div className="border-t border-border px-4 py-3">
-          {canManage ? <ConnectMailbox entityId={entityId} ret={ret} /> : <span className="text-[11px] text-text-3">Only a partner, CFO or controller can connect mailboxes.</span>}
-        </div>
-      )}
+      {(q.data ?? []).map(mb => <MailboxRow key={mb.id} mb={mb} canManage={canManage} />)}
+      {!q.isLoading && !q.data?.length && <EmptyState title="No mailbox connected" icon={<Mail className="size-5" />}>Connect the AP inbox where suppliers send invoices.</EmptyState>}
+      <div className="border-t border-border px-4 py-3">
+        {canManage ? <ConnectMailbox entityId={entityId} ret={ret} /> : <span className="text-[11px] text-text-3">Only a partner, CFO or controller can connect mailboxes.</span>}
+      </div>
     </Card>
   )
 }

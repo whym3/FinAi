@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Banner, Bar, DataTable, KpiCard, MsmeBadge, PageHeader, Pill, Q, Source } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useMsme, useVendors } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useAct, useMsme, useVendors } from '@/api/hooks'
+import * as api from '@/api'
 import { date, daysBetween, daysFromNow, inr, todayIso } from '@/lib/format'
 import { downloadCsv } from '@/lib/csv'
 import type { MsmeInvoice } from '@/lib/types'
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 export default function MsmePage() {
   const q = useMsme()
   const vendors = useVendors().data ?? []
-  const { user, readOnly } = useSession()
+  const { readOnly } = useSession()
   const { act } = useAct()
   const [sched, setSched] = useState<MsmeInvoice | null>(null)
   const [d, setD] = useState(todayIso())
@@ -55,7 +55,7 @@ export default function MsmePage() {
           <DialogHeader><DialogTitle>Schedule manual payment</DialogTitle><DialogDescription>{sched && `${v(sched.vendorId)?.name} · ${sched.invoiceNo} · ${inr(sched.amount)} · limit ${date(sched.limitOn)}`}</DialogDescription></DialogHeader>
           <Input type="date" value={d} min={todayIso()} onChange={e => setD(e.target.value)} />
           {sched && d > sched.limitOn && <Banner tone="warn">This date is after the 45-day limit.</Banner>}
-          <DialogFooter><Button variant="ghost" onClick={() => setSched(null)}>Cancel</Button><Button variant="default" onClick={async () => { if (sched && await act(() => api.scheduleMsmePayment(sched.id, d, user.id), 'Payment scheduled')) setSched(null) }}>Schedule</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" onClick={() => setSched(null)}>Cancel</Button><Button variant="default" onClick={async () => { if (sched && await act(() => api.scheduleMsmePayment(sched.id, d), 'Payment scheduled')) setSched(null) }}>Schedule</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </>

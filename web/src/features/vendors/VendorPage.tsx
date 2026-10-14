@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { Lock } from 'lucide-react'
 import { Banner, Card, CardBody, CardHeader, Gstin, KV, MsmeBadge, PageHeader, Pill, Q, Source, StatusPill, Prio } from '@/components/pravah'
-import { useVendor } from '@/mock/hooks'
+import { useVendor } from '@/api/hooks'
 import { date, inr } from '@/lib/format'
 import { invoiceStatus } from '@/features/review/ReviewQueuePage'
 import { poHealth } from '@/features/p2p/P2PListPage'
@@ -16,13 +16,13 @@ export default function VendorPage() {
       <>
         <PageHeader crumbs={[{ label: 'Vendors', to: '/vendors' }, { label: v.name }]} title={v.name}
           badges={<>{v.msme && <MsmeBadge cls={v.msme} udyam={!!v.udyam} />}<Pill s={v.status} /></>}
-          meta={<><span className="font-mono">Vendor {v.id}</span><Gstin g={v.gstin} state={v.gstinStatus} /><span>PAN <span className="font-mono">{v.pan}</span></span><Source name="SAP" syncKey="sap" /></>} />
+          meta={<><span className="font-mono">Vendor {v.code ?? v.id}</span><Gstin g={v.gstin} state={v.gstinStatus} /><span>PAN <span className="font-mono">{v.pan}</span></span><Source name="SAP" syncKey="sap" /></>} />
         {v.blocked && <Banner tone="bad" icon={<Lock className="size-4" />}>Payments to this vendor are blocked until the bank-detail change is verified. {exceptions[0] && <Link to={'/exceptions?ex=' + exceptions[0].id}>Open {exceptions[0].id}</Link>}</Banner>}
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex min-w-0 flex-[2_1_560px] flex-col gap-4">
             <Card>
               <CardHeader title="Purchase orders" as="h3" />
-              {pos.length ? <div className="overflow-auto"><table className={T}><thead><tr><th>PO</th><th>Material</th><th className="text-right!">Value</th><th>Status</th></tr></thead><tbody>{pos.map(p => <tr key={p.id}><td><Link to={'/p2p/' + p.id} className="font-mono">{p.id}</Link></td><td>{p.lines[0].material}</td><td className="text-right tabular-nums">{inr(p.value)}</td><td><Pill s={poHealth(p)} /></td></tr>)}</tbody></table></div> : <CardBody className="text-xs text-text-3">No open POs.</CardBody>}
+              {pos.length ? <div className="overflow-auto"><table className={T}><thead><tr><th>PO</th><th>Material</th><th className="text-right!">Value</th><th>Status</th></tr></thead><tbody>{pos.map(p => <tr key={p.id}><td><Link to={'/p2p/' + p.id} className="font-mono">{p.poNo}</Link></td><td>{p.lines[0]?.material ?? '—'}</td><td className="text-right tabular-nums">{inr(p.value)}</td><td><Pill s={poHealth(p)} /></td></tr>)}</tbody></table></div> : <CardBody className="text-xs text-text-3">No open POs.</CardBody>}
             </Card>
             <Card>
               <CardHeader title="Invoices in review" as="h3" />
@@ -45,13 +45,13 @@ export default function VendorPage() {
               <CardBody><KV items={[['Email', v.email], ['Phone', v.phone], ['Payment terms', `${v.paymentTermsDays} days`], ['TDS', v.tdsSection ?? '—'], ['Outstanding', inr(v.outstanding), 'text-right tabular-nums'], ['Overdue', <span className={v.overdue ? 'text-bad' : ''}>{inr(v.overdue)}</span>, 'text-right tabular-nums'], ['Purchases FY to date', inr(v.ytdPurchases), 'text-right tabular-nums']]} /></CardBody>
             </Card>
             <Card>
-              <CardHeader title="Bank account" as="h3"><Source name="Bank" text="penny-drop verified" /></CardHeader>
-              <CardBody><KV items={[['Bank', `${v.bank.bank}${v.bank.branch ? ', ' + v.bank.branch : ''}`], ['IFSC', <span className="font-mono">{v.bank.ifsc}</span>], ['Account', <span className="font-mono">••••{v.bank.account.slice(-4)}</span>], ['Name at bank', v.bank.nameAtBank]]} /></CardBody>
+              <CardHeader title="Bank account" as="h3"><Source name="SAP" text="vendor master" /></CardHeader>
+              <CardBody><KV items={[['Bank', v.bank.bank ? `${v.bank.bank}${v.bank.branch ? ', ' + v.bank.branch : ''}` : '—'], ['IFSC', <span className="font-mono">{v.bank.ifsc || '—'}</span>], ['Account', v.bank.account ? <span className="font-mono">••••{v.bank.account.slice(-4)}</span> : '—'], ['Name at bank', v.bank.nameAtBank || '—']]} /></CardBody>
             </Card>
             <Card>
               <CardHeader title="GST & MSME" as="h3"><Source name="GST portal" syncKey="gst" /></CardHeader>
               <CardBody className="flex flex-col gap-3">
-                <KV items={[['Registration', <StatusPill tone={v.gstinStatus === 'Active' ? 'ok' : 'bad'}>{v.gstinStatus}</StatusPill>], ['GSTR-1 on time', `${v.filing.onTime} of ${v.filing.of} months`], ['Udyam', v.udyam ? <span className="font-mono text-[11px]">{v.udyam}</span> : 'Not registered'], ['Verified', v.udyamVerifiedOn ? date(v.udyamVerifiedOn) : '—']]} />
+                <KV items={[['Registration', <StatusPill tone={v.gstinStatus === 'Active' ? 'ok' : 'bad'}>{v.gstinStatus}</StatusPill>], ['GSTR-1 on time', v.filing.of ? `${v.filing.onTime} of ${v.filing.of} months` : '—'], ['Udyam', v.udyam ? <span className="font-mono text-[11px]">{v.udyam}</span> : 'Not registered'], ['Verified', v.udyamVerifiedOn ? date(v.udyamVerifiedOn) : '—']]} />
                 {msme.length > 0 && <div className="text-[11px] text-text-2">{msme.filter(m => !m.paidOn).length} unpaid MSME invoice(s) · next limit {date(msme.filter(m => !m.paidOn).sort((a, b) => a.limitOn.localeCompare(b.limitOn))[0]?.limitOn)}</div>}
               </CardBody>
             </Card>

@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ArrowRight, Building2, Download, RefreshCw, SlidersHorizontal, Users } from 'lucide-react'
+import { ArrowRight, Building2, Download, SlidersHorizontal, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Banner, Card, CardBody, CardHeader, Chk, Count, Gstin, KpiCard, MsmeBadge, PageHeader, Pill, Q, Segmented, Source, StatusPill, Up, Bar, useStale, Freshness,
 } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useFirmOverview, useOverview } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useFirmOverview, useOverview } from '@/api/hooks'
 import { ago, date, dateLong, dateTime, daysFromNow, inr, lakhCrStr, num2 } from '@/lib/format'
 import type { Kpi } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -56,14 +55,11 @@ export default function OverviewPage() {
 }
 
 function StaleBankBanner({ compact }: { compact?: boolean }) {
-  const { user } = useSession()
   const { stale, at } = useStale('bank')
-  const { act, pending } = useAct()
-  if (!stale) return null
+  if (!stale || !at) return null  // not connected is shown on the KPI, not as a stale banner
   return (
     <Banner tone="warn" className={compact ? 'px-3' : ''} actions={<>
-      <Button size="sm" disabled={pending} onClick={() => act(() => api.retrySync('bank', user.id), 'Bank feed synced')}><RefreshCw className={cn(pending && 'animate-spin')} />{compact ? 'Retry' : 'Retry sync'}</Button>
-      {!compact && <Button size="sm" variant="ghost" asChild><Link to="/bank">Feed status</Link></Button>}
+      <Button size="sm" variant="ghost" asChild><Link to="/settings/integrations">Feed status</Link></Button>
     </>}>
       {compact ? <><b>Bank feed is stale</b> — last statement {dateTime(at)}.</> : <><b>Bank feed is stale.</b> Last statement synced {dateTime(at)} ({ago(at)}). Bank balance and the opening balance of the cash forecast may be out of date.</>}
     </Banner>

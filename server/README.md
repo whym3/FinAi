@@ -1,6 +1,6 @@
 # Pravah server
 
-FastAPI + Postgres. It holds clients and their GST registrations, reads invoice mailboxes (Gmail and Outlook, read-only), stores every original document, and extracts fields with Claude, OpenAI or Gemini. The web app (`../web`) reaches it at `/api` through the Vite proxy in dev and through nginx in production.
+FastAPI + Postgres. It holds the firm, its users and clients, reads invoice mailboxes (Gmail and Outlook, read-only), stores every original document, reads documents with Claude, imports SAP exports, runs the three-way match and keeps an append-only audit log. The web app (`../web`) reaches it at `/api` through the Vite proxy in dev and through nginx in production.
 
 ## Run
 
@@ -15,59 +15,79 @@ Server outside Docker (Python 3.13 via uv):
 
 ```sh
 docker compose up -d db
-cp .env.example .env             # then set APP_SECRET_KEY (command in the file)
+cp .env.example .env             # then set APP_SECRET_KEY and ANTHROPIC_API_KEY
 uv sync
 uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
-uv run pytest                    # 19 tests; the DB ones skip when Postgres is down
+uv run pytest                    # 27 tests; DB-backed ones skip when Postgres is down
 ```
 
 `docker compose down -v` wipes the database and stored documents.
 
-## Connecting Gmail (Google Workspace or personal)
+## First run
+
+Open the app. With no users in the database it shows **Set up Pravah**: firm name and the first admin. The admin then enrols an authenticator app (mandatory for everyone), onboards the first client in **Settings → Clients**, and invites colleagues in **Settings → Users & roles** with a role and approval limit per client. Without SMTP the invite link is shown to the admin to send by hand.
+
+## Configuration (`server/.env`)
+
+| Variable | What |
+|---|---|
+| `APP_SECRET_KEY` | base64 of 32 random bytes. Encrypts OAuth tokens, SAP passwords and TOTP secrets. Generate: `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"` |
+| `DATABASE_URL` | Postgres URL (`postgresql+psycopg://…`) |
+| `PUBLIC_URL` | The address users open. OAuth redirect URIs and emailed links use it. `https://` also turns on secure cookies. |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Claude reads every document. One key per deployment; nothing is entered in the UI. Default model `claude-sonnet-5-5`. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Invites, password resets, vendor queries. Optional. |
+| `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox sign-in (below). Optional. |
+| `STORAGE_DIR` | Where original documents and import files are kept (`/data/storage` in Docker) |
+| `POLL_SECONDS` | Mailbox polling interval (60) |
+
+## Sign-in and roles
+
+- Email + password (argon2) and a mandatory authenticator (TOTP). Five failed attempts lock the account for 15 minutes. Sessions are server-side, 12-hour idle expiry, httpOnly cookie; every mutating request must carry the `X-Pravah: 1` header (CSRF guard).
+- Roles per client: `partner`, `manager` (firm-wide), `cfo`, `controller`, `ap`, `ar`, `gst`, `procurement`, `stores`, `auditor` (read-only). A firm **admin** manages users, integrations and settings. Approval limits are per user per client; an invoice above the decider's limit needs a second approver.
+- Every write goes to `audit_log` with user, IP and user agent; a Postgres trigger rejects UPDATE and DELETE on that table.
+
+## How documents are read
+
+1. A file arrives by email or upload (PDF, image, XML/JSON, or those inside a ZIP). Exact duplicates (same bytes) are marked.
+2. Claude classifies the pages: a scanned bundle is split into its documents (invoice, lorry receipt, weighbridge ticket, gate entry, purchase order, goods receipt note …), each stored as its own PDF.
+3. Each document is read with a schema for its kind. Deterministic checks follow (GSTIN check digit, PAN–GSTIN, taxable + tax = total, CGST/SGST vs IGST, gross − tare = net); a failed check lowers the field's confidence so a person must confirm it.
+4. The reader links documents by PO number, invoice number, LR number, e-way bill and vehicle into one purchase order with its GRN, dispatch documents and invoice. The PO comes from the SAP register if imported, otherwise from the PO document itself.
+5. The three-way match compares Negotiated · PO · GRN · Invoice (qty, rate, HSN, tax rate and type, freight, total, payment terms, vehicle, e-way bill, IRN). Every difference becomes a flag and an exception under the matching rule (Settings → Exception rules), never a verdict.
+
+## Getting SAP data in
+
+- **Imports** (page): drop a purchase register, sales register, stock movement list, open-item list or master export (.xlsx/.xlsb/.csv). The server detects the kind from the headers, suggests a mapping, previews the parse and runs it in the background. Rows upsert on their natural key, so the same month can be imported again. Layouts are remembered per client.
+- **SAP S/4HANA live** (Settings → Integrations): host, client, company code, communication user; `Test connection` reads `$metadata` of `API_BUSINESS_PARTNER`; an active connection pulls purchase orders, goods receipts, business partners and open items on a schedule into the same tables. `shortcut:` untested against a live system until a client grants access.
+
+## Connecting Gmail
 
 1. In [Google Cloud console](https://console.cloud.google.com/), create a project and enable the **Gmail API**.
-2. **OAuth consent screen**: External (or Internal for a Workspace org). Add the scope `https://www.googleapis.com/auth/gmail.readonly`. While the app is in *Testing*, add every mailbox you will connect as a test user.
-3. **Credentials → Create OAuth client ID → Web application**. Authorised redirect URI: `http://localhost:5173/api/oauth/google/callback` (use your `PUBLIC_URL` in production).
-4. Put the client ID and secret in `server/.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, then restart the server.
+2. **OAuth consent screen**: add the scope `https://www.googleapis.com/auth/gmail.readonly`. While in *Testing*, add every mailbox you will connect as a test user.
+3. **Credentials → OAuth client ID → Web application**, redirect URI `<PUBLIC_URL>/api/oauth/google/callback`.
+4. Put the client ID and secret in `.env` as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
 
-`gmail.readonly` is a *restricted* scope. Using it for mailboxes outside your own organisation needs Google's app verification and a yearly CASA security assessment. Testing mode works for up to 100 test users, but its refresh tokens expire after 7 days.
+`gmail.readonly` is a restricted scope: use outside your own organisation needs Google's app verification and a CASA assessment. Testing-mode refresh tokens expire after 7 days.
 
-## Connecting Outlook (Microsoft 365 or Outlook.com)
+## Connecting Outlook
 
-1. In [Azure portal → App registrations](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps), choose **New registration**. For supported account types, pick *Accounts in any organizational directory and personal Microsoft accounts*.
-2. Set the redirect URI to **Web** `http://localhost:5173/api/oauth/microsoft/callback`.
-3. Under **API permissions**, add the Microsoft Graph delegated permissions `Mail.Read`, `User.Read` and `offline_access`. In some tenants an admin has to consent.
-4. Under **Certificates & secrets**, create a new client secret. Put the application (client) ID and the secret value in `server/.env` as `MS_CLIENT_ID` and `MS_CLIENT_SECRET`.
+1. [Azure portal → App registrations](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps) → New registration, *Accounts in any organizational directory and personal Microsoft accounts*.
+2. Redirect URI (Web): `<PUBLIC_URL>/api/oauth/microsoft/callback`.
+3. API permissions: Microsoft Graph delegated `Mail.Read`, `User.Read`, `offline_access`.
+4. Certificates & secrets → new client secret → `.env` `MS_CLIENT_ID` / `MS_CLIENT_SECRET`.
 
-## How email intake works
-
-- **Connecting:** Settings → Clients → a client → *Connect Gmail / Outlook*. The flow uses OAuth with PKCE and a signed `state`. The refresh token is stored encrypted with AES-GCM under `APP_SECRET_KEY`.
-- **Polling:** a background loop checks each active mailbox every `POLL_SECONDS` (60 by default).
-  - Gmail follows its `historyId`. Outlook follows its delta link.
-  - The first check reads the chosen backfill window.
-  - Push notifications (Gmail Pub/Sub, Graph subscriptions) need a public HTTPS URL, so they come with deployment.
-- **What is kept:** PDF, image, XML and JSON attachments, plus the same file types inside ZIPs.
-  - Small inline images, such as signatures, are skipped.
-  - Sender allow and block lists apply per mailbox.
-- **Storage and duplicates:** each file is stored once per client under `STORAGE_DIR/<client>/<sha256>`. The same file arriving again is marked a duplicate of the first.
-- **Extraction:** new documents are queued, and the worker sends each one to the provider chosen in Settings → AI extraction.
-  - Deterministic checks then lower the confidence of doubtful fields: GSTIN check digit, PAN–GSTIN match, taxable + tax = total, and CGST/SGST vs IGST. A person has to confirm those fields.
-  - Each provider needs its own API key. A Claude.ai, ChatGPT or Gemini app subscription cannot be used by other apps.
-- **Errors:** if a mailbox loses access (revoked, password change), it shows *Needs attention* and stops polling until someone reconnects it.
-
-## Auth and audit
-
-- **Dev auth only:** the server trusts the `X-User-Id` header, sent by the web app's "Act as" switcher. Replace it with SSO and MFA before anyone outside the team uses the app.
-- **Audit log:** every write goes to `audit_log`, and a Postgres trigger rejects UPDATE and DELETE on that table.
+Mailboxes are polled every `POLL_SECONDS` (Gmail history, Graph delta). Push notifications need a public HTTPS URL and come with deployment.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `app/models.py` | Tables. Alembic migrations live in `alembic/versions`. |
-| `app/routers/` | `entities` (onboarding), `mailboxes`, `oauth`, `intake`, `ai`, `audit` |
-| `app/mail/` | `gmail.py`, `outlook.py` (fetch since cursor), `ingest.py` (filter, unzip, store, dedupe, queue) |
-| `app/extract/` | `schema.py` (one JSON schema and prompt), `providers.py` (Claude, OpenAI, Gemini), `validate.py` (checks), `run.py` (job) |
-| `app/worker.py` | Mailbox polling and the job queue (`FOR UPDATE SKIP LOCKED`) |
-| `app/validate.py` | PAN, TAN, CIN and GSTIN (with check digit) validation, mirrored in `web/src/lib/gstin.ts` |
+| `app/models.py` | Tables. `alembic/versions/0001_initial_schema.py` creates them, the audit trigger and the default exception rules. |
+| `app/auth.py` | Sessions, passwords, TOTP, roles, audit helper |
+| `app/routers/` | `auth`, `users`, `entities`, `mailboxes`, `oauth`, `intake`, `p2p`, `invoices`, `exceptions`, `approvals`, `parties`, `notifications`, `overview` (KPIs, counts, search, sources), `modules` (GST, payables, MSME, close, reports), `imports`, `sap`, `integrations` |
+| `app/extract/` | `schemas.py` (per-kind JSON schemas and prompts), `claude.py`, `split.py`, `validate.py`, `run.py` (the job) |
+| `app/domain/` | `link.py` (documents → records), `match.py` (three-way match), `p2p.py` (timeline and ledger), `calendar.py` (statutory dates) |
+| `app/imports/` | `readers.py`, `kinds.py` (templates and synonyms), `run.py` (writers) |
+| `app/sap/` | `odata.py` (client), `sync.py` |
+| `app/mail/` | `gmail.py`, `outlook.py`, `ingest.py` |
+| `app/worker.py` | Mailbox polling, SAP scheduling and the job queue (`FOR UPDATE SKIP LOCKED`) |

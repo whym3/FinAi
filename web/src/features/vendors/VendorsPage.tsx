@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DataTable, FilterChip, Gstin, MsmeBadge, PageHeader, Pill, Q, Source, StatusPill } from '@/components/pravah'
-import { useVendors } from '@/mock/hooks'
+import { useVendors } from '@/api/hooks'
 import { inr } from '@/lib/format'
 import type { Vendor } from '@/lib/types'
 
@@ -11,7 +11,7 @@ export default function VendorsPage() {
   const nav = useNavigate()
   const [f, setF] = useState<'all' | 'msme' | 'blocked' | 'rcm'>('all')
   const columns = useMemo<ColumnDef<Vendor, any>[]>(() => [ // eslint-disable-line @typescript-eslint/no-explicit-any
-    { accessorKey: 'id', header: 'Vendor', cell: ({ getValue }) => <span className="font-mono">{getValue()}</span> },
+    { accessorKey: 'code', header: 'Vendor', cell: ({ getValue }) => <span className="font-mono">{getValue() ?? '—'}</span> },
     { accessorKey: 'name', header: 'Name', cell: ({ row: { original: v } }) => <span className="flex items-center gap-1.5 whitespace-nowrap"><span className="font-medium">{v.name}</span>{v.msme && <MsmeBadge cls={v.msme} />}{v.tags.map(t => <span key={t} className="rounded-sm bg-acc-weak px-1.5 text-[11px] font-semibold text-acc">{t}</span>)}</span> },
     { accessorKey: 'gstin', header: 'GSTIN', cell: ({ getValue }) => <Gstin g={getValue()} /> },
     { accessorKey: 'gstinStatus', header: 'GST registration', cell: ({ getValue }) => <StatusPill tone={getValue() === 'Active' ? 'ok' : 'bad'}>{getValue()}</StatusPill> },

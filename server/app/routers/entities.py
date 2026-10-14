@@ -1,12 +1,12 @@
 import re
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import ADMIN_ROLES, audit, can_see, current_user, require_entity, require_role
+from ..auth import ADMIN_ROLES, audit, current_user, require_admin, require_entity, require_role, visible_entities
 from ..db import get_db
 from ..models import Entity, GstRegistration, User
 from ..serialize import entity_out
@@ -95,14 +95,14 @@ def _slug(db: Session, name: str) -> str:
 def get_entity(db: Session, u: User, entity_id: str) -> Entity:
     require_entity(u, entity_id)
     e = db.get(Entity, entity_id)
-    if not e:
+    if not e or e.firm_id != u.firm_id:
         raise HTTPException(404, 'Client not found')
     return e
 
 
 @router.get('/entities')
 def list_entities(u: User = Depends(current_user), db: Session = Depends(get_db)):
-    return [entity_out(e) for e in db.scalars(select(Entity).order_by(Entity.created_at)) if can_see(u, e.id)]
+    return [entity_out(e) for e in visible_entities(db, u)]
 
 
 @router.get('/entities/{entity_id}')
@@ -111,22 +111,23 @@ def read_entity(entity_id: str, u: User = Depends(current_user), db: Session = D
 
 
 @router.post('/entities', status_code=201)
-def create_entity(body: EntityIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
-    require_role(u, {'partner'}, 'onboard clients')
+def create_entity(body: EntityIn, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_admin(u, 'onboard clients')
     _ids(body)
-    e = Entity(id=_slug(db, body.short_name), status='onboarding', created_by=u.id, **body.model_dump(exclude={'gstins'}))
+    e = Entity(id=_slug(db, body.short_name), firm_id=u.firm_id, status='onboarding', created_by=u.id, **body.model_dump(exclude={'gstins'}))
     e.gstins = _gstins(db, None, body.pan, body.gstins)
     db.add(e)
     db.flush()
-    audit(db, u.id, e.id, 'Started client onboarding', e.legal_name, f'PAN {e.pan} · {len(e.gstins)} GSTIN(s)', after=body.model_dump())
+    audit(db, u.id, e.id, 'Started client onboarding', e.legal_name, f'PAN {e.pan} · {len(e.gstins)} GSTIN(s)', after=body.model_dump(), request=request)
     db.commit()
+    db.refresh(e)
     return entity_out(e)
 
 
 @router.patch('/entities/{entity_id}')
-def update_entity(entity_id: str, body: EntityPatch, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def update_entity(entity_id: str, body: EntityPatch, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
     e = get_entity(db, u, entity_id)
-    require_role(u, ADMIN_ROLES, 'edit client details')
+    require_role(u, e.id, ADMIN_ROLES, 'edit client details')
     _ids(body)
     before = entity_out(e)
     for k, v in body.model_dump(exclude_unset=True, exclude={'gstins'}).items():
@@ -137,26 +138,28 @@ def update_entity(entity_id: str, body: EntityPatch, u: User = Depends(current_u
         if dropped and e.status == 'active':
             raise HTTPException(409, f'GSTIN {", ".join(sorted(dropped))} cannot be removed from an active client; mark it cancelled instead')
         keep = {g.gstin: g for g in e.gstins}
-        e.gstins = [keep.get(g.gstin) or g for g in new]
-        for g in new:  # update details on kept rows
+        for g in new:
             if g.gstin in keep:
                 k = keep[g.gstin]
                 k.place_of_business, k.filing_frequency, k.einvoice_applicable = g.place_of_business, g.filing_frequency, g.einvoice_applicable
+        e.gstins = [keep.get(g.gstin) or g for g in new]
     db.flush()
-    audit(db, u.id, e.id, 'Edited client details', e.legal_name, ', '.join(body.model_dump(exclude_unset=True)), before=before, after=entity_out(e))
+    audit(db, u.id, e.id, 'Edited client details', e.legal_name, ', '.join(body.model_dump(exclude_unset=True)), before=before, after=entity_out(e), request=request)
     db.commit()
+    db.refresh(e)
     return entity_out(e)
 
 
 @router.post('/entities/{entity_id}/activate')
-def activate_entity(entity_id: str, u: User = Depends(current_user), db: Session = Depends(get_db)):
+def activate_entity(entity_id: str, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
     e = get_entity(db, u, entity_id)
-    require_role(u, {'partner'}, 'activate clients')
+    require_admin(u, 'activate clients')
     if not e.gstins:
         raise HTTPException(422, 'Add at least one GST registration first')
     e.status = 'active'
-    audit(db, u.id, e.id, 'Activated client', e.legal_name)
+    audit(db, u.id, e.id, 'Activated client', e.legal_name, request=request)
     db.commit()
+    db.refresh(e)
     return entity_out(e)
 
 

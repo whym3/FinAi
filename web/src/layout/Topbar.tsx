@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Bell, Building2, Calendar, ChevronDown, Moon, RefreshCw, RotateCcw, Search, Sun, Users } from 'lucide-react'
+import { Bell, Building2, Calendar, ChevronDown, KeyRound, LogOut, Moon, Search, Sun, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import {
@@ -10,12 +10,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Avatar, Freshness, Gstin, toneIcon, toneText, useStale } from '@/components/pravah'
 import { useSession } from '@/app/session'
 import { useTheme } from '@/app/theme'
-import { useAct, useCounts, useNotifications, useSearch } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useAct, useCounts, useNotifications, useSearch } from '@/api/hooks'
+import * as api from '@/api'
 import { ago, dateTime } from '@/lib/format'
 import type { SyncKey } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router'
 
 export function EntitySwitcher({ compact }: { compact?: boolean }) {
   const { entity, entities, firm, scope, setEntityId, setScope, period } = useSession()
@@ -45,7 +45,7 @@ export function EntitySwitcher({ compact }: { compact?: boolean }) {
         {entities.map(e => (
           <DropdownMenuItem key={e.id} onSelect={() => setEntityId(e.id)} className="items-start">
             <Building2 className="mt-0.5" />
-            <span className="flex flex-col"><span className={cn(e.id === entity.id && !firmView && 'font-semibold')}>{e.name}</span><span className="text-[11px] text-text-3">{e.city} · {e.gstins.length} GSTIN{e.gstins.length > 1 ? 's' : ''} · risk {e.risk.toLowerCase()}</span></span>
+            <span className="flex flex-col"><span className={cn(e.id === entity.id && !firmView && 'font-semibold')}>{e.name}</span><span className="text-[11px] text-text-3">{e.city} · {e.gstins.length} GSTIN{e.gstins.length > 1 ? 's' : ''}{e.status === 'onboarding' ? ' · onboarding' : ''}</span></span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -53,20 +53,27 @@ export function EntitySwitcher({ compact }: { compact?: boolean }) {
   )
 }
 
-const MONTHS = ['Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026', 'Sep 2026', 'Oct 2026']
-const quarter = (p: string) => ({ Apr: 'Q1 (Apr–Jun)', May: 'Q1 (Apr–Jun)', Jun: 'Q1 (Apr–Jun)', Jul: 'Q2 (Jul–Sep)', Aug: 'Q2 (Jul–Sep)', Sep: 'Q2 (Jul–Sep)', Oct: 'Q3 (Oct–Dec)' } as Record<string, string>)[p.slice(0, 3)]
+/** Indian financial year (April–March): the months of the current FY up to today. */
+function fyMonths(now = new Date()) {
+  const fyStart = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1
+  const out: string[] = []
+  for (let d = new Date(fyStart, 3, 1); d <= now; d.setMonth(d.getMonth() + 1)) out.push(d.toLocaleString('en-IN', { month: 'short', year: 'numeric' }))
+  return { fy: `FY ${fyStart}-${String(fyStart + 1).slice(2)}`, months: out }
+}
+const quarter = (p: string) => ({ Apr: 'Q1 (Apr–Jun)', May: 'Q1 (Apr–Jun)', Jun: 'Q1 (Apr–Jun)', Jul: 'Q2 (Jul–Sep)', Aug: 'Q2 (Jul–Sep)', Sep: 'Q2 (Jul–Sep)', Oct: 'Q3 (Oct–Dec)', Nov: 'Q3 (Oct–Dec)', Dec: 'Q3 (Oct–Dec)', Jan: 'Q4 (Jan–Mar)', Feb: 'Q4 (Jan–Mar)', Mar: 'Q4 (Jan–Mar)' } as Record<string, string>)[p.slice(0, 3)]
 
 function PeriodPicker() {
   const { period, setPeriod } = useSession()
+  const { fy, months } = fyMonths()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button aria-label="Financial year and period"><Calendar className="text-text-3" />FY 2026-27<span className="text-text-3">·</span>{period}<span className="hidden text-xs text-text-3 2xl:inline">{quarter(period)}</span><ChevronDown className="text-text-3" /></Button>
+        <Button aria-label="Financial year and period"><Calendar className="text-text-3" />{fy}<span className="text-text-3">·</span>{period}<span className="hidden text-xs text-text-3 2xl:inline">{quarter(period)}</span><ChevronDown className="text-text-3" /></Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuLabel>FY 2026-27</DropdownMenuLabel>
+        <DropdownMenuLabel>{fy}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={period} onValueChange={setPeriod}>
-          {MONTHS.map(m => <DropdownMenuRadioItem key={m} value={m}>{m} <span className="ml-auto pl-3 text-[11px] text-text-3">{quarter(m)}</span></DropdownMenuRadioItem>)}
+          {months.map(m => <DropdownMenuRadioItem key={m} value={m}>{m} <span className="ml-auto pl-3 text-[11px] text-text-3">{quarter(m)}</span></DropdownMenuRadioItem>)}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -109,17 +116,19 @@ export function useSearchShortcut() {
 }
 
 function FeedChip({ k }: { k: SyncKey }) {
-  const { user } = useSession()
   const { sync, stale } = useStale(k)
-  const { act, pending } = useAct()
+  const nav = useNavigate()
   return (
     <Popover>
       <PopoverTrigger asChild><button type="button" className="cursor-pointer rounded-[13px]" aria-label={`${sync.system} feed status`}><Freshness k={k} /></button></PopoverTrigger>
       <PopoverContent align="end" className="w-72 text-xs">
         <div className="mb-1 font-semibold">{sync.system}</div>
-        <div className="text-text-2">Last synced {dateTime(sync.at)} · {ago(sync.at)}</div>
-        <div className={cn('mt-1', stale ? 'text-warn' : 'text-ok')}>{stale ? `Stale: older than ${sync.staleAfterH} h. Figures from this source are marked.` : 'Up to date.'}</div>
-        <Button size="sm" className="mt-2" disabled={pending} onClick={() => act(() => api.retrySync(k, user.id), `${sync.system} synced`)}><RefreshCw className={cn(pending && 'animate-spin')} />Sync now</Button>
+        {sync.at ? <>
+          <div className="text-text-2">Last synced {dateTime(sync.at)} · {ago(sync.at)}{sync.detail ? ` · ${sync.detail}` : ''}</div>
+          <div className={cn('mt-1', stale ? 'text-warn' : 'text-ok')}>{stale ? `Stale: older than ${Math.round(sync.staleAfterH)} h. Figures from this source are marked.` : 'Up to date.'}</div>
+          {sync.error && <div className="mt-1 text-bad">{sync.error}</div>}
+        </> : <div className="text-text-2">{sync.error ?? 'Not connected yet.'}</div>}
+        <Button size="sm" className="mt-2" onClick={() => nav(k === 'sap' && !sync.at ? '/imports' : '/settings/integrations')}>{k === 'sap' && !sync.at ? 'Import an SAP export' : 'Open integrations'}</Button>
       </PopoverContent>
     </Popover>
   )
@@ -159,24 +168,21 @@ export function NotificationsMenu({ big }: { big?: boolean }) {
 }
 
 export function UserMenu() {
-  const { user, users, setUserId } = useSession()
+  const { user, role, approvalLimit, entity, signOut } = useSession()
   const { theme, toggle } = useTheme()
-  const qc = useQueryClient()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" aria-label="User menu" className="gap-1.5 px-1 py-0.5"><Avatar id={user.id} /><ChevronDown className="text-text-3" /></Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel className="flex flex-col"><span>{user.name}</span><span className="text-[11px] font-normal text-text-3">{user.title}{user.approvalLimit > 0 && user.approvalLimit < 1e11 ? ` · approves up to ₹${user.approvalLimit.toLocaleString('en-IN')}` : ''}</span></DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[11px] font-medium text-text-3">Act as (demo)</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={user.id} onValueChange={setUserId}>
-          {users.map(u => <DropdownMenuRadioItem key={u.id} value={u.id}>{u.name}<span className="ml-auto pl-2 text-[11px] text-text-3">{u.title}</span></DropdownMenuRadioItem>)}
-        </DropdownMenuRadioGroup>
+        <DropdownMenuLabel className="flex flex-col"><span>{user.name}</span><span className="text-[11px] font-normal text-text-3">{user.email}</span>
+          <span className="text-[11px] font-normal text-text-3">{role ? `${role} on ${entity.shortName}` : user.isAdmin ? 'Firm admin' : 'No client assigned'}{approvalLimit > 0 && approvalLimit < 1e11 ? ` · approves up to ₹${approvalLimit.toLocaleString('en-IN')}` : ''}</span></DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={toggle}>{theme === 'dark' ? <Sun /> : <Moon />}{theme === 'dark' ? 'Light theme' : 'Dark theme'}</DropdownMenuItem>
-        <DropdownMenuItem onSelect={async () => { await api.resetDemo(); qc.invalidateQueries() }}><RotateCcw />Reset demo data</DropdownMenuItem>
+        <DropdownMenuItem asChild><Link to="/settings/account"><KeyRound />Password and security</Link></DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => signOut()}><LogOut />Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -194,7 +200,7 @@ export function Topbar() {
       </button>
       <SearchPalette open={open} onOpenChange={setOpen} />
       <div className="ml-auto flex items-center gap-1.5">
-        <FeedChip k="sap" /><FeedChip k="gst" /><FeedChip k="bank" />
+        <FeedChip k="sap" /><FeedChip k="email" /><FeedChip k="gst" /><FeedChip k="bank" />
       </div>
       <NotificationsMenu />
       <UserMenu />

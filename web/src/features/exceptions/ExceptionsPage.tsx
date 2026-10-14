@@ -12,8 +12,8 @@ import {
   Avatar, Banner, BulkBar, Card, Chk, CommentRow, DataTable, EmptyState, ExceptionCard, FilterChip, Filters, LineTabs, PageHeader, Prio, Q, Segmented, Sla, Source, Spacer, StatusPill, Up, ageOf, slaOver,
 } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useExceptions, useRules } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useAct, useExceptions, useRules } from '@/api/hooks'
+import * as api from '@/api'
 import { addDays, date, dayMonthTime, inr, lakhCrStr, todayIso } from '@/lib/format'
 import { downloadCsv } from '@/lib/csv'
 import type { ExceptionItem, ExceptionStatus, Priority, Status } from '@/lib/types'
@@ -130,12 +130,12 @@ export default function ExceptionsPage() {
 }
 
 function ExceptionBulk({ rows, clear }: { rows: ExceptionItem[]; clear: () => void }) {
-  const { user, users, readOnly } = useSession()
+  const { users, readOnly } = useSession()
   const { act } = useAct()
   const [dueOpen, setDueOpen] = useState(false)
   const [resolveOpen, setResolveOpen] = useState(false)
   const ids = rows.map(r => r.id)
-  const run = async (patch: Parameters<typeof api.updateExceptions>[1], msg: string) => { if (await act(() => api.updateExceptions(ids, patch, user.id), msg)) clear() }
+  const run = async (patch: Parameters<typeof api.updateExceptions>[1], msg: string) => { if (await act(() => api.updateExceptions(ids, patch), msg)) clear() }
   return (
     <BulkBar>
       <span className="font-medium">{rows.length} selected</span>
@@ -187,7 +187,7 @@ function ResolveDialog({ open, onOpenChange, count, onSave }: { open: boolean; o
 }
 
 function Detail({ x, onClose }: { x: ExceptionItem; onClose: () => void }) {
-  const { user, users, readOnly } = useSession()
+  const { users, readOnly } = useSession()
   const { act, pending } = useAct()
   const [tab, setTab] = useState<'evidence' | 'comments' | 'history'>('evidence')
   const [comment, setComment] = useState('')
@@ -214,11 +214,11 @@ function Detail({ x, onClose }: { x: ExceptionItem; onClose: () => void }) {
           {!done && <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" disabled={dis}>Status<ChevronDown /></Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end">{(['open', 'in-progress', 'waiting-vendor', 'awaiting-approval'] as ExceptionStatus[]).map(s => <DropdownMenuItem key={s} disabled={s === x.status} onSelect={() => act(() => api.updateExceptions([x.id], { status: s }, user.id), `Moved to ${STATUS[s].label}`)}>{STATUS[s].label}</DropdownMenuItem>)}</DropdownMenuContent>
+              <DropdownMenuContent align="end">{(['open', 'in-progress', 'waiting-vendor', 'awaiting-approval'] as ExceptionStatus[]).map(s => <DropdownMenuItem key={s} disabled={s === x.status} onSelect={() => act(() => api.updateExceptions([x.id], { status: s }), `Moved to ${STATUS[s].label}`)}>{STATUS[s].label}</DropdownMenuItem>)}</DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button size="sm" disabled={dis}>Reassign</Button></DropdownMenuTrigger>
-              <DropdownMenuContent align="end"><DropdownMenuLabel>Assign to</DropdownMenuLabel><DropdownMenuSeparator />{users.map(u => <DropdownMenuItem key={u.id} onSelect={() => act(() => api.updateExceptions([x.id], { ownerId: u.id }, user.id), `Assigned to ${u.name}`)}>{u.name}<span className="ml-auto pl-2 text-[11px] text-text-3">{u.title}</span></DropdownMenuItem>)}</DropdownMenuContent>
+              <DropdownMenuContent align="end"><DropdownMenuLabel>Assign to</DropdownMenuLabel><DropdownMenuSeparator />{users.map(u => <DropdownMenuItem key={u.id} onSelect={() => act(() => api.updateExceptions([x.id], { ownerId: u.id }), `Assigned to ${u.name}`)}>{u.name}<span className="ml-auto pl-2 text-[11px] text-text-3">{u.title}</span></DropdownMenuItem>)}</DropdownMenuContent>
             </DropdownMenu>
           </>}
         </div>
@@ -242,16 +242,16 @@ function Detail({ x, onClose }: { x: ExceptionItem; onClose: () => void }) {
           {x.checklist && !done && (
             <div className="flex flex-col gap-1.5">
               <Up>To release payments</Up>
-              {x.checklist.map(c => <label key={c.id} className="flex items-start gap-2 text-xs"><Chk checked={c.done} disabled={dis} onChange={() => act(() => api.toggleChecklist(x.id, c.id, user.id))} /><span className={cn(c.done && 'text-text-3 line-through')}>{c.label}</span></label>)}
+              {x.checklist.map(c => <label key={c.id} className="flex items-start gap-2 text-xs"><Chk checked={c.done} disabled={dis} onChange={() => act(() => api.toggleChecklist(x.id, c.id))} /><span className={cn(c.done && 'text-text-3 line-through')}>{c.label}</span></label>)}
             </div>
           )}
           {!done && (
             <div className="flex flex-wrap gap-2">
               {x.type === 'Vendor bank details changed' ? <>
                 <Button variant="default" disabled={dis} onClick={() => setCallback(true)}><Phone />Record call-back</Button>
-                <Button variant="destructive" disabled={dis} onClick={() => act(() => api.rejectBankChange(x.id, user.id), 'Bank change rejected · payments released to the existing account')}>Reject change</Button>
+                <Button variant="destructive" disabled={dis} onClick={() => act(() => api.rejectBankChange(x.id), 'Bank change rejected · payments released to the existing account')}>Reject change</Button>
               </> : <Button variant="default" disabled={dis} onClick={() => setResolve(true)}><Check />Resolve</Button>}
-              <Button disabled={dis || owner?.role === 'cfo'} onClick={() => act(() => api.escalate(x.id, user.id), 'Escalated to the CFO')}>Escalate</Button>
+              <Button disabled={dis || owner?.role === 'cfo'} onClick={() => act(() => api.escalate(x.id), 'Escalated to the CFO')}>Escalate</Button>
             </div>
           )}
         </>}
@@ -259,7 +259,7 @@ function Detail({ x, onClose }: { x: ExceptionItem; onClose: () => void }) {
         {tab === 'comments' && <>
           {x.comments.map(c => <CommentRow key={c.id} c={c} />)}
           {!x.comments.length && <p className="text-xs text-text-3">No comments yet.</p>}
-          <form className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-2.5" onSubmit={async e => { e.preventDefault(); if (await act(() => api.addComment(x.id, comment, user.id))) setComment('') }}>
+          <form className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-2.5" onSubmit={async e => { e.preventDefault(); if (await act(() => api.addComment(x.id, comment))) setComment('') }}>
             <input className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-text-3" aria-label="Add a comment" placeholder="Comment, or @mention someone" value={comment} onChange={e => setComment(e.target.value)} disabled={readOnly} />
             <Button size="icon-sm" type="submit" aria-label="Send comment" disabled={!comment.trim() || dis}><Send /></Button>
           </form>
@@ -273,13 +273,12 @@ function Detail({ x, onClose }: { x: ExceptionItem; onClose: () => void }) {
         )}
       </div>
       <CallbackDialog open={callback} onOpenChange={setCallback} x={x} />
-      <ResolveDialog open={resolve} onOpenChange={setResolve} count={1} onSave={r => act(() => api.updateExceptions([x.id], { status: 'resolved', resolution: r }, user.id), `${x.id} resolved`)} />
+      <ResolveDialog open={resolve} onOpenChange={setResolve} count={1} onSave={r => act(() => api.updateExceptions([x.id], { status: 'resolved', resolution: r }), `${x.id} resolved`)} />
     </div>
   )
 }
 
 function CallbackDialog({ open, onOpenChange, x }: { open: boolean; onOpenChange: (o: boolean) => void; x: ExceptionItem }) {
-  const { user } = useSession()
   const { act, pending } = useAct()
   const [outcome, setOutcome] = useState<'confirmed' | 'denied' | 'no-answer'>('confirmed')
   const [note, setNote] = useState('')
@@ -294,7 +293,7 @@ function CallbackDialog({ open, onOpenChange, x }: { open: boolean; onOpenChange
           ))}
         </div>
         <Textarea rows={2} placeholder="Who you spoke to, and what they said" value={note} onChange={e => setNote(e.target.value)} />
-        <DialogFooter><Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button><Button variant="default" disabled={pending} onClick={async () => { if (await act(() => api.recordCallback(x.id, outcome, note, user.id), 'Call-back recorded')) onOpenChange(false) }}><Phone />Save</Button></DialogFooter>
+        <DialogFooter><Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button><Button variant="default" disabled={pending} onClick={async () => { if (await act(() => api.recordCallback(x.id, outcome, note), 'Call-back recorded')) onOpenChange(false) }}><Phone />Save</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -328,7 +327,6 @@ function Board({ list, all, onOpen, activeId }: { list: ExceptionItem[]; all: Ex
 
 function RulesDialog({ open, onOpenChange, readOnly }: { open: boolean; onOpenChange: (o: boolean) => void; readOnly: boolean }) {
   const rules = useRules().data ?? []
-  const { user } = useSession()
   const { act } = useAct()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -337,7 +335,7 @@ function RulesDialog({ open, onOpenChange, readOnly }: { open: boolean; onOpenCh
         <div className="flex max-h-[420px] flex-col gap-1.5 overflow-auto">
           {rules.map(r => (
             <label key={r.id} className="flex items-start gap-3 rounded-md border border-border px-3 py-2">
-              <Chk checked={r.enabled} disabled={readOnly} onChange={() => act(() => api.toggleRule(r.id, user.id), `${r.name} ${r.enabled ? 'off' : 'on'}`)} />
+              <Chk checked={r.enabled} disabled={readOnly} onChange={() => act(() => api.toggleRule(r), `${r.name} ${r.enabled ? 'off' : 'on'}`)} />
               <span className="flex flex-1 flex-col"><span className="font-medium">{r.name} <span className="font-mono text-[11px] text-text-3">{r.id}</span></span><span className="text-[11px] text-text-2">{r.description}</span></span>
               <span className="flex flex-col items-end gap-1"><Prio p={r.priority} /><span className="text-[11px] text-text-3">SLA {r.slaDays} d</span></span>
             </label>

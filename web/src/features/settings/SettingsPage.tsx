@@ -1,75 +1,97 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router'
-import { Building2, Moon, Plus, RotateCcw, Server, Sun } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router'
+import { Building2, Moon, Plus, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Avatar, Banner, Card, CardBody, CardHeader, Chk, KV, PageHeader, Prio, Segmented, StatusPill } from '@/components/pravah'
-import { AiCard } from './AiCard'
+import { Card, CardBody, CardHeader, Chk, KV, LineTabs, PageHeader, Prio, Segmented, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
 import { useTheme } from '@/app/theme'
-import { useAct, useRules } from '@/mock/hooks'
-import * as api from '@/mock/api'
-import { inr } from '@/lib/format'
+import { useAct, useRules } from '@/api/hooks'
+import * as api from '@/api'
 import { toast } from 'sonner'
+import { UsersSection } from './UsersSection'
+import { IntegrationsSection } from './IntegrationsSection'
+import { AccountSection } from './AccountSection'
+
+const SECTIONS = [['clients', 'Clients'], ['users', 'Users & roles'], ['integrations', 'Integrations'], ['rules', 'Exception rules'], ['firm', 'Firm'], ['account', 'My account'], ['appearance', 'Appearance']] as const
+type Section = (typeof SECTIONS)[number][0]
 
 export default function SettingsPage() {
-  const { user, users, entity, entities, setUserId, readOnly, serverOnline } = useSession()
-  const { theme, setTheme } = useTheme()
-  const rules = useRules().data ?? []
-  const { act } = useAct()
-  const qc = useQueryClient()
+  const { section = 'clients' } = useParams()
+  const nav = useNavigate()
+  const { user, firm, isAdmin, firmWide } = useSession()
+  const canAdmin = isAdmin || firmWide
+  const visible = SECTIONS.filter(([k]) => canAdmin || !['users', 'firm'].includes(k))
+  const cur = (visible.some(([k]) => k === section) ? section : 'clients') as Section
   return (
     <>
-      <PageHeader title="Settings" sub={`${entity.name} · signed in as ${user.name}`} />
-      {!serverOnline && <Banner tone="warn" className="mb-4" icon={<Server className="size-4" />}>The Pravah server is not reachable, so the app is running on demo data only. Start it with <code>docker compose up</code> to onboard clients and connect mailboxes.</Banner>}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] items-start gap-4">
-        <Card>
-          <CardHeader title="Clients" as="h3">
-            {user.role === 'partner' && serverOnline && <Button size="sm" variant="default" asChild><Link to="/settings/clients/new"><Plus />Onboard client</Link></Button>}
-          </CardHeader>
-          {entities.map(e => (
-            <Link key={e.id} to={serverOnline ? `/settings/clients/${e.id}` : '/settings'} className="flex items-center gap-2.5 border-b border-border px-4 py-2 last:border-b-0 hover:bg-surface-2">
-              <Building2 className="size-4 text-text-3" />
-              <span className="min-w-0 flex-1 text-xs"><span className="font-medium">{e.shortName}</span> <span className="text-text-3">· {e.city || e.pan}</span>
-                <span className="block truncate text-[11px] text-text-3">{e.intakeEmail ? `Mailbox ${e.intakeEmail}` : 'No mailbox connected'}</span></span>
-              {e.status === 'onboarding' ? <StatusPill tone="warn" plain>Onboarding</StatusPill> : <StatusPill tone="ok" plain>Active</StatusPill>}
-            </Link>
-          ))}
-        </Card>
-        <AiCard />
-        <Card>
-          <CardHeader title="Appearance" as="h3" />
-          <CardBody className="flex flex-col gap-3">
-            <div className="flex items-center justify-between"><span className="text-xs">Theme</span><Segmented label="Theme" value={theme} onChange={setTheme} options={[{ value: 'light', label: 'Light', icon: <Sun className="size-3.5" /> }, { value: 'dark', label: 'Dark', icon: <Moon className="size-3.5" /> }]} /></div>
-            <div className="flex items-center justify-between"><span className="text-xs">Saved table columns and filters</span><Button size="sm" onClick={() => { try { Object.keys(localStorage).filter(k => k.startsWith('pv-cols-') || k === 'pv-overview-hidden').forEach(k => localStorage.removeItem(k)) } catch { /* storage unavailable */ } toast.success('Table layouts reset · reload to apply') }}>Reset</Button></div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader title="People and approval limits" as="h3"><span className="text-[11px] text-text-3">Act as anyone for the demo</span></CardHeader>
-          {users.map(u => (
-            <label key={u.id} className="flex cursor-pointer items-center gap-2.5 border-b border-border px-4 py-2 last:border-b-0 hover:bg-surface-2">
-              <input type="radio" name="actas" checked={u.id === user.id} onChange={() => setUserId(u.id)} className="accent-[var(--primary)]" />
-              <Avatar id={u.id} /><span className="flex-1 text-xs"><span className="font-medium">{u.name}</span> · {u.title}</span>
-              <span className="text-[11px] text-text-2 tabular-nums">{u.approvalLimit >= 1e11 ? 'No limit' : u.approvalLimit ? inr(u.approvalLimit) : u.role === 'auditor' ? 'Read-only' : 'Cannot approve'}</span>
-            </label>
-          ))}
-        </Card>
-        <Card>
-          <CardHeader title="Exception rules" as="h3" />
-          {rules.map(r => (
-            <label key={r.id} className="flex items-center gap-2.5 border-b border-border px-4 py-2 last:border-b-0">
-              <Chk checked={r.enabled} disabled={readOnly} onChange={() => act(() => api.toggleRule(r.id, user.id), `${r.name} ${r.enabled ? 'off' : 'on'}`)} />
-              <span className="flex-1 text-xs"><span className="font-medium">{r.name}</span> <span className="text-text-3">· SLA {r.slaDays} d</span></span><Prio p={r.priority} />
-            </label>
-          ))}
-        </Card>
-        <Card>
-          <CardHeader title="Entity" as="h3" />
-          <CardBody className="flex flex-col gap-3">
-            <KV items={[['Legal name', entity.name], ['PAN', <span className="font-mono">{entity.pan}</span>], ['GSTINs', entity.gstins.map(g => g.gstin).join(', ')], ['SAP company code', entity.sapCompanyCode], ['Intake email', <span className="font-mono text-[11px]">{entity.intakeEmail}</span>], ['WhatsApp', entity.whatsapp]]} />
-            <Button size="sm" className="self-start" onClick={async () => { await api.resetDemo(); qc.invalidateQueries(); toast.success('Demo data reset') }}><RotateCcw />Reset demo data</Button>
-          </CardBody>
-        </Card>
-      </div>
+      <PageHeader title="Settings" sub={`${firm.name} · signed in as ${user.name}`} />
+      <LineTabs label="Settings sections" value={cur} onChange={v => nav(v === 'clients' ? '/settings' : `/settings/${v}`)} items={visible.map(([k, l]) => ({ value: k as Section, label: l }))} />
+      {cur === 'clients' && <ClientsSection />}
+      {cur === 'users' && <UsersSection />}
+      {cur === 'integrations' && <IntegrationsSection />}
+      {cur === 'rules' && <RulesSection />}
+      {cur === 'firm' && <FirmSection />}
+      {cur === 'account' && <AccountSection />}
+      {cur === 'appearance' && <AppearanceSection />}
     </>
+  )
+}
+
+function ClientsSection() {
+  const { entities, isAdmin, firmWide } = useSession()
+  return (
+    <Card>
+      <CardHeader title="Clients" as="h3">
+        {(isAdmin || firmWide) && <Button size="sm" variant="default" asChild><Link to="/settings/clients/new"><Plus />Onboard client</Link></Button>}
+      </CardHeader>
+      {entities.length === 0 && <div className="px-4 py-6 text-center text-xs text-text-3">No clients yet. Onboard the first one: company details, GST registrations, then the invoice mailbox.</div>}
+      {entities.map(e => (
+        <Link key={e.id} to={`/settings/clients/${e.id}`} className="flex items-center gap-2.5 border-b border-border px-4 py-2.5 last:border-b-0 hover:bg-surface-2">
+          <Building2 className="size-4 text-text-3" />
+          <span className="min-w-0 flex-1 text-xs"><span className="font-medium">{e.name}</span> <span className="text-text-3">· {e.city || e.pan} · {e.gstins.length} GSTIN{e.gstins.length === 1 ? '' : 's'}</span>
+            <span className="block truncate text-[11px] text-text-3">{e.intakeEmail ? `Mailbox ${e.intakeEmail}` : 'No mailbox connected'}</span></span>
+          {e.status === 'onboarding' ? <StatusPill tone="warn" plain>Onboarding</StatusPill> : <StatusPill tone="ok" plain>Active</StatusPill>}
+        </Link>
+      ))}
+    </Card>
+  )
+}
+
+function RulesSection() {
+  const { isAdmin, firmWide } = useSession()
+  const rules = useRules().data ?? []
+  const { act } = useAct()
+  return (
+    <Card>
+      <CardHeader title="Exception rules" as="h3"><span className="text-[11px] text-text-3">What the three-way match raises, and who gets it</span></CardHeader>
+      {rules.map(r => (
+        <label key={r.id} className="flex items-center gap-2.5 border-b border-border px-4 py-2 last:border-b-0">
+          <Chk checked={r.enabled} disabled={!(isAdmin || firmWide)} onChange={() => act(() => api.toggleRule(r), `${r.name} ${r.enabled ? 'off' : 'on'}`)} />
+          <span className="flex-1 text-xs"><span className="font-medium">{r.name}</span> <span className="text-text-3">· {r.description} · SLA {r.slaDays} d · to {r.defaultRole}</span></span><Prio p={r.priority} />
+        </label>
+      ))}
+    </Card>
+  )
+}
+
+function FirmSection() {
+  const { firm, entities } = useSession()
+  return (
+    <Card>
+      <CardHeader title="Firm" as="h3" />
+      <CardBody><KV items={[['Name', firm.name], ['Short name', firm.short], ['FRN', firm.frn || '—'], ['Clients', String(entities.length)]]} /></CardBody>
+    </Card>
+  )
+}
+
+function AppearanceSection() {
+  const { theme, setTheme } = useTheme()
+  return (
+    <Card>
+      <CardHeader title="Appearance" as="h3" />
+      <CardBody className="flex flex-col gap-3">
+        <div className="flex items-center justify-between"><span className="text-xs">Theme</span><Segmented label="Theme" value={theme} onChange={setTheme} options={[{ value: 'light', label: 'Light', icon: <Sun className="size-3.5" /> }, { value: 'dark', label: 'Dark', icon: <Moon className="size-3.5" /> }]} /></div>
+        <div className="flex items-center justify-between"><span className="text-xs">Saved table columns and filters</span><Button size="sm" onClick={() => { try { Object.keys(localStorage).filter(k => k.startsWith('pv-cols-') || k === 'pv-overview-hidden').forEach(k => localStorage.removeItem(k)) } catch { /* storage unavailable */ } toast.success('Table layouts reset · reload to apply') }}>Reset</Button></div>
+      </CardBody>
+    </Card>
   )
 }

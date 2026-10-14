@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DataTable, Gstin, PageHeader, Pill, Q, Source } from '@/components/pravah'
-import { useCustomers } from '@/mock/hooks'
+import { useCustomers } from '@/api/hooks'
 import { inr } from '@/lib/format'
 import type { Customer } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -11,7 +11,8 @@ export default function CustomersPage() {
   const q = useCustomers()
   const nav = useNavigate()
   const columns = useMemo<ColumnDef<Customer, any>[]>(() => [ // eslint-disable-line @typescript-eslint/no-explicit-any
-    { accessorKey: 'name', header: 'Customer', cell: ({ getValue }) => <span className="font-medium">{getValue()}</span> },
+    { accessorKey: 'code', header: 'Customer', cell: ({ getValue }) => <span className="font-mono">{getValue() ?? '—'}</span> },
+    { accessorKey: 'name', header: 'Name', cell: ({ getValue }) => <span className="font-medium">{getValue()}</span> },
     { accessorKey: 'gstin', header: 'GSTIN', cell: ({ getValue }) => <Gstin g={getValue()} /> },
     { accessorKey: 'creditDays', header: 'Credit', meta: { num: true }, cell: ({ getValue }) => `${getValue()} d` },
     { accessorKey: 'outstanding', header: 'Outstanding', meta: { num: true }, cell: ({ getValue }) => inr(getValue()) },

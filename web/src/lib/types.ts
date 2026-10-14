@@ -8,7 +8,7 @@ export type SourceName =
   | 'SAP' | 'GST portal' | 'Bank' | 'Extracted' | 'Email' | 'WhatsApp' | 'Upload'
   | 'Udyam' | 'MCA' | 'TRACES' | 'Post' | 'IRP'
 
-export type RoleKey = 'ap' | 'controller' | 'cfo' | 'gst' | 'stores' | 'procurement' | 'purchase-head' | 'partner' | 'auditor'
+export type RoleKey = 'ap' | 'ar' | 'controller' | 'cfo' | 'gst' | 'stores' | 'procurement' | 'manager' | 'partner' | 'auditor'
 
 export interface User {
   id: string
@@ -17,9 +17,22 @@ export interface User {
   role: RoleKey
   title: string
   /** Max invoice or run value this person can approve alone; 0 = cannot approve. */
-  approvalLimit: number
+  approvalLimit?: number
   color: AvatarColor
-  entityIds: string[] | 'all'
+  email?: string
+  isAdmin?: boolean
+  status?: 'invited' | 'active' | 'disabled'
+  mfaEnabled?: boolean
+  lastLoginAt?: string | null
+  assignments?: { entityId: string; role: RoleKey; approvalLimit: number }[]
+}
+
+export interface Me {
+  user: User
+  firm: { id: number; name: string; short: string; frn: string | null; entityIds: string[] }
+  firmWide: boolean
+  entities: Entity[]
+  access: Record<string, { role: RoleKey; approvalLimit: number }>
 }
 
 export interface Gstin { gstin: string; code: string; state: string; placeOfBusiness?: string; filingFrequency?: 'monthly' | 'qrmp'; einvoiceApplicable?: boolean }
@@ -41,12 +54,21 @@ export interface Mailbox {
   documents: number
 }
 
-export type AiProvider = 'anthropic' | 'openai' | 'gemini'
-export interface AiSettings {
-  activeProvider: AiProvider
-  autoExtract: boolean
-  models: Partial<Record<AiProvider, string>>
-  keys: Record<AiProvider, { set: boolean; setOn: string | null; fromEnv: boolean }>
+export interface ImportKind { kind: string; label: string; module: string; route: string; fields: { key: string; label: string; required: boolean; type: string }[] }
+export interface ImportRun {
+  id: number; entityId: string; kind: string | null; filename: string; size: number; sheet: string | null; sheets: string[]; headers: string[]; preview: unknown[][]
+  mapping: Record<string, number>; periodFrom: string | null; periodTo: string | null; status: 'detected' | 'queued' | 'running' | 'done' | 'failed'
+  rowsTotal: number; rowsDone: number; rowsCreated: number; rowsUpdated: number; rowsSkipped: number; errors: { row: number; column?: string; message: string }[]
+  summary: { headline?: string; module?: string; route?: string; headerRow?: number; remembered?: boolean; score?: number; missing?: string[]; source?: string }
+  createdBy: string | null; createdAt: string | null; finishedAt: string | null
+}
+export interface SapConnection {
+  id?: number; entityId: string; edition: string; host: string; client: string; companyCode: string; plantMapping?: Record<string, string>; username: string; passwordSet: boolean
+  objects: string[]; scheduleMinutes: number; status: 'none' | 'draft' | 'active' | 'paused' | 'error'; lastTestAt?: string | null; lastTestResult?: string | null; lastSyncAt?: string | null; lastError?: string | null
+}
+export interface Integrations {
+  entities: { id: string; name: string }[]; mailboxes: Mailbox[]; oauth: { gmail: boolean; outlook: boolean }; sap: SapConnection[]
+  claude: { configured: boolean; model: string }; smtp: { configured: boolean; from: string | null }; imports: (ImportRun & { kind: string })[]; publicUrl: string
 }
 
 export interface Entity {
@@ -69,6 +91,8 @@ export interface Entity {
   einvoiceBand?: 'above-5cr' | 'below-5cr' | 'exempt'
   msmeStatus?: 'none' | 'micro' | 'small' | 'medium'
   mailboxes?: Mailbox[]
+  plants?: { code: string; name: string }[]
+  createdAt?: string | null
 }
 
 export interface Firm { name: string; short: string; entityIds: string[] }
@@ -78,7 +102,11 @@ export type MsmeClass = 'Micro' | 'Small' | 'Medium'
 export interface BankDetails { bank: string; branch?: string; ifsc: string; account: string; nameAtBank: string }
 
 export interface Vendor {
-  id: string // SAP vendor number
+  id: string
+  code?: string | null
+  source?: string
+  city?: string | null
+  state?: string | null
   entityId: string
   name: string
   shortName: string
@@ -105,8 +133,12 @@ export interface Vendor {
 
 export interface Customer {
   id: string
+  code?: string | null
   entityId: string
   name: string
+  city?: string | null
+  state?: string | null
+  invoices?: number
   outstanding: number
   overdue: number
   daysOverdue: number
@@ -116,15 +148,17 @@ export interface Customer {
   contact: string
 }
 
-export type SyncKey = 'sap' | 'gst' | 'bank'
+export type SyncKey = 'sap' | 'gst' | 'bank' | 'email'
 export interface SyncState {
   key: SyncKey
   label: string
   system: string
-  at: string
+  /** null = never synced / not connected */
+  at: string | null
   /** Hours after which the source is shown as stale. */
   staleAfterH: number
-  error?: string
+  error?: string | null
+  detail?: string
 }
 
 /* ---------------- overview ---------------- */
@@ -248,6 +282,13 @@ export interface IntakeDoc {
   mime?: string
   filename?: string
   subject?: string
+  kind?: string
+  bundleId?: string | null
+  pageFrom?: number | null
+  pageTo?: number | null
+  grnId?: string | null
+  /** Documents split out of a bundle (multi-document PDF). */
+  parts?: IntakeDoc[]
 }
 
 /* ---------------- purchase-to-pay ---------------- */
@@ -270,10 +311,12 @@ export interface EvidenceDoc {
   title: string
   number: string
   date: string
-  source: SourceName
+  source: SourceName | string
   linkedBy: string
   check: Status
   paper?: PaperDoc
+  fileUrl?: string
+  kind?: string
 }
 
 export interface PoLine {
@@ -302,8 +345,20 @@ export interface NegotiationVersion {
 
 export interface PurchaseOrder {
   id: string
+  poNo: string
   entityId: string
   vendorId: string
+  vendorName: string
+  buyer?: string
+  docType?: string | null
+  releaseState?: string | null
+  openQty?: number
+  openValue?: number
+  source?: string
+  paymentTermsDays?: number | null
+  freightTerms?: string | null
+  invoices?: { id: string; invoiceNo: string; status: string; total: number }[]
+  grns?: string[]
   value: number
   taxable: number
   buyerId: string
@@ -316,7 +371,7 @@ export interface PurchaseOrder {
   freightInvoiced?: number
   agreedDue?: string
   docs: EvidenceDoc[]
-  negotiation: {
+  negotiation: null | {
     locked: boolean
     current: NegotiationVersion
     history: NegotiationVersion[]
@@ -362,13 +417,27 @@ export interface Decision {
   byId: string
   at: string
   secondApproverNeeded: boolean
-  debitNote?: { no: string; taxable: number; gst: number; total: number }
+  debitNote?: { no: string; taxable: number; gst: number; total: number } | null
+  secondById?: string
+  secondAt?: string
 }
 
 export interface Invoice {
   id: string
   entityId: string
   vendorId: string
+  vendorName?: string
+  poRef?: string | null
+  irn?: string | null
+  ewaybill?: string | null
+  vehicle?: string | null
+  placeOfSupply?: string | null
+  supplierGstin?: string | null
+  billToGstin?: string | null
+  paymentTermsDays?: number | null
+  sapDocNo?: string | null
+  freight?: number
+  lines?: { line: number; description: string; hsn: string | null; qty: number; uom: string | null; rate: number; taxable: number; taxRate: number }[]
   invoiceNo: string
   date: string
   receivedAt: string
@@ -388,9 +457,9 @@ export interface Invoice {
   dnLines: { text: string; taxable: number; gst: number }[]
   tds: { nature: string; section: string; legacy: string; threshold: string; crossed: string; rate: string; base: number; amount: number; note: string }
   itc: { status: Status; onInvoice: number; afterDn: number; ims: string; imsNote: string; expected: string; pay180: string; s164: string; filing: string }
-  msme?: { daysLeft: number; acceptedOn: string; payBy: string; recommended: string; note: string }
-  draft?: { kind: DecisionKind; reasons: string[]; note: string }
-  decision?: Decision
+  msme?: { daysLeft: number; acceptedOn: string; payBy: string; recommended: string; note: string } | null
+  draft?: { kind: DecisionKind; reasons: string[]; note: string } | null
+  decision?: Decision | null
   docTitle: string
 }
 
@@ -404,6 +473,9 @@ export interface HistoryItem { at: string; text: string }
 
 export interface ExceptionItem {
   id: string
+  nid?: number
+  invoiceId?: string | null
+  poId?: string | null
   entityId: string
   type: string
   title: string
@@ -428,7 +500,7 @@ export interface ExceptionItem {
   history: HistoryItem[]
 }
 
-export interface ExceptionRule { id: string; name: string; type: string; description: string; enabled: boolean; priority: Priority; slaDays: number }
+export interface ExceptionRule { id: string; name: string; type: string; description: string; enabled: boolean; priority: Priority; slaDays: number; defaultRole?: string }
 
 /* ---------------- GST ---------------- */
 
@@ -502,6 +574,7 @@ export interface ApItem {
   id: string
   entityId: string
   vendorId: string
+  vendor?: string
   invoiceNo: string
   date: string
   due: string
@@ -514,16 +587,27 @@ export interface ApItem {
 
 /* ---------------- other modules ---------------- */
 
-export interface ArItem { id: string; entityId: string; customerId: string; invoiceNo: string; date: string; due: string; amount: number; received: number; status: Status; lastAction?: string }
+export interface ArItem { id: string; entityId: string; customerId: string; customer?: string; invoiceNo: string; gstInvoiceNo?: string | null; date: string | null; due: string | null; amount: number; taxable?: number; tax?: number; received: number; status: Status; lastAction?: string | null; docType?: string; state?: string | null; profitCenter?: string | null; recon?: string | null; lines?: number }
 export interface BankAccount { id: string; entityId: string; bank: string; account: string; type: string; balance: number; asOf: string; unreconciled: number }
 export interface BankLine { id: string; entityId: string; accountId: string; date: string; narration: string; ref: string; amount: number; suggestion?: string; confidence?: number; status: Status }
 export interface TdsLine { id: string; entityId: string; section: string; legacy: string; nature: string; deductee: string; pan: string; base: number; rate: number; tds: number; date: string; challan: Status }
-export interface MsmeInvoice { id: string; entityId: string; vendorId: string; invoiceNo: string; amount: number; acceptedOn: string; limitOn: string; status: Status; paidOn?: string }
-export interface CloseTask { id: string; entityId: string; area: string; task: string; ownerId: string; due: string; done: boolean; doneAt?: string; note?: string }
+export interface MsmeInvoice { id: string; entityId: string; vendorId: string; vendor?: string; invoiceNo: string; amount: number; acceptedOn: string; limitOn: string; status: Status; paidOn?: string | null; note?: string | null }
+export interface CloseTask { id: string; entityId: string; period?: string; area: string; task: string; ownerId: string; due: string | null; done: boolean; doneAt?: string | null; note?: string | null }
 export interface ReportDef { id: string; name: string; group: string; description: string; lastRun?: string; format: string }
 
-export interface AuditEntry { id: string; at: string; userId: string; entityId: string; action: string; target: string; detail: string }
+export interface AuditEntry { id: string; at: string; userId: string; entityId: string; action: string; target: string; detail: string; ip?: string | null }
 
 export interface Notification { id: string; entityId: string; at: string; title: string; body: string; route: string; read: boolean; tone: Tone }
 
 export interface SearchHit { kind: string; label: string; sub: string; route: string }
+
+/* ---------------- server composites ---------------- */
+
+export interface Overview { snapshot: OverviewSnapshot; deadlines: Deadline[]; vendors: Vendor[]; customers: Customer[]; pendingRun: PaymentRun | null; sources: SyncState[]; hasData: boolean }
+export interface FirmRow {
+  entityId: string; entity: Pick<Entity, 'id' | 'name' | 'shortName' | 'city' | 'risk' | 'riskScore' | 'gstins' | 'pan'>; overduePayables: number; msme: number; msmeLabel: string; msmeTone: Tone
+  imsPending: number; mismatch: number; tdsDue: number; critical: number; close: Status; closeSub: string
+}
+export interface FirmOverview { rows: FirmRow[]; filing: FilingCell[]; filingHeads: string[] }
+export interface RcmLr { id: string; lr: string; date: string; route: string; freight: number; selfInvoice?: string | null }
+export interface GstView { summary: GstSummary | null; rows: ImsRow[]; outward: OutwardDoc[]; rcmLrs: RcmLr[]; suppliers: Vendor[]; notConnected?: string }

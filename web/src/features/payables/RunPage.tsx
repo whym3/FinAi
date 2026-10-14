@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, Banner, Card, CardBody, CardHeader, Chip, KV, MsmeBadge, PageHeader, Pill, Q, Source, StatusPill, toneIcon, toneText } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useRun } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useAct, useRun } from '@/api/hooks'
+import * as api from '@/api'
 import { date, dateTime, inr } from '@/lib/format'
 import type { PaymentRun } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -60,7 +60,7 @@ function Run({ run }: { run: PaymentRun }) {
       </div>
 
       {released && (
-        <Banner tone="ok" icon={toneIcon.ok({ size: 20 })} actions={myApproval ? <Button size="sm" disabled={pending} onClick={() => act(() => api.undoRunApproval(run.id, user.id), 'Approval withdrawn')}><Undo2 />Back to review</Button> : undefined}>
+        <Banner tone="ok" icon={toneIcon.ok({ size: 20 })} actions={myApproval ? <Button size="sm" disabled={pending} onClick={() => act(() => api.undoRunApproval(run.id), 'Approval withdrawn')}><Undo2 />Back to review</Button> : undefined}>
           <div className="font-semibold">Approved and sent to the bank</div>
           <div className="text-xs text-text-2">{run.bank.split(' ').slice(0, 2).join(' ')} host-to-host · file {run.h2hFile} · value date {date(run.valueDate)}. UTRs will appear here as the bank confirms each payment.</div>
         </Banner>
@@ -144,14 +144,14 @@ function Run({ run }: { run: PaymentRun }) {
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader><DialogTitle>Approve {inr(run.net)}?</DialogTitle><DialogDescription>{run.invoices} invoices to {run.vendors} vendors from {run.bank} {run.account}, value date {date(run.valueDate)}.{run.approvers.filter(a => a.status === 'pending').length === 1 ? ' Yours is the last approval: the file goes to the bank immediately.' : ''}</DialogDescription></DialogHeader>
           <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-2 p-3 text-xs text-text-2"><Fingerprint className="size-8 text-acc" />In production this step asks for your device passkey. The demo confirms directly.</div>
-          <DialogFooter><Button variant="ghost" onClick={() => setConfirm(false)}>Cancel</Button><Button variant="default" disabled={pending} onClick={async () => { if (await act(() => api.approveRun(run.id, note, user.id), r => r.status === 'released' ? 'Approved and sent to the bank' : 'Approved · waiting for the next approver')) setConfirm(false) }}><Fingerprint />Confirm approval</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" onClick={() => setConfirm(false)}>Cancel</Button><Button variant="default" disabled={pending} onClick={async () => { if (await act(() => api.approveRun(run.id, note), r => r.status === 'released' ? 'Approved and sent to the bank' : 'Approved · waiting for the next approver')) setConfirm(false) }}><Fingerprint />Confirm approval</Button></DialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={back} onOpenChange={setBack}>
         <DialogContent>
           <DialogHeader><DialogTitle>Send back {run.id}</DialogTitle><DialogDescription>The Controller sees your note and revises the proposal in SAP.</DialogDescription></DialogHeader>
           <Textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="What needs to change" />
-          <DialogFooter><Button variant="ghost" onClick={() => setBack(false)}>Cancel</Button><Button variant="destructive" disabled={!note.trim() || pending} onClick={async () => { if (await act(() => api.sendBackRun(run.id, note, user.id), 'Run sent back to the Controller')) setBack(false) }}>Send back</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" onClick={() => setBack(false)}>Cancel</Button><Button variant="destructive" disabled={!note.trim() || pending} onClick={async () => { if (await act(() => api.sendBackRun(run.id, note), 'Run sent back to the Controller')) setBack(false) }}>Send back</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </>

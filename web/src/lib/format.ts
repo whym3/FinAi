@@ -91,8 +91,8 @@ export function daysBetween(a: string, b: string): number {
 }
 
 /** Calendar days from today to iso (negative when past). */
-export function daysFromNow(iso: string): number {
-  return daysBetween(todayIso(), iso)
+export function daysFromNow(iso: string, from: string = todayIso()): number {
+  return daysBetween(from, iso)
 }
 
 export function todayIso(): string {
@@ -111,8 +111,8 @@ export function addDays(iso: string, n: number): string {
 }
 
 /** '10 min ago', '2 h ago', '26 h ago', '3 days ago' */
-export function ago(iso: string): string {
-  const mins = Math.max(0, Math.round((now().getTime() - toDate(iso).getTime()) / 60_000))
+export function ago(iso: string, at: Date = now()): string {
+  const mins = Math.max(0, Math.round((at.getTime() - toDate(iso).getTime()) / 60_000))
   if (mins < 1) return 'just now'
   if (mins < 60) return `${mins} min ago`
   const h = Math.round(mins / 60)

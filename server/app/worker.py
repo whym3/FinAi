@@ -9,7 +9,7 @@ from sqlalchemy import select, text
 
 from .config import settings
 from .db import SessionLocal
-from .extract.run import extract_document
+from .extract.run import process_document
 from .mail.ingest import sync_mailbox
 from .models import Job, Mailbox
 
@@ -39,8 +39,14 @@ def run_one_job() -> bool:
             return False
         job.attempts += 1
         try:
-            if job.kind == 'extract':
-                extract_document(db, job.payload['document_id'])
+            if job.kind == 'process':
+                process_document(db, job.payload['document_id'])
+            elif job.kind == 'import':
+                from .imports.run import run_import
+                run_import(db, job.payload['import_id'])
+            elif job.kind == 'sap_sync':
+                from .sap.sync import sync_connection
+                sync_connection(db, job.payload['connection_id'])
             job.done_at = datetime.now(UTC)
         except Exception as e:
             db.rollback()
@@ -51,10 +57,23 @@ def run_one_job() -> bool:
         return True
 
 
+def schedule_sap() -> None:
+    """Queue a sync for every active SAP connection whose schedule is due."""
+    from .models import SapConnection
+    with SessionLocal() as db:
+        for c in db.scalars(select(SapConnection).where(SapConnection.status == 'active')):
+            due = not c.last_sync_at or c.last_sync_at < datetime.now(UTC) - timedelta(minutes=c.schedule_minutes)
+            pending = db.scalar(select(Job.id).where(Job.kind == 'sap_sync', Job.done_at.is_(None), Job.payload['connection_id'].as_integer() == c.id))
+            if due and not pending:
+                db.add(Job(kind='sap_sync', payload={'connection_id': c.id}))
+        db.commit()
+
+
 async def mail_loop() -> None:
     while True:
         try:
             await asyncio.to_thread(poll_mailboxes)
+            await asyncio.to_thread(schedule_sap)
         except Exception:
             log.exception('mailbox poll failed')
         await asyncio.sleep(settings.poll_seconds)

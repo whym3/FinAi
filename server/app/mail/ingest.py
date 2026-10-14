@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import audit
 from ..config import settings
-from ..models import AiSettings, Job, Mailbox, SourceDocument
+from ..models import Job, Mailbox, SourceDocument
 from .base import Attachment, Message
 
 EXT_MIME = {'.pdf': 'application/pdf', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.tif': 'image/tiff',
@@ -71,10 +71,24 @@ def store(entity_id: str, data: bytes) -> tuple[str, str]:
     return sha, str(path)
 
 
+def ingest_file(db: Session, entity_id: str, filename: str, mime: str, data: bytes, channel: str = 'Upload', sender: str = '', subject: str = '',
+                uploaded_by: int | None = None, received_at: datetime | None = None, mailbox_id: int | None = None, msg_id: str | None = None, att_id: str | None = None) -> SourceDocument:
+    """Store one file as a source document, mark exact duplicates, and queue it for reading."""
+    sha, path = store(entity_id, data)
+    dup = db.scalar(select(SourceDocument.id).where(SourceDocument.entity_id == entity_id, SourceDocument.sha256 == sha, SourceDocument.bundle_id.is_(None)).order_by(SourceDocument.id))
+    doc = SourceDocument(entity_id=entity_id, channel=channel, mailbox_id=mailbox_id, external_msg_id=msg_id, external_att_id=att_id, sender=sender, subject=subject[:1000],
+                         received_at=received_at or datetime.now(UTC), uploaded_by=uploaded_by, filename=filename[:300], mime=mime, size=len(data), sha256=sha, storage_path=path,
+                         status='duplicate' if dup else 'new', duplicate_of=dup, status_note=f'Same file as document {dup}' if dup else 'Queued for reading')
+    db.add(doc)
+    db.flush()
+    if not dup:
+        db.add(Job(kind='process', payload={'document_id': doc.id}))
+    return doc
+
+
 def ingest(db: Session, mb: Mailbox, msgs: list[Message]) -> int:
     if not msgs:
         return 0
-    ai = db.get(AiSettings, 1)
     created = 0
     for m in msgs:
         if not sender_allowed(m.sender, mb.sender_allow or [], mb.sender_block or []):
@@ -85,19 +99,10 @@ def ingest(db: Session, mb: Mailbox, msgs: list[Message]) -> int:
                                                                    SourceDocument.external_att_id == ext_id))
                 if exists:
                     continue  # already ingested on an earlier sync
-                sha, path = store(mb.entity_id, data)
-                dup = db.scalar(select(SourceDocument.id).where(SourceDocument.entity_id == mb.entity_id, SourceDocument.sha256 == sha).order_by(SourceDocument.id))
-                doc = SourceDocument(entity_id=mb.entity_id, channel='Email', mailbox_id=mb.id, external_msg_id=m.id, external_att_id=ext_id,
-                                     sender=m.sender, subject=m.subject[:1000], received_at=m.received_at, filename=filename, mime=mime, size=len(data),
-                                     sha256=sha, storage_path=path, status='duplicate' if dup else 'new', duplicate_of=dup,
-                                     status_note=f'Same file as document {dup}' if dup else ('Extraction queued' if ai is None or ai.auto_extract else 'Waiting for extraction'))
-                db.add(doc)
-                db.flush()
-                if not dup and (ai is None or ai.auto_extract):
-                    db.add(Job(kind='extract', payload={'document_id': doc.id}))
+                ingest_file(db, mb.entity_id, filename, mime, data, 'Email', m.sender, m.subject, received_at=m.received_at, mailbox_id=mb.id, msg_id=m.id, att_id=ext_id)
                 created += 1
     if created:
-        audit(db, 'PV', mb.entity_id, 'Ingested email documents', mb.address, f'{created} new document(s)')
+        audit(db, None, mb.entity_id, 'Ingested email documents', mb.address, f'{created} new document(s)')
     return created
 
 
@@ -119,7 +124,7 @@ def sync_mailbox(db: Session, mb: Mailbox) -> int:
     except AuthError as e:
         db.rollback()
         mb.status, mb.last_error = 'error', f'Access was revoked or expired. Reconnect the mailbox. ({e})'
-        audit(db, 'PV', mb.entity_id, 'Mailbox sync failed', mb.address, mb.last_error)
+        audit(db, None, mb.entity_id, 'Mailbox sync failed', mb.address, mb.last_error)
         db.commit()
     except Exception as e:  # network or provider error: keep the cursor, retry next poll
         db.rollback()

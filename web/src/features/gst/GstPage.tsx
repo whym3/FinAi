@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Check, Download, Info, Pause, RefreshCw, X } from 'lucide-react'
+import { Check, Download, Info, Pause, Receipt, RefreshCw, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
-  Avatar, Banner, BulkBar, Card, CardBody, CardFooter, CardHeader, Chip, DataTable, FilterChip, Gstin, KV, LineTabs, PageHeader, Pill, Q, Segmented, Source, Spacer, StatusPill, toneIcon, toneText,
+  Avatar, Banner, BulkBar, Card, CardBody, CardFooter, CardHeader, Chip, DataTable, EmptyState, FilterChip, Gstin, KV, LineTabs, PageHeader, Pill, Q, Segmented, Source, Spacer, StatusPill, toneIcon, toneText,
 } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useGst } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useAct, useGst } from '@/api/hooks'
+import * as api from '@/api'
 import { date, dateTime, dayMonthTime, inr, int, todayIso } from '@/lib/format'
 import { downloadCsv } from '@/lib/csv'
 import type { ImsAction, ImsRow, OutwardDoc, Vendor } from '@/lib/types'
@@ -23,27 +23,26 @@ const TABS: { value: Tab; label: string }[] = [
 ]
 
 export default function GstPage() {
-  const { entity, user, readOnly, sync } = useSession()
+  const { entity, period, sync } = useSession()
   const [sp, setSp] = useSearchParams()
   const tab = (sp.get('tab') ?? 'ims') as Tab
-  const gstin = sp.get('gstin') ?? entity.gstins[0].gstin
-  const g = entity.gstins.find(x => x.gstin === gstin) ?? entity.gstins[0]
+  const gstin = sp.get('gstin') ?? entity.gstins[0]?.gstin ?? ''
+  const g = entity.gstins.find(x => x.gstin === gstin) ?? entity.gstins[0] ?? { gstin: '', code: '', state: '' }
   const set = (k: string, v: string) => setSp(p => { const n = new URLSearchParams(p); n.set(k, v); return n }, { replace: true })
   const q = useGst(g.gstin)
-  const { act, pending } = useAct()
-  const gs = sync.find(s => s.key === 'gst')!
+  const gs = sync.find(s => s.key === 'gst')
   return (
     <>
       <PageHeader crumbs={[{ label: 'GST hub', to: '/gst' }, { label: TABS.find(t => t.value === tab)!.label }]} title={TABS.find(t => t.value === tab)!.label}
-        badges={<><Gstin g={g.gstin} state={`${g.code} · ${g.state}`} /><Chip>Return period Oct 2026</Chip></>}
+        badges={<><Gstin g={g.gstin} state={`${g.code} · ${g.state}`} /><Chip>Return period {period}</Chip></>}
         actions={<>
           {entity.gstins.length > 1 && <Segmented label="GSTIN" value={g.gstin} onChange={v => set('gstin', v)} options={entity.gstins.map(x => ({ value: x.gstin, label: `${x.code} · ${x.state}` }))} />}
-          <Source name="GST portal" syncKey="gst" text={`IMS synced ${dateTime(gs.at)}`} />
-          <Button disabled={pending || readOnly} onClick={() => act(() => api.retrySync('gst', user.id), 'IMS fetched from the GST portal')}><RefreshCw className={cn(pending && 'animate-spin')} />Fetch IMS now</Button>
+          <Source name="GST portal" syncKey="gst" text={gs?.at ? `IMS synced ${dateTime(gs.at)}` : 'not connected'} />
+          <Button asChild><Link to="/settings/integrations">Connect GST portal</Link></Button>
         </>} />
       <LineTabs label="GST hub sections" value={tab} onChange={v => set('tab', v)} items={TABS} />
       <Q q={q}>{d => (
-        tab === 'ims' ? (d.summary ? <Ims rows={d.rows} summary={d.summary} gstin={g.gstin} /> : <Card><CardBody>No IMS data for this GSTIN.</CardBody></Card>) :
+        tab === 'ims' ? (d.summary ? <Ims rows={d.rows} summary={d.summary} gstin={g.gstin} /> : <Card><EmptyState title="GST portal not connected" icon={<Receipt className="size-5" />} action={<Button size="sm" asChild><Link to="/settings/integrations">Integrations</Link></Button>}>IMS documents, GSTR-2B and supplier filing status arrive through a GST Suvidha Provider. Until then, GSTR-1 and e-invoice tabs show your sales register, and supplier invoices are matched against POs and GRNs.</EmptyState></Card>) :
         tab === 'gstr1' ? <Gstr1 docs={d.outward} gstin={g.gstin} /> :
         tab === 'gstr3b' ? <Gstr3b outward={d.outward} rows={d.rows} summary={d.summary} /> :
         tab === 'einv' ? <EInvoice docs={d.outward} /> :
@@ -59,7 +58,7 @@ export default function GstPage() {
 type Filter = 'all' | 'noaction' | 'differs' | 'matched' | 'partial' | 'notbooks'
 
 function Ims({ rows, summary, gstin }: { rows: ImsRow[]; summary: NonNullable<Awaited<ReturnType<typeof api.getGst>>['summary']>; gstin: string }) {
-  const { entity, user, users, readOnly } = useSession()
+  const { entity, users, readOnly, period } = useSession()
   const { act, pending } = useAct()
   const [filter, setFilter] = useState<Filter>('all')
   const [suppliers, setSuppliers] = useState<string[]>([])
@@ -69,7 +68,7 @@ function Ims({ rows, summary, gstin }: { rows: ImsRow[]; summary: NonNullable<Aw
     (!suppliers.length || suppliers.includes(r.supplier)) &&
     (filter === 'all' || (filter === 'noaction' && r.portal === 'No action') || (filter === 'differs' && !!r.final && r.final !== r.recommended) ||
       (filter === 'matched' && r.match.tone === 'ok') || (filter === 'partial' && r.match.tone === 'warn') || (filter === 'notbooks' && r.match.tone === 'bad')))
-  const setFinal = (ids: string[], a: ImsAction) => act(() => api.setImsFinal(ids, a, user.id))
+  const setFinal = (ids: string[], a: ImsAction) => act(() => api.setImsFinal(ids, a))
   const portalTone = { 'No action': 'none', Accepted: 'ok', Rejected: 'bad', Pending: 'warn' } as const
 
   const columns = useMemo<ColumnDef<ImsRow, any>[]>(() => [ // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -94,7 +93,7 @@ function Ims({ rows, summary, gstin }: { rows: ImsRow[]; summary: NonNullable<Aw
   return (
     <>
       <Banner tone="info" icon={<Info className="size-4" />} actions={<Popover><PopoverTrigger asChild><Button size="sm">How recompute works</Button></PopoverTrigger><PopoverContent className="w-80 text-xs leading-5">GSTR-2B is generated on the 14th from IMS actions taken by then. Actions taken later are not reflected until you press <b>Recompute GSTR-2B</b> on the portal. File GSTR-3B only after recompute, or the ITC you claim will not match 2B.</PopoverContent></Popover>}>
-        <b>GSTR-2B for Oct 2026 is generated on {date(summary.twoBDate)}.</b> Until then these figures are a draft built from IMS. Any accept, reject or keep-pending action taken after the 14th needs GSTR-2B to be recomputed on the portal before you file GSTR-3B (due {date(summary.threeBDue)}).
+        <b>GSTR-2B for {period} is generated on {date(summary.twoBDate)}.</b> Until then these figures are a draft built from IMS. Any accept, reject or keep-pending action taken after the 14th needs GSTR-2B to be recomputed on the portal before you file GSTR-3B (due {date(summary.threeBDue)}).
       </Banner>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
@@ -132,15 +131,15 @@ function Ims({ rows, summary, gstin }: { rows: ImsRow[]; summary: NonNullable<Aw
                 <Button size="sm" disabled={readOnly} onClick={async () => { await setFinal(sel.map(r => r.id), 'Accept'); clear() }}><Check />Accept</Button>
                 <Button size="sm" disabled={readOnly} onClick={async () => { await setFinal(sel.map(r => r.id), 'Reject'); clear() }}><X />Reject</Button>
                 <Button size="sm" disabled={readOnly} onClick={async () => { await setFinal(sel.map(r => r.id), 'Keep pending'); clear() }}><Pause />Keep pending</Button>
-                <Button size="sm" disabled={readOnly || !recCount} onClick={async () => { await act(() => api.applyRecommendations(entity.id, gstin, user.id), r => `${r.applied} recommendations applied · not saved yet`); clear() }}>Apply all recommendations ({recCount})</Button>
+                <Button size="sm" disabled={readOnly || !recCount} onClick={async () => { await act(() => api.applyRecommendations(entity.id, gstin), r => `${r.applied} recommendations applied · not saved yet`); clear() }}>Apply all recommendations ({recCount})</Button>
               </BulkBar>
             )}
             cardFooter={
               <CardFooter className="text-[11px] text-text-3">
                 Showing {list.length} of {rows.length} · actions are sent to the GST portal IMS when you press Save to portal{summary.lastSaved && <> · last saved {dateTime(summary.lastSaved.at)} by {users.find(u => u.id === summary.lastSaved!.by)?.name}</>}
                 <Spacer />
-                {recCount > 0 && <Button size="sm" disabled={readOnly || pending} onClick={() => act(() => api.applyRecommendations(entity.id, gstin, user.id), r => `${r.applied} recommendations applied · not saved yet`)}>Apply all recommendations ({recCount})</Button>}
-                <Button size="sm" variant="default" disabled={readOnly || pending || !dirty} onClick={() => act(() => api.saveImsToPortal(entity.id, gstin, user.id), r => `${r.saved} action${r.saved > 1 ? 's' : ''} saved to the GST portal`)}>Save {dirty} action{dirty === 1 ? '' : 's'} to portal</Button>
+                {recCount > 0 && <Button size="sm" disabled={readOnly || pending} onClick={() => act(() => api.applyRecommendations(entity.id, gstin), r => `${r.applied} recommendations applied · not saved yet`)}>Apply all recommendations ({recCount})</Button>}
+                <Button size="sm" variant="default" disabled={readOnly || pending || !dirty} onClick={() => act(() => api.saveImsToPortal(entity.id, gstin), r => `${r.saved} action${r.saved > 1 ? 's' : ''} saved to the GST portal`)}>Save {dirty} action{dirty === 1 ? '' : 's'} to portal</Button>
               </CardFooter>
             } />
         </div>
@@ -182,7 +181,7 @@ function Ims({ rows, summary, gstin }: { rows: ImsRow[]; summary: NonNullable<Aw
 }
 
 function RcmCard({ summary }: { summary: NonNullable<Awaited<ReturnType<typeof api.getGst>>['summary']> }) {
-  const { entity, user, readOnly } = useSession()
+  const { entity, readOnly } = useSession()
   const { act, pending } = useAct()
   const r = summary.rcm
   const half = r.freight * r.rate / 200
@@ -199,7 +198,7 @@ function RcmCard({ summary }: { summary: NonNullable<Awaited<ReturnType<typeof a
           [<span className="font-medium text-text">Payable in cash</span>, <b>{inr(half * 2)}</b>, 'text-right tabular-nums'],
         ]} />
         <div className="flex flex-wrap items-center gap-1.5"><StatusPill tone={missing ? 'warn' : 'ok'}>Self-invoices {r.selfInvoices} of {r.lrs}</StatusPill><span className="text-[11px] text-text-3">GSTR-3B Table 3.1(d) · ITC after payment</span></div>
-        {missing > 0 && <Button size="sm" className="self-start" disabled={readOnly || pending} onClick={() => act(() => api.generateSelfInvoices(entity.id, user.id), x => `${x.generated} self-invoice${x.generated > 1 ? 's' : ''} generated`)}>Generate {missing} self-invoice{missing > 1 ? 's' : ''}</Button>}
+        {missing > 0 && <Button size="sm" className="self-start" disabled={readOnly || pending} onClick={() => act(() => api.generateSelfInvoices(entity.id), x => `${x.generated} self-invoice${x.generated > 1 ? 's' : ''} generated`)}>Generate {missing} self-invoice{missing > 1 ? 's' : ''}</Button>}
       </CardBody>
     </Card>
   )
@@ -248,7 +247,7 @@ function Gstr3b({ outward, rows, summary }: { outward: OutwardDoc[]; rows: ImsRo
   return (
     <div className="flex flex-wrap items-start gap-4">
       <Card className="flex-[2_1_560px]">
-        <CardHeader title="GSTR-3B · Oct 2026 · draft from books"><StatusPill tone="none">Not filed</StatusPill><span className="text-[11px] text-text-3">Due {date(summary?.threeBDue ?? '2026-11-20')}</span></CardHeader>
+        <CardHeader title="{`GSTR-3B · ${period} · draft from books`}"><StatusPill tone="none">Not filed</StatusPill><span className="text-[11px] text-text-3">{summary ? `Due ${date(summary.threeBDue)}` : 'Due 20th of next month'}</span></CardHeader>
         <table className="w-full border-separate border-spacing-0 text-[12.5px] [&_td]:border-b [&_td]:border-border [&_td]:px-3 [&_td]:py-2">
           <tbody>
             {line('3.1(a)', `Outward taxable supplies · taxable ${inr(outTaxable)}`, outTax)}
@@ -262,7 +261,7 @@ function Gstr3b({ outward, rows, summary }: { outward: OutwardDoc[]; rows: ImsRo
             {line('6.1', 'Tax payable in cash (after ITC)', payable, true)}
           </tbody>
         </table>
-        <CardFooter className="text-[11px] text-text-3">Draft computed from SAP and IMS. File on the GST portal after GSTR-2B is generated on {date(summary?.twoBDate ?? '2026-11-14')} and recomputed if IMS actions change.</CardFooter>
+        <CardFooter className="text-[11px] text-text-3">Draft computed from SAP and IMS. File on the GST portal after GSTR-2B is generated (14th of next month) and recomputed if IMS actions change.</CardFooter>
       </Card>
       <Card className="flex-[1_1_300px]">
         <CardHeader title="Before you file" />
@@ -281,7 +280,7 @@ function Gstr3b({ outward, rows, summary }: { outward: OutwardDoc[]; rows: ImsRo
 }
 
 function EInvoice({ docs }: { docs: OutwardDoc[] }) {
-  const { user, readOnly } = useSession()
+  const { readOnly } = useSession()
   const { act } = useAct()
   const failed = docs.filter(d => d.irn.tone === 'bad')
   const columns = useMemo<ColumnDef<OutwardDoc, any>[]>(() => [ // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -291,7 +290,7 @@ function EInvoice({ docs }: { docs: OutwardDoc[] }) {
     { accessorKey: 'taxable', header: 'Value incl. tax', meta: { num: true }, cell: ({ row: { original: d } }) => inr(d.taxable + d.tax) },
     { id: 'irn', header: 'E-invoice (IRN)', accessorFn: d => d.irn.label, cell: ({ row: { original: d } }) => <Pill s={d.irn} /> },
     { id: 'ewb', header: 'E-way bill', accessorFn: d => d.ewb.label, cell: ({ row: { original: d } }) => <Pill s={d.ewb} /> },
-    { id: 'act', header: '', enableSorting: false, cell: ({ row: { original: d } }) => d.irn.tone === 'bad' ? <Button size="sm" disabled={readOnly} onClick={() => act(() => api.retryIrn(d.id, user.id), `IRN generated for ${d.docNo}`)}><RefreshCw />Fix and retry</Button> : null },
+    { id: 'act', header: '', enableSorting: false, cell: ({ row: { original: d } }) => d.irn.tone === 'bad' ? <Button size="sm" disabled={readOnly} onClick={() => act(() => api.retryIrn(d.id), `IRN generated for ${d.docNo}`)}><RefreshCw />Fix and retry</Button> : null },
   ], [readOnly]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
@@ -305,7 +304,7 @@ function Rcm({ lrs, summary }: { lrs: Awaited<ReturnType<typeof api.getGst>>['rc
   return (
     <div className="flex flex-wrap items-start gap-4">
       <Card className="flex-[2_1_560px]">
-        <CardHeader title="Lorry receipts under reverse charge · Oct 2026"><Source name="SAP" syncKey="sap" /></CardHeader>
+        <CardHeader title="{`Lorry receipts under reverse charge · ${period}`}"><Source name="SAP" syncKey="sap" /></CardHeader>
         <table className="w-full border-separate border-spacing-0 text-[12.5px] [&_td]:border-b [&_td]:border-border [&_td]:px-2.5 [&_td]:py-2 [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-2 [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:text-text-2">
           <thead><tr><th>LR</th><th>Date</th><th>Route</th><th className="text-right!">Freight</th><th className="text-right!">GST 5% (RCM)</th><th>Self-invoice</th></tr></thead>
           <tbody>{lrs.map(l => <tr key={l.id}><td className="font-mono">{l.lr}</td><td>{date(l.date)}</td><td>{l.route}</td><td className="text-right tabular-nums">{inr(l.freight)}</td><td className="text-right tabular-nums">{inr(l.freight * 0.05)}</td><td>{l.selfInvoice ? <span className="font-mono text-xs">{l.selfInvoice}</span> : <StatusPill tone="warn">Missing</StatusPill>}</td></tr>)}</tbody>

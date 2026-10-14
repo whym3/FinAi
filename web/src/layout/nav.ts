@@ -1,6 +1,6 @@
-import { ArrowDownLeft, CalendarCheck, ChartColumn, FileCheck, History, Inbox, Landmark, LayoutGrid, Percent, Receipt, ShieldCheck, SlidersHorizontal, TriangleAlert, Truck, Users, Wallet, Workflow, type LucideIcon } from 'lucide-react'
+import { ArrowDownLeft, CalendarCheck, Database, ChartColumn, FileCheck, History, Inbox, Landmark, LayoutGrid, Percent, Receipt, ShieldCheck, SlidersHorizontal, TriangleAlert, Truck, Users, Wallet, Workflow, type LucideIcon } from 'lucide-react'
 
-export type CountKey = 'intake' | 'p2p' | 'review' | 'exceptions' | 'payables' | 'receivables' | 'bank' | 'gst' | 'tds' | 'msme' | 'close' | 'vendors'
+export type CountKey = 'imports' | 'intake' | 'p2p' | 'review' | 'exceptions' | 'payables' | 'receivables' | 'bank' | 'gst' | 'tds' | 'msme' | 'close' | 'vendors'
 export interface NavItem { to: string; label: string; icon: LucideIcon; count?: CountKey; tone?: 'acc' | 'warn' | 'bad' }
 
 export const OVERVIEW: NavItem = { to: '/', label: 'Overview', icon: LayoutGrid }
@@ -9,6 +9,7 @@ export const SETTINGS: NavItem = { to: '/settings', label: 'Settings', icon: Sli
 export const NAV: { title: string; items: NavItem[] }[] = [
   { title: 'Work', items: [
     { to: '/intake', label: 'Intake inbox', icon: Inbox, count: 'intake', tone: 'acc' },
+    { to: '/imports', label: 'Imports', icon: Database, count: 'imports', tone: 'warn' },
     { to: '/p2p', label: 'Purchase-to-pay', icon: Workflow, count: 'p2p', tone: 'warn' },
     { to: '/review', label: 'Invoice review', icon: FileCheck, count: 'review' },
     { to: '/exceptions', label: 'Exceptions', icon: TriangleAlert, count: 'exceptions', tone: 'bad' },

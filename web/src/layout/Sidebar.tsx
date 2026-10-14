@@ -2,10 +2,12 @@ import { NavLink } from 'react-router'
 import { Menu } from 'lucide-react'
 import { Count } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useCounts } from '@/mock/hooks'
+import { useCounts } from '@/api/hooks'
 import { cn } from '@/lib/utils'
 import { BrandMark } from './Brand'
 import { NAV, OVERVIEW, SETTINGS, type NavItem } from './nav'
+
+const initials = (s: string) => s.split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'P'
 
 function Item({ it, rail, onNavigate }: { it: NavItem; rail: boolean; onNavigate?: () => void }) {
   const counts = useCounts().data
@@ -56,10 +58,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       <SidebarNav rail={collapsed} />
       <div className="min-h-4 flex-auto" />
       <Item it={SETTINGS} rail={collapsed} />
-      {collapsed ? <span className="mt-2"><span title="Mehta & Rao Chartered Accountants" className="grid size-8 place-items-center rounded-full border border-[#BCD2F0] bg-[#DCE8F8] text-xs font-semibold text-[#173E73] dark:border-[#2C4D78] dark:bg-[#1B3352] dark:text-[#BCD6F7]">MR</span></span> : (
+      {collapsed ? <span className="mt-2"><span title={firm.name} className="grid size-8 place-items-center rounded-full border border-[#BCD2F0] bg-[#DCE8F8] text-xs font-semibold text-[#173E73] dark:border-[#2C4D78] dark:bg-[#1B3352] dark:text-[#BCD6F7]">{initials(firm.short)}</span></span> : (
         <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-border p-2.5">
-          <span title="Mehta & Rao Chartered Accountants" className="grid size-8 place-items-center rounded-full border border-[#BCD2F0] bg-[#DCE8F8] text-xs font-semibold text-[#173E73] dark:border-[#2C4D78] dark:bg-[#1B3352] dark:text-[#BCD6F7]">MR</span>
-          <span className="flex min-w-0 flex-col"><span className="text-xs font-medium">{firm.short}</span><span className="text-[11px] text-text-3">Chartered Accountants · {entities.length} clients</span></span>
+          <span title={firm.name} className="grid size-8 place-items-center rounded-full border border-[#BCD2F0] bg-[#DCE8F8] text-xs font-semibold text-[#173E73] dark:border-[#2C4D78] dark:bg-[#1B3352] dark:text-[#BCD6F7]">{initials(firm.short)}</span>
+          <span className="flex min-w-0 flex-col"><span className="truncate text-xs font-medium">{firm.short}</span><span className="text-[11px] text-text-3">{entities.length} client{entities.length === 1 ? '' : 's'}</span></span>
         </div>
       )}
     </nav>

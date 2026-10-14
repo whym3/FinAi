@@ -5,17 +5,17 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Banner, Card, CardBody, CardHeader, Gstin, KV, PageHeader, Q, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useServerEntity } from '@/mock/hooks'
-import * as api from '@/mock/api'
-import type { EntityInput, GstInput } from '@/mock/api'
+import { useAct, useEntity } from '@/api/hooks'
+import * as api from '@/api'
+import type { EntityInput, GstInput } from '@/api'
 import type { Entity } from '@/lib/types'
-import { ADMIN, CompanyFields, GstinEditor, MailboxesCard, companyErrors, gstinRowError } from './parts'
+import { CompanyFields, GstinEditor, MailboxesCard, companyErrors, gstinRowError, useCanManage } from './parts'
 
 const BAND = { 'above-5cr': 'Above ₹5 Cr · e-invoice required', 'below-5cr': 'Below ₹5 Cr', exempt: 'Exempt' }
 
 export default function ClientPage() {
   const { id = '' } = useParams()
-  const q = useServerEntity(id)
+  const q = useEntity(id)
   const [sp, setSp] = useSearchParams()
   useEffect(() => {
     const ok = sp.get('mailbox'), err = sp.get('mailbox_error')
@@ -28,9 +28,9 @@ export default function ClientPage() {
 }
 
 function Client({ e }: { e: Entity }) {
-  const { user } = useSession()
+  const { refresh } = useSession()
   const { act, pending } = useAct()
-  const canEdit = ADMIN.includes(user.role)
+  const canEdit = useCanManage()
   const [editing, setEditing] = useState(false)
   const [c, setC] = useState<EntityInput>(() => toInput(e))
   const [gst, setGst] = useState<GstInput[]>(() => toGst(e))
@@ -53,7 +53,7 @@ function Client({ e }: { e: Entity }) {
               {gstErr && <Banner tone="bad" role="alert">{gstErr}</Banner>}
               <div className="flex justify-end gap-2"><Button onClick={reset}>Cancel</Button>
                 <Button variant="default" disabled={pending || !!gstErr || Object.keys(err).length > 0}
-                  onClick={async () => { if (await act(() => api.updateEntity(e.id, { ...c, pan: undefined, gstins: gst }), 'Client details saved')) setEditing(false) }}>Save</Button></div>
+                  onClick={async () => { if (await act(() => api.updateEntity(e.id, { ...c, pan: undefined, gstins: gst }), 'Client details saved')) { refresh(); setEditing(false) } }}>Save</Button></div>
             </> : (
               <KV items={[['Legal name', e.name], ['Short name', e.shortName], ['City', e.city || '—'], ['PAN', <span className="font-mono">{e.pan}</span>],
                 ['TAN', <span className="font-mono">{e.tan || '—'}</span>], ['CIN / LLPIN', <span className="font-mono">{e.cin || '—'}</span>],

@@ -8,8 +8,8 @@ import {
   Avatar, Banner, Bar, Card, CardBody, CardHeader, Chip, Chk, CompareCell, DocumentDrawer, Gstin, KV, MsmeBadge, OptionCard, PageHeader, Pill, Q, Restricted, Source, StatusPill, OkIcon, WarnIcon, BadIcon, NoneIcon, placeholderPaper,
 } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useIntake, useInvoice, useInvoices, useVendors } from '@/mock/hooks'
-import * as api from '@/mock/api'
+import { useAct, useIntake, useInvoice, useInvoices, useVendors } from '@/api/hooks'
+import * as api from '@/api'
 import { date, dateTime, daysFromNow, inr } from '@/lib/format'
 import type { DecisionKind, EvidenceDoc, Invoice } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -35,7 +35,7 @@ export default function InvoiceReviewPage() {
 }
 
 function Review({ inv }: { inv: Invoice }) {
-  const { user, users, readOnly } = useSession()
+  const { user, users, readOnly, approvalLimit } = useSession()
   const vendor = useVendors().data?.find(v => v.id === inv.vendorId)
   const queue = (useInvoices().data ?? []).filter(i => i.status === 'needs-decision' || i.id === inv.id)
   const intake = useIntake().data?.find(d => d.id === inv.intakeId)
@@ -51,8 +51,8 @@ function Review({ inv }: { inv: Invoice }) {
   const [reasons, setReasons] = useState<string[]>(() => defaultReasons(defaultKind))
   const [note, setNote] = useState(inv.draft?.note ?? '')
   const noteRequired = kind === 'note' || kind === 'hold' || kind === 'reject'
-  const overLimit = (kind === 'approve' || kind === 'note' || kind === 'dn') && inv.total > user.approvalLimit
-  const canDecide = !readOnly && user.approvalLimit > 0 && inv.status === 'needs-decision'
+  const overLimit = (kind === 'approve' || kind === 'note' || kind === 'dn') && inv.total > approvalLimit
+  const canDecide = !readOnly && approvalLimit > 0 && inv.status === 'needs-decision'
   const valid = reasons.length > 0 && (!noteRequired || note.trim().length > 0) && (kind !== 'dn' || inv.dnLines.length > 0)
   const pos = queue.findIndex(i => i.id === inv.id)
   const next = queue.filter(i => i.id !== inv.id && i.status === 'needs-decision')[0]
@@ -60,7 +60,7 @@ function Review({ inv }: { inv: Invoice }) {
   const submitLabel = { approve: 'Approve invoice', note: 'Approve with note', hold: 'Put on hold', reject: 'Reject invoice', dn: `Raise debit note ${inr(dnTotal)} and approve` }[kind]
   const submit = async () => {
     if (!valid || pending) return
-    const r = await act(() => api.submitDecision(inv.id, kind, reasons, note, user.id), r => r.decision?.secondApproverNeeded ? `Decision saved · sent to a second approver` : `${inv.invoiceNo}: ${KIND_LABEL[kind].toLowerCase()}`)
+    const r = await act(() => api.submitDecision(inv.id, kind, reasons, note), r => r.decision?.secondApproverNeeded ? `Decision saved · sent to a second approver` : `${inv.invoiceNo}: ${KIND_LABEL[kind].toLowerCase()}`)
     if (r && next) nav('/review/' + next.id)
   }
   useEffect(() => {
@@ -142,7 +142,7 @@ function Review({ inv }: { inv: Invoice }) {
           </Card>
 
           <Card aria-label="Decision" className="border-border-2">
-            <CardHeader title="Decision"><span className="flex items-center gap-1.5 text-xs text-text-2"><Avatar id={inv.decision?.byId ?? user.id} />{users.find(u => u.id === (inv.decision?.byId ?? user.id))?.name} · {users.find(u => u.id === (inv.decision?.byId ?? user.id))?.title}{!inv.decision && user.approvalLimit > 0 && user.approvalLimit < 1e11 && ` · approval limit ${inr(user.approvalLimit)}`}</span></CardHeader>
+            <CardHeader title="Decision"><span className="flex items-center gap-1.5 text-xs text-text-2"><Avatar id={inv.decision?.byId ?? user.id} />{users.find(u => u.id === (inv.decision?.byId ?? user.id))?.name} · {users.find(u => u.id === (inv.decision?.byId ?? user.id))?.title}{!inv.decision && approvalLimit > 0 && approvalLimit < 1e11 && ` · approval limit ${inr(approvalLimit)}`}</span></CardHeader>
             {inv.decision ? <DecisionSummary inv={inv} /> : !canDecide ? (
               <Restricted>{readOnly ? 'Your role is read-only. Decisions need an AP executive, Controller or CFO.' : `${user.title}s cannot decide on invoices. Switch to an AP executive, Controller or CFO from the user menu.`}</Restricted>
             ) : (
@@ -178,12 +178,12 @@ function Review({ inv }: { inv: Invoice }) {
                   </div>
                   <Banner tone={overLimit ? 'warn' : 'info'} icon={<Users className="size-4" />} className="py-2">
                     {overLimit
-                      ? <>This invoice is {inr(inv.total)}, above your limit of {inr(user.approvalLimit)}. After you submit, a Controller or CFO must approve it before it posts.</>
-                      : <>Amounts above <span className="font-medium">{inr(user.approvalLimit)}</span> need a second approver (Controller or CFO). This invoice is {inr(inv.total)}, so your decision is final and is logged with the evidence above.</>}
+                      ? <>This invoice is {inr(inv.total)}, above your limit of {inr(approvalLimit)}. After you submit, a Controller or CFO must approve it before it posts.</>
+                      : <>Amounts above <span className="font-medium">{inr(approvalLimit)}</span> need a second approver (Controller or CFO). This invoice is {inr(inv.total)}, so your decision is final and is logged with the evidence above.</>}
                   </Banner>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button variant="default" disabled={!valid || pending} onClick={submit}><Check />{submitLabel}</Button>
-                    <Button disabled={pending} onClick={() => act(() => api.saveDraft(inv.id, { kind, reasons, note }, user.id), 'Draft saved')}>Save draft</Button>
+                    <Button disabled={pending} onClick={() => act(() => api.saveDraft(inv.id, { kind, reasons, note }), 'Draft saved')}>Save draft</Button>
                     <span className="text-[11px] text-text-3">Ctrl Enter to submit · next invoice opens automatically</span>
                   </div>
                 </div>
@@ -242,11 +242,11 @@ function Review({ inv }: { inv: Invoice }) {
 }
 
 function DecisionSummary({ inv }: { inv: Invoice }) {
-  const { user, users, readOnly } = useSession()
+  const { user, users, readOnly, approvalLimit } = useSession()
   const { act, pending } = useAct()
   const d = inv.decision!
   const by = users.find(u => u.id === d.byId)
-  const canSecond = d.secondApproverNeeded && !readOnly && d.byId !== user.id && user.approvalLimit >= inv.total
+  const canSecond = d.secondApproverNeeded && !readOnly && d.byId !== user.id && approvalLimit >= inv.total
   return (
     <CardBody className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2"><StatusPill tone={d.kind === 'hold' || d.kind === 'reject' ? 'bad' : 'ok'}>{KIND_LABEL[d.kind]}</StatusPill><span className="text-xs text-text-2">by {by?.name} · {dateTime(d.at)}</span></div>
@@ -257,7 +257,7 @@ function DecisionSummary({ inv }: { inv: Invoice }) {
         ['Second approver', d.secondApproverNeeded ? <StatusPill tone="warn">Pending · Controller or CFO</StatusPill> : <span className="text-text-2">Not needed or done</span>],
       ]} />
       {d.secondApproverNeeded && (canSecond
-        ? <div className="flex gap-2"><Button variant="default" disabled={pending} onClick={() => act(() => api.confirmSecondApproval(inv.id, user.id), 'Second approval recorded · invoice posts')}><Check />Approve as second approver</Button></div>
+        ? <div className="flex gap-2"><Button variant="default" disabled={pending} onClick={() => act(() => api.confirmSecondApproval(inv.id), 'Second approval recorded · invoice posts')}><Check />Approve as second approver</Button></div>
         : <Banner tone="info" icon={<Users className="size-4" />}>Waiting for a Controller or CFO with a limit of at least {inr(inv.total)}. They see it in Approvals.</Banner>)}
     </CardBody>
   )

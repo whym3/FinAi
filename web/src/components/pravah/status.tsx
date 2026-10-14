@@ -83,12 +83,12 @@ export function Gstin({ g, state, short }: { g?: string; state?: string; short?:
   )
 }
 
-/** Source chip: "[SAP] synced 10 min ago". Pass syncKey to derive time and staleness from the live sync state. */
+/** Source chip: "[SAP] synced 10 min ago". Pass syncKey to derive time and staleness from the live source state. */
 export function Source({ name, text, syncKey, stale }: { name: SourceName | string; text?: string; syncKey?: SyncKey; stale?: boolean }) {
   const { sync } = useSession()
-  const s = syncKey && sync.find(x => x.key === syncKey)
-  const isStale = stale ?? (s ? hoursSince(s.at) > s.staleAfterH : false)
-  const label = text ?? (s ? 'synced ' + ago(s.at) : '')
+  const s = syncKey ? sync.find(x => x.key === syncKey) : undefined
+  const isStale = stale ?? (s ? (!s.at ? !!s.error : hoursSince(s.at) > s.staleAfterH) : false)
+  const label = text ?? (s ? (s.at ? 'synced ' + ago(s.at) : s.error ?? 'not connected') : '')
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-[11px] leading-4 whitespace-nowrap', isStale ? 'text-warn' : 'text-text-3')}>
       <b className={cn('rounded-sm border px-1.5 font-medium', isStale ? 'border-warn-bd bg-warn-bg text-warn' : 'border-border bg-surface-2 text-text-2')}>{name}</b>{label}
@@ -98,10 +98,14 @@ export function Source({ name, text, syncKey, stale }: { name: SourceName | stri
 
 export function Freshness({ k }: { k: SyncKey }) {
   const { sync } = useSession()
-  const s = sync.find(x => x.key === k)!
+  const s = sync.find(x => x.key === k)
+  if (!s) return null
+  if (!s.at) {
+    return <span title={`${s.system}: ${s.error ?? 'not connected'}`} className="inline-flex h-[26px] items-center gap-1.5 rounded-[13px] border border-dashed border-border-2 bg-surface px-[9px] text-[11.5px] whitespace-nowrap text-text-3"><NoneIcon size={12} />{s.label} · off</span>
+  }
   const stale = hoursSince(s.at) > s.staleAfterH
   return (
-    <span title={`${s.system} synced ${s.at.replace('T', ' ')}${stale ? ' — stale' : ''}`} className={cn('inline-flex h-[26px] items-center gap-1.5 rounded-[13px] border px-[9px] text-[11.5px] whitespace-nowrap', stale ? 'border-warn-bd bg-warn-bg text-warn' : 'border-border bg-surface text-text-2')}>
+    <span title={`${s.system} ${s.detail ? '· ' + s.detail + ' ' : ''}synced ${s.at.replace('T', ' ')}${stale ? ' — stale' : ''}`} className={cn('inline-flex h-[26px] items-center gap-1.5 rounded-[13px] border px-[9px] text-[11.5px] whitespace-nowrap', stale ? 'border-warn-bd bg-warn-bg text-warn' : 'border-border bg-surface text-text-2')}>
       {stale ? <WarnIcon size={12} /> : <span className="size-[7px] rounded-full bg-ok" />}{s.label} · {agoShort(s.at)}
     </span>
   )
@@ -109,8 +113,8 @@ export function Freshness({ k }: { k: SyncKey }) {
 
 export function useStale(k: SyncKey) {
   const { sync } = useSession()
-  const s = sync.find(x => x.key === k)!
-  return { stale: hoursSince(s.at) > s.staleAfterH, at: s.at, sync: s }
+  const s = sync.find(x => x.key === k) ?? { key: k, label: k.toUpperCase(), system: k, at: null, staleAfterH: 0, error: 'Not connected' }
+  return { stale: s.at ? hoursSince(s.at) > s.staleAfterH : !!s.error, at: s.at, sync: s }
 }
 
 /* ---------- avatar ---------- */
@@ -127,9 +131,10 @@ export function Avatar({ id, size = 'md', className }: { id: string; size?: 'sm'
   const { users } = useSession()
   const u = users.find(u => u.id === id)
   const color = u?.color
+  const auto = !id || id === 'PV'
   return (
-    <span title={u ? `${u.name} · ${u.title}` : id} className={cn('inline-grid shrink-0 place-items-center rounded-full border font-semibold', color ? av[color] : 'border-border-2 bg-surface-3 text-text', size === 'sm' && 'size-5 text-[9px]', size === 'md' && 'size-6 text-[10px]', size === 'lg' && 'size-8 text-xs', className)}>
-      {u?.initials ?? id}
+    <span title={u ? `${u.name} · ${u.title}` : auto ? 'Pravah (automatic)' : `User ${id}`} className={cn('inline-grid shrink-0 place-items-center rounded-full border font-semibold', color ? av[color] : 'border-border-2 bg-surface-3 text-text', size === 'sm' && 'size-5 text-[9px]', size === 'md' && 'size-6 text-[10px]', size === 'lg' && 'size-8 text-xs', className)}>
+      {u?.initials ?? (auto ? 'PV' : '?')}
     </span>
   )
 }
@@ -137,7 +142,7 @@ export function Avatar({ id, size = 'md', className }: { id: string; size?: 'sm'
 export function Person({ id, sub }: { id: string; sub?: boolean }) {
   const { users } = useSession()
   const u = users.find(u => u.id === id)
-  return <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Avatar id={id} /><span className="text-xs">{u?.name ?? (id === 'PV' ? 'Pravah (auto)' : id)}{sub && u && <span className="text-text-3"> · {u.title}</span>}</span></span>
+  return <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Avatar id={id} /><span className="text-xs">{u?.name ?? (!id || id === 'PV' ? 'Pravah (auto)' : 'Unassigned')}{sub && u && <span className="text-text-3"> · {u.title}</span>}</span></span>
 }
 
 /* ---------- confidence meter ---------- */

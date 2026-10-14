@@ -19,13 +19,15 @@ Refresh the graph so the next session sees your changes: run `/graphify . --upda
 
 ## Run
 
-- Everything: `docker compose up --build` → http://localhost:5173
-- UI only (mock data): `cd web && npm run dev`
+- Everything: `docker compose up --build` → http://localhost:5173 (first run: /setup creates the firm and admin; MFA is mandatory)
 - Server only: `docker compose up -d db`, then `cd server && uv run alembic upgrade head && uv run uvicorn app.main:app --reload`
+- UI only: `cd web && npm run dev` (needs the server; there is no mock data any more)
 - Tests: `cd web && npm test`; `cd server && uv run pytest`
 
 ## Conventions
 
-- The UI calls `web/src/mock/api.ts`. Functions move to the real server one feature at a time (via `web/src/api/http.ts`), and `web/src/mock/api.test.ts` is the behaviour contract.
-- Every write records an audit entry, and nothing is deleted.
+- The UI calls only `web/src/api/index.ts` (fetch wrapper in `web/src/api/http.ts`, React Query hooks in `web/src/api/hooks.ts`). Server routes live in `server/app/routers/`; shapes are `web/src/lib/types.ts` ↔ `server/app/serialize.py`.
+- Claude is called only from `server/app/extract/claude.py`; the key is server config, never UI.
+- Every write records an audit entry, and nothing is deleted. Extracted values never count until a person confirms them.
+- Sample client data for manual testing is in `~/Downloads/Datafor` (Apollo Pipes: a scanned invoice bundle, purchase and sales registers, stock movements).
 - Push to https://github.com/whym3/FinAi on branch `claude/pravah-finance-control-design-ti9zjy`.

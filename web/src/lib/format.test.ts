@@ -20,11 +20,12 @@ describe('format', () => {
     expect(dateLong('2026-10-13')).toBe('13 Oct 2026')
     expect(daysBetween('2026-10-08', '2026-11-22')).toBe(45)
     expect(addDays('2026-10-08', 45)).toBe('2026-11-22')
-    expect(daysFromNow('2026-10-31')).toBe(18)
+    expect(daysFromNow('2026-10-31', '2026-10-13')).toBe(18)
   })
-  it('describes ages relative to the demo clock', () => {
-    expect(ago('2026-10-13T15:10')).toBe('10 min ago')
-    expect(ago('2026-10-12T17:40')).toBe('22 h ago')
+  it('describes ages relative to a given moment', () => {
+    const at = new Date('2026-10-13T15:20:00+05:30')
+    expect(ago('2026-10-13T15:10', at)).toBe('10 min ago')
+    expect(ago('2026-10-12T17:40', at)).toBe('22 h ago')
   })
 })
 
