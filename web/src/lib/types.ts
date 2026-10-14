@@ -37,7 +37,7 @@ export interface Me {
 
 export interface Gstin { gstin: string; code: string; state: string; placeOfBusiness?: string; filingFrequency?: 'monthly' | 'qrmp'; einvoiceApplicable?: boolean }
 
-export type MailProvider = 'gmail' | 'outlook'
+export type MailProvider = 'gmail' | 'outlook' | 'imap'
 /** A connected invoice mailbox (server). */
 export interface Mailbox {
   id: number

@@ -1,12 +1,16 @@
+import json
+
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .. import crypto
 from ..auth import ADMIN_ROLES, audit, current_user, require_entity, require_role
-from ..db import get_db
+from ..db import SessionLocal, get_db
+from ..mail import imap
+from ..mail.base import AuthError
 from ..mail.ingest import sync_mailbox
 from ..models import Mailbox, SourceDocument, User
 from ..serialize import doc_out, mailbox_out
@@ -94,3 +98,45 @@ def disconnect(mailbox_id: int, request: Request, u: User = Depends(current_user
     audit(db, u.id, mb.entity_id, 'Disconnected mailbox', mb.address, 'Ingested documents are kept', request=request)
     db.commit()
     return {'ok': True}
+
+
+class ImapIn(BaseModel):
+    address: str = Field(min_length=3, max_length=200, pattern=r'^[^@\s]+@[^@\s]+$')
+    host: str = Field(min_length=3, max_length=200, pattern=r'^[A-Za-z0-9.-]+$')
+    port: int = Field(993, ge=1, le=65535)
+    username: str = ''
+    password: str = Field(min_length=1, max_length=500)
+    backfill_days: int = Field(7, ge=0, le=90)
+
+
+@router.post('/entities/{entity_id}/mailboxes/imap')
+def connect_imap(entity_id: str, body: ImapIn, request: Request, background: BackgroundTasks, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_entity(u, entity_id)
+    require_role(u, entity_id, ADMIN_ROLES, 'connect mailboxes')
+    address = body.address.strip().lower()
+    secret = {'host': body.host.strip(), 'port': body.port, 'user': body.username.strip() or address, 'password': body.password.replace(' ', '') if body.host.endswith('gmail.com') else body.password}
+    try:
+        imap.check(secret)
+    except AuthError as e:
+        raise HTTPException(400, f'The mail server refused the login: {e}. Use an app password, and make sure IMAP is turned on for this mailbox.')
+    except OSError as e:
+        raise HTTPException(400, f'Could not reach {secret["host"]}:{secret["port"]} ({e})')
+    mb = db.scalar(select(Mailbox).where(Mailbox.entity_id == entity_id, Mailbox.address == address))
+    if not mb:
+        mb = Mailbox(entity_id=entity_id, provider='imap', address=address, backfill_days=body.backfill_days, sender_allow=[], sender_block=[])
+        db.add(mb)
+    elif mb.status == 'disconnected' or mb.provider != 'imap':
+        mb.cursor, mb.backfill_days = None, body.backfill_days  # start fresh, dedupe stops repeats
+    mb.provider, mb.enc_refresh_token, mb.status, mb.last_error, mb.connected_by = 'imap', crypto.encrypt(json.dumps(secret)), 'active', None, u.id
+    db.flush()
+    audit(db, u.id, entity_id, 'Connected mailbox', address, f'IMAP {secret["host"]} · backfill {mb.backfill_days} days', request=request)
+    db.commit()
+    background.add_task(_first_sync, mb.id)
+    return mailbox_out(mb)
+
+
+def _first_sync(mailbox_id: int) -> None:
+    with SessionLocal() as db:
+        mb = db.get(Mailbox, mailbox_id)
+        if mb:
+            sync_mailbox(db, mb)

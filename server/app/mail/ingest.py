@@ -109,9 +109,9 @@ def ingest(db: Session, mb: Mailbox, msgs: list[Message]) -> int:
 def sync_mailbox(db: Session, mb: Mailbox) -> int:
     """Fetch new mail for one mailbox and ingest it. Errors mark the mailbox, they never raise to the poller."""
     from .. import crypto
-    from . import gmail, outlook
+    from . import gmail, imap, outlook
     from .base import AuthError
-    provider = {'gmail': gmail, 'outlook': outlook}[mb.provider]
+    provider = {'gmail': gmail, 'outlook': outlook, 'imap': imap}[mb.provider]
     try:
         res = provider.fetch(crypto.decrypt(mb.enc_refresh_token), mb.cursor, mb.backfill_days)
         n = ingest(db, mb, res.messages)

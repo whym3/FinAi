@@ -76,6 +76,10 @@ Open the app. With no users in the database it shows **Set up Pravah**: firm nam
 3. API permissions: Microsoft Graph delegated `Mail.Read`, `User.Read`, `offline_access`.
 4. Certificates & secrets → new client secret → `.env` `MS_CLIENT_ID` / `MS_CLIENT_SECRET`.
 
+## Connecting any mailbox with an app password (IMAP)
+
+No cloud app needed. Settings → Integrations → **Connect with app password**: pick the provider (Gmail, Zoho, Yahoo, iCloud, or any IMAP server), enter the address and an app password. Gmail needs 2-Step Verification on, then Google Account → Security → App passwords. The login is checked before saving; the password is stored encrypted. INBOX is opened read-only and messages are fetched with `BODY.PEEK[]`, so nothing is marked as read. The cursor is `<UIDVALIDITY>:<last UID>`; a long backfill continues 100 messages per poll. Microsoft 365 and Outlook.com no longer accept passwords over IMAP, so Outlook uses sign-in above.
+
 Mailboxes are polled every `POLL_SECONDS` (Gmail history, Graph delta). Push notifications need a public HTTPS URL and come with deployment.
 
 ## Layout

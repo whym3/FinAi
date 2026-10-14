@@ -50,6 +50,7 @@ export const listMailboxes = (entityId: string) => http<Mailbox[]>(`/entities/${
 export const mailboxRecent = (id: number) => http<IntakeDoc[]>(`/mailboxes/${id}/recent`)
 export const updateMailbox = (id: number, body: { status?: 'active' | 'paused'; backfill_days?: number; sender_allow?: string[]; sender_block?: string[] }) => http<Mailbox>(`/mailboxes/${id}`, { method: 'PATCH', json: body })
 export const syncMailbox = (id: number) => http<{ new: number; mailbox: Mailbox }>(`/mailboxes/${id}/sync`, { method: 'POST' })
+export const connectImap = (entityId: string, body: { address: string; host: string; port: number; username?: string; password: string; backfill_days: number }) => http<Mailbox>(`/entities/${entityId}/mailboxes/imap`, { method: 'POST', json: body })
 export const disconnectMailbox = (id: number) => http<{ ok: boolean }>(`/mailboxes/${id}/disconnect`, { method: 'POST' })
 /** Full-page navigation to the provider's consent screen; it returns to `ret` with ?mailbox=connected or ?mailbox_error=… */
 export function connectMailbox(provider: MailProvider, entityId: string, ret: string, backfill: number) {

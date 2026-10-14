@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
-import { Mail, Pause, Play, Plus, RefreshCw, Trash2, Unplug, X } from 'lucide-react'
+import { KeyRound, Mail, Pause, Play, Plus, RefreshCw, Trash2, Unplug, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -111,12 +111,17 @@ export function GstinEditor({ rows, set, pan, canRemove = () => true }: { rows: 
   )
 }
 
-const PROVIDER: Record<MailProvider, string> = { gmail: 'Gmail / Google Workspace', outlook: 'Outlook / Microsoft 365' }
+const PROVIDER: Record<MailProvider, string> = { gmail: 'Gmail / Google Workspace', outlook: 'Outlook / Microsoft 365', imap: 'IMAP' }
+/** Microsoft 365 and Outlook.com no longer accept passwords over IMAP, so Outlook stays on sign-in. */
+const IMAP_HOSTS: [string, string, string][] = [['imap.gmail.com', 'Gmail / Google Workspace', 'Google Account → Security → 2-Step Verification → App passwords'],
+  ['imap.zoho.in', 'Zoho Mail (India)', 'Zoho Accounts → Security → App passwords; turn on IMAP in Mail settings'], ['imap.mail.yahoo.com', 'Yahoo Mail', 'Account security → Generate app password'],
+  ['imap.mail.me.com', 'iCloud Mail', 'appleid.apple.com → App-specific passwords'], ['', 'Other (company or hosted mail)', 'Ask your mail host for the IMAP server; usually imap.<your domain>, port 993']]
 const MB_TONE: Record<Mailbox['status'], [Tone, string]> = { active: ['ok', 'Live'], paused: ['none', 'Paused'], error: ['bad', 'Needs attention'], disconnected: ['none', 'Disconnected'] }
 
 /** Connect buttons with the backfill choice. Navigates away to the provider and comes back to `ret`. */
 export function ConnectMailbox({ entityId, ret, disabled }: { entityId: string; ret: string; disabled?: boolean }) {
   const [backfill, setBackfill] = useState('7')
+  const [imapOpen, setImapOpen] = useState(false)
   const health = useIntegrations().data?.oauth
   const [sp, setSp] = useSearchParams()
   useEffect(() => { // result of the OAuth round-trip
@@ -133,13 +138,45 @@ export function ConnectMailbox({ entityId, ret, disabled }: { entityId: string; 
       <div className="flex flex-wrap items-end gap-2">
         <Button disabled={disabled || health?.gmail === false} onClick={() => api.connectMailbox('gmail', entityId, ret, Number(backfill))}><Mail />Connect Gmail</Button>
         <Button disabled={disabled || health?.outlook === false} onClick={() => api.connectMailbox('outlook', entityId, ret, Number(backfill))}><Mail />Connect Outlook</Button>
+        <Button disabled={disabled} onClick={() => setImapOpen(true)}><KeyRound />Connect with app password</Button>
         <Field label="Read past mail" className="ml-1"><NativeSelect label="Backfill" value={backfill} onChange={setBackfill} options={[['0', 'New mail only'], ['7', 'Last 7 days'], ['30', 'Last 30 days']]} /></Field>
       </div>
       <div className="text-[11px] text-text-3">
         Read-only access. Pravah checks the inbox every minute and takes PDF, image, XML/JSON and ZIP attachments into the Intake inbox. Nothing is sent, moved or deleted.
-        {health && (!health.gmail || !health.outlook) && <> Not set up on this server yet: {[!health.gmail && 'Google', !health.outlook && 'Microsoft'].filter(Boolean).join(' and ')} sign-in (see server/README.md).</>}
+        {health && (!health.gmail || !health.outlook) && <> Not set up on this server yet: {[!health.gmail && 'Google', !health.outlook && 'Microsoft'].filter(Boolean).join(' and ')} sign-in (see server/README.md). Any Gmail, Zoho or company mailbox can connect with an app password instead.</>}
       </div>
+      <ImapDialog entityId={entityId} backfill={Number(backfill)} open={imapOpen} onOpenChange={setImapOpen} />
     </div>
+  )
+}
+
+function ImapDialog({ entityId, backfill, open, onOpenChange }: { entityId: string; backfill: number; open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { act, pending } = useAct()
+  const [address, setAddress] = useState('')
+  const [preset, setPreset] = useState('imap.gmail.com')
+  const [host, setHost] = useState('')
+  const [port, setPort] = useState('993')
+  const [password, setPassword] = useState('')
+  const help = IMAP_HOSTS.find(h => h[0] === preset)?.[2]
+  const server = preset || host.trim()
+  const submit = async () => {
+    const mb = await act(() => api.connectImap(entityId, { address: address.trim(), host: server, port: Number(port) || 993, password, backfill_days: backfill }), m => `Connected ${m.address}. First check is running.`)
+    if (mb) { setPassword(''); onOpenChange(false) }
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader><DialogTitle>Connect a mailbox with an app password</DialogTitle><DialogDescription>Pravah reads the inbox over IMAP, read-only: it never sends, moves, deletes or marks mail as read. The password is stored encrypted.</DialogDescription></DialogHeader>
+        <Field label="Mail provider"><NativeSelect label="Mail provider" value={preset} onChange={setPreset} options={IMAP_HOSTS.map(h => [h[0], h[1]])} /></Field>
+        {!preset && <div className="grid grid-cols-[1fr_90px] gap-2"><Field label="IMAP server"><Input value={host} onChange={e => setHost(e.target.value)} placeholder="imap.example.in" /></Field><Field label="Port"><Input value={port} onChange={e => setPort(e.target.value)} inputMode="numeric" /></Field></div>}
+        <Field label="Email address"><Input type="email" value={address} onChange={e => setAddress(e.target.value)} placeholder="ap@apollopipes.com" autoComplete="off" /></Field>
+        <Field label="App password" hint={help}><Input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></Field>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="default" disabled={pending || !address.includes('@') || !password || !server} onClick={submit}>{pending ? 'Checking…' : 'Connect'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
