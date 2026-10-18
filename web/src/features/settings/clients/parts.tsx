@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
-import { KeyRound, Mail, Pause, Play, Plus, RefreshCw, Trash2, Unplug, X } from 'lucide-react'
+import { Eye, EyeOff, KeyRound, Mail, Pause, Play, Plus, RefreshCw, Trash2, Unplug, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { Banner, Card, CardHeader, EmptyState, Gstin, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
 import { useAct, useIntegrations, useMailboxes, useMailboxRecent } from '@/api/hooks'
@@ -18,6 +19,27 @@ import { cn } from '@/lib/utils'
 export const ADMIN = ['partner', 'cfo', 'controller']
 /** Firm admins and partners manage everything; CFOs and controllers manage their own client. */
 export function useCanManage() { const { isAdmin, firmWide, role } = useSession(); return isAdmin || firmWide || ADMIN.includes(role ?? '') }
+
+/** Password box with a show/hide toggle. */
+export function PasswordInput({ value, onChange, ...props }: Omit<ComponentProps<typeof InputGroupInput>, 'type'>) {
+  const [shown, setShown] = useState(false)
+  return (
+    <InputGroup>
+      <InputGroupInput type={shown ? 'text' : 'password'} value={value} onChange={onChange} {...props} />
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          aria-label={shown ? 'Hide password' : 'Show password'}
+          aria-pressed={shown}
+          title={shown ? 'Hide password' : 'Show password'}
+          disabled={props.disabled}
+          onClick={() => setShown(s => !s)}
+        >
+          {shown ? <EyeOff /> : <Eye />}
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
+  )
+}
 
 export function Field({ label, hint, error, children, className }: { label: string; hint?: ReactNode; error?: string | null; children: ReactNode; className?: string }) {
   return (
@@ -170,7 +192,7 @@ function ImapDialog({ entityId, backfill, open, onOpenChange }: { entityId: stri
         <Field label="Mail provider"><NativeSelect label="Mail provider" value={preset} onChange={setPreset} options={IMAP_HOSTS.map(h => [h[0], h[1]])} /></Field>
         {!preset && <div className="grid grid-cols-[1fr_90px] gap-2"><Field label="IMAP server"><Input value={host} onChange={e => setHost(e.target.value)} placeholder="imap.example.in" /></Field><Field label="Port"><Input value={port} onChange={e => setPort(e.target.value)} inputMode="numeric" /></Field></div>}
         <Field label="Email address"><Input type="email" value={address} onChange={e => setAddress(e.target.value)} placeholder="ap@apollopipes.com" autoComplete="off" /></Field>
-        <Field label="App password" hint={help}><Input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></Field>
+        <Field label="App password" hint={help}><PasswordInput aria-label="App password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></Field>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button variant="default" disabled={pending || !address.includes('@') || !password || !server} onClick={submit}>{pending ? 'Checking…' : 'Connect'}</Button>
