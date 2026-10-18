@@ -7,20 +7,18 @@ import { useApprovals, useCounts } from '@/api/hooks'
 import { cn } from '@/lib/utils'
 import { BrandMark } from './Brand'
 import { SidebarNav } from './Sidebar'
-import { EntitySwitcher, NotificationsMenu, SearchPalette, UserMenu, useSearchShortcut } from './Topbar'
+import { EntitySwitcher, NotificationsMenu, UserMenu } from './Topbar'
 import { SETTINGS } from './nav'
 
-export function MobileTopBar() {
-  const [open, setOpen] = useSearchShortcut()
+export function MobileTopBar({ onSearch }: { onSearch: () => void }) {
   return (
     <header className="sticky top-0 z-20 flex flex-col gap-2 border-b border-border bg-surface px-4 py-2 md:hidden">
       <div className="flex items-center gap-2">
         <BrandMark size={28} />
         <EntitySwitcher compact />
-        <button type="button" aria-label="Search" onClick={() => setOpen(true)} className="grid size-11 flex-none cursor-pointer place-items-center rounded-md text-text-2 hover:bg-surface-2"><Search className="size-4" /></button>
+        <button type="button" aria-label="Search" onClick={onSearch} className="grid size-11 flex-none cursor-pointer place-items-center rounded-md text-text-2 hover:bg-surface-2"><Search className="size-4" /></button>
         <NotificationsMenu big />
       </div>
-      <SearchPalette open={open} onOpenChange={setOpen} />
     </header>
   )
 }

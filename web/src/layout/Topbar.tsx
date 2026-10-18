@@ -6,8 +6,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Avatar, Freshness, Gstin, toneIcon, toneText, useStale } from '@/components/pravah'
+import { Avatar, Gstin, toneIcon, toneText, useStale } from '@/components/pravah'
 import { useSession } from '@/app/session'
 import { useTheme } from '@/app/theme'
 import { useAct, useCounts, useNotifications, useSearch } from '@/api/hooks'
@@ -115,22 +114,23 @@ export function useSearchShortcut() {
   return [open, setOpen] as const
 }
 
-function FeedChip({ k }: { k: SyncKey }) {
+/** One connection's status, as a row in the account menu. */
+function FeedRow({ k }: { k: SyncKey }) {
   const { sync, stale } = useStale(k)
   const nav = useNavigate()
   return (
-    <Popover>
-      <PopoverTrigger asChild><button type="button" className="cursor-pointer rounded-[13px]" aria-label={`${sync.system} feed status`}><Freshness k={k} /></button></PopoverTrigger>
-      <PopoverContent align="end" className="w-72 text-xs">
-        <div className="mb-1 font-semibold">{sync.system}</div>
-        {sync.at ? <>
-          <div className="text-text-2">Last synced {dateTime(sync.at)} · {ago(sync.at)}{sync.detail ? ` · ${sync.detail}` : ''}</div>
-          <div className={cn('mt-1', stale ? 'text-warn' : 'text-ok')}>{stale ? `Stale: older than ${Math.round(sync.staleAfterH)} h. Figures from this source are marked.` : 'Up to date.'}</div>
-          {sync.error && <div className="mt-1 text-bad">{sync.error}</div>}
-        </> : <div className="text-text-2">{sync.error ?? 'Not connected yet.'}</div>}
-        <Button size="sm" className="mt-2" onClick={() => nav(k === 'sap' && !sync.at ? '/imports' : '/settings/integrations')}>{k === 'sap' && !sync.at ? 'Import an SAP export' : 'Open integrations'}</Button>
-      </PopoverContent>
-    </Popover>
+    <DropdownMenuItem className="items-start gap-2" onSelect={() => nav(k === 'sap' && !sync.at ? '/imports' : '/settings/integrations')}>
+      <span className={cn('mt-1 size-2 flex-none rounded-full', !sync.at ? 'bg-text-3' : stale ? 'bg-warn' : 'bg-ok')} aria-hidden />
+      <span className="flex min-w-0 flex-col">
+        <span className="text-xs font-medium">{sync.system}</span>
+        <span className="text-[11px] text-text-2">
+          {sync.at
+            ? `Synced ${ago(sync.at)}${sync.detail ? ` · ${sync.detail}` : ''}${stale ? ` · stale over ${Math.round(sync.staleAfterH)} h` : ''}`
+            : sync.error ?? 'Not connected'}
+        </span>
+        {sync.at && <span className="text-[10.5px] text-text-3">{dateTime(sync.at)}</span>}
+      </span>
+    </DropdownMenuItem>
   )
 }
 
@@ -182,26 +182,25 @@ export function UserMenu() {
         <DropdownMenuItem onSelect={toggle}>{theme === 'dark' ? <Sun /> : <Moon />}{theme === 'dark' ? 'Light theme' : 'Dark theme'}</DropdownMenuItem>
         <DropdownMenuItem asChild><Link to="/settings/account"><KeyRound />Password and security</Link></DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[11px] font-normal text-text-3">Connections</DropdownMenuLabel>
+        <FeedRow k="sap" /><FeedRow k="email" /><FeedRow k="gst" /><FeedRow k="bank" />
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => signOut()}><LogOut />Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-export function Topbar() {
-  const [open, setOpen] = useSearchShortcut()
+export function Topbar({ onSearch }: { onSearch: () => void }) {
   return (
     <header className="sticky top-0 z-20 hidden min-h-[60px] flex-wrap items-center xl:flex-nowrap gap-x-3 gap-y-2.5 border-b border-border bg-surface px-6 py-2.5 md:flex">
       <EntitySwitcher />
       <PeriodPicker />
-      <button type="button" onClick={() => setOpen(true)} className="flex h-9 max-w-[460px] min-w-[140px] xl:min-w-0 flex-[1_1_200px] cursor-text items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 text-left text-text-3">
+      <button type="button" onClick={onSearch} className="flex h-9 max-w-[460px] min-w-[140px] xl:min-w-0 flex-[1_1_200px] cursor-text items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 text-left text-text-3">
         <Search className="size-4" /><span className="flex-1 truncate">Invoice no., GSTIN, PO, GRN, UTR, IRN</span>
         <span className="rounded-sm border border-border-2 bg-surface px-[5px] text-[11px] leading-4 whitespace-nowrap">Ctrl K</span>
       </button>
-      <SearchPalette open={open} onOpenChange={setOpen} />
-      <div className="ml-auto flex items-center gap-1.5">
-        <FeedChip k="sap" /><FeedChip k="email" /><FeedChip k="gst" /><FeedChip k="bank" />
-      </div>
+      <div className="ml-auto" />
       <NotificationsMenu />
       <UserMenu />
     </header>
