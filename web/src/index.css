@@ -176,6 +176,12 @@
 
 @keyframes pv-sk { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
+/* Scrolls, but without the scrollbar taking up room or showing. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
 /* Things that are awkward as utilities: the paper document mock and its field boxes. */
 @layer components {
   .doc { position: relative; background: var(--paper); color: var(--ink); border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.18); font-size: 10.5px; line-height: 14px; }

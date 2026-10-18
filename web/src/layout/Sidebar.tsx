@@ -42,7 +42,7 @@ export function SidebarNav({ rail = false, onNavigate }: { rail?: boolean; onNav
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { firm, entities } = useSession()
   return (
-    <nav aria-label="Main" className={cn('sticky top-0 hidden h-svh flex-none flex-col gap-0.5 overflow-y-auto border-r border-border bg-surface transition-[width] duration-200 md:flex', collapsed ? 'w-16 items-center px-2 pt-3 pb-4' : 'w-60 px-2.5 pt-3 pb-4')}>
+    <nav aria-label="Main" className={cn('no-scrollbar sticky top-0 hidden h-svh flex-none flex-col gap-0.5 overflow-y-auto border-r border-border bg-surface transition-[width] duration-200 md:flex', collapsed ? 'w-16 items-center px-2 pt-3 pb-4' : 'w-60 px-2.5 pt-3 pb-4')}>
       {collapsed ? (
         <>
           <BrandMark className="mt-1.5 mb-2" />
