@@ -13,6 +13,7 @@ from ..auth import (audit, check_password_strength, csrf_guard, current_user, en
                     revoke_all, start_session, verify_password)
 from ..config import settings
 from ..db import get_db
+from ..extract import ai
 from ..mailer import send
 from ..models import Firm, Token, User
 from ..serialize import me_out
@@ -29,7 +30,7 @@ def _initials(name: str) -> str:
 @router.get('/status')
 def status(db: DbSession = Depends(get_db)):
     """What the login screen needs before anyone is signed in."""
-    return {'needsSetup': db.scalar(select(func.count(User.id))) == 0, 'smtp': bool(settings.smtp_host), 'claude': bool(settings.anthropic_api_key)}
+    return {'needsSetup': db.scalar(select(func.count(User.id))) == 0, 'smtp': bool(settings.smtp_host), 'ai': ai.configured(db)}
 
 
 class SetupIn(BaseModel):

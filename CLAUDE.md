@@ -27,7 +27,7 @@ Refresh the graph so the next session sees your changes: run `/graphify . --upda
 ## Conventions
 
 - The UI calls only `web/src/api/index.ts` (fetch wrapper in `web/src/api/http.ts`, React Query hooks in `web/src/api/hooks.ts`). Server routes live in `server/app/routers/`; shapes are `web/src/lib/types.ts` ↔ `server/app/serialize.py`.
-- Claude is called only from `server/app/extract/claude.py`; the key is server config, never UI.
+- The model is called only from `server/app/extract/ai.py`; the provider, key and model come from the `ai_settings` row (Settings → Integrations), falling back to `ANTHROPIC_API_KEY`.
 - Every write records an audit entry, and nothing is deleted. Extracted values never count until a person confirms them.
 - Sample client data for manual testing is in `~/Downloads/Datafor` (Apollo Pipes: a scanned invoice bundle, purchase and sales registers, stock movements).
 - Push to https://github.com/whym3/FinAi on branch `claude/pravah-finance-control-design-ti9zjy`.

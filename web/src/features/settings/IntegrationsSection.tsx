@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Banner, Card, CardBody, CardHeader, EmptyState, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useIntegrations, useSap } from '@/api/hooks'
+import { useAct, useAi, useIntegrations, useSap } from '@/api/hooks'
 import * as api from '@/api'
 import { dateTime } from '@/lib/format'
 import type { SapConnection } from '@/lib/types'
-import { ConnectMailbox, Field, MailboxRow, NativeSelect } from './clients/parts'
+import { ConnectMailbox, Field, MailboxRow, NativeSelect, PasswordInput } from './clients/parts'
 
 const OBJECTS: [string, string][] = [['purchase_orders', 'Purchase orders'], ['goods_receipts', 'Goods receipts'], ['supplier_invoices', 'Supplier invoices'], ['business_partners', 'Business partners (vendors)'], ['ar_open_items', 'Customer open items'], ['ap_open_items', 'Vendor open items']]
 
@@ -41,11 +41,8 @@ export function IntegrationsSection() {
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-4">
         <Card>
-          <CardHeader title="Claude (document reading)" as="h3" />
-          <CardBody className="flex flex-col gap-2 text-xs">
-            {d?.claude.configured ? <StatusPill tone="ok">Configured on the server · {d.claude.model}</StatusPill> : <StatusPill tone="bad">Not configured</StatusPill>}
-            <p className="text-text-2">Every uploaded or emailed document is read by Claude. The API key is set once in the server configuration (<code>ANTHROPIC_API_KEY</code>); nobody enters keys in the app. Extracted values stay unconfirmed until a person checks them.</p>
-          </CardBody>
+          <CardHeader title="Document reading" as="h3" />
+          <AiCard canManage={canManage} />
         </Card>
         <Card>
           <CardHeader title="Outgoing email" as="h3" />
@@ -81,6 +78,86 @@ function ConnectPicker() {
       {entities.length > 1 && <Field label="Connect a mailbox for"><NativeSelect label="Client" value={ent} onChange={setEnt} options={entities.map(e => [e.id, e.shortName])} /></Field>}
       <ConnectMailbox entityId={ent} ret="/settings/integrations" />
     </div>
+  )
+}
+
+const PROVIDER_LABEL: Record<string, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI' }
+const CUSTOM = '__custom__'
+
+/** Which model reads every document: provider, key and model, with a test call so you know it works. */
+function AiCard({ canManage }: { canManage: boolean }) {
+  const q = useAi()
+  const { act, pending } = useAct()
+  const [provider, setProvider] = useState('')
+  const [model, setModel] = useState('')
+  const [custom, setCustom] = useState(false)
+  const [key, setKey] = useState('')
+  const [test, setTest] = useState<{ ok: boolean; message: string } | null>(null)
+  const [live, setLive] = useState<string[] | null>(null)
+  const d = q.data
+  // Re-sync only when the saved settings actually change: every mutation refetches, and that
+  // must not wipe what the admin is typing or the test result they just asked for.
+  const sig = d ? `${d.provider}|${d.model}|${d.keySet}|${d.fromEnv}` : ''
+  useEffect(() => {
+    if (!d) return
+    setProvider(d.provider)
+    setModel(d.model)
+    setCustom(!d.knownModels[d.provider]?.includes(d.model))
+  }, [sig])  // eslint-disable-line react-hooks/exhaustive-deps
+  // Ask the provider which models this key can use; the built-in list is only the fallback.
+  const hasKey = !!d && (d.keySet || d.fromEnv)
+  useEffect(() => {
+    setLive(null)
+    if (!provider || !hasKey) return
+    let stale = false
+    api.listAiModels({ provider }).then(r => { if (!stale && r.ok && r.models.length) setLive(r.models) }).catch(() => {})
+    return () => { stale = true }
+  }, [provider, hasKey])
+  if (q.isError) return <CardBody className="text-xs text-text-3">Only a firm admin or partner can see these settings.</CardBody>
+  if (!d || !provider) return <CardBody className="text-xs text-text-3">Loading…</CardBody>
+
+  const known = live ?? d.knownModels[provider] ?? []
+  const onProvider = (p: string) => { setProvider(p); setModel(d.defaultModels[p] ?? ''); setCustom(false); setTest(null) }
+  const body = { provider, model: model.trim(), api_key: key ? key : undefined }
+  // The saved model may not be in the fetched list; keep it selectable rather than silently switching.
+  const options = known.includes(model) || !model ? known : [model, ...known]
+
+  return (
+    <CardBody className="flex flex-col gap-3 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        {d.configured ? <StatusPill tone="ok">{PROVIDER_LABEL[d.provider] ?? d.provider} · {d.model}</StatusPill> : <StatusPill tone="bad">Not configured</StatusPill>}
+        {d.fromEnv && d.configured && <span className="text-text-3">from the server's <code>ANTHROPIC_API_KEY</code></span>}
+        {d.lastTestAt && <span className="text-text-3">Tested {dateTime(d.lastTestAt)}</span>}
+      </div>
+      {d.lastTestResult && !test && <Banner tone={d.lastTestResult.startsWith('OK') ? 'ok' : 'bad'}>{d.lastTestResult}</Banner>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Provider">
+          <NativeSelect label="Provider" value={provider} onChange={onProvider} disabled={!canManage}
+            options={d.providers.map(p => [p, PROVIDER_LABEL[p] ?? p] as [string, string])} />
+        </Field>
+        <Field label="Model" hint={live ? `${live.length} models on this key` : 'Suggestions · test the key to load the full list'}>
+          <NativeSelect label="Model" value={custom ? CUSTOM : model} disabled={!canManage}
+            onChange={v => { if (v === CUSTOM) { setCustom(true) } else { setCustom(false); setModel(v) } }}
+            options={[...options.map(m => [m, m] as [string, string]), [CUSTOM, 'Other…']]} />
+        </Field>
+      </div>
+      {custom && <Field label="Model name" hint="Exactly as the provider spells it"><Input value={model} onChange={e => setModel(e.target.value)} disabled={!canManage} className="font-mono" placeholder={d.defaultModels[provider]} /></Field>}
+      <Field label={d.keySet ? 'API key (saved · enter to replace)' : 'API key'} hint={provider === 'openai' ? 'From platform.openai.com → API keys' : 'From console.anthropic.com → API keys'}>
+        <PasswordInput aria-label="API key" value={key} onChange={e => setKey(e.target.value)} disabled={!canManage} autoComplete="off" placeholder={d.keySet ? '••••••••' : provider === 'openai' ? 'sk-…' : 'sk-ant-…'} />
+      </Field>
+      {test && <Banner tone={test.ok ? 'ok' : 'bad'}>{test.message}</Banner>}
+      {canManage && (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="default" disabled={pending || !model.trim()} onClick={async () => { if (await act(() => api.saveAi({ ...body, api_key: key ? key : null }), 'Document reading saved')) { setKey(''); setTest(null) } }}>Save</Button>
+          <Button disabled={pending || (!key && !hasKey) || !model.trim()} onClick={async () => {
+            const r = await act(() => api.testAi(body))
+            if (r) setTest(r)
+            if (r?.ok) api.listAiModels({ provider, api_key: key || undefined }).then(m => { if (m.ok && m.models.length) setLive(m.models) }).catch(() => {})
+          }}><Plug />Test API key</Button>
+        </div>
+      )}
+      <p className="text-text-2">Every uploaded or emailed document is read by this model. The key is stored encrypted and never shown again. Extracted values stay unconfirmed until a person checks them.</p>
+    </CardBody>
   )
 }
 

@@ -1,6 +1,6 @@
 # Pravah server
 
-FastAPI + Postgres. It holds the firm, its users and clients, reads invoice mailboxes (Gmail and Outlook, read-only), stores every original document, reads documents with Claude, imports SAP exports, runs the three-way match and keeps an append-only audit log. The web app (`../web`) reaches it at `/api` through the Vite proxy in dev and through nginx in production.
+FastAPI + Postgres. It holds the firm, its users and clients, reads invoice mailboxes (Gmail and Outlook, read-only), stores every original document, reads documents with Claude or an OpenAI model, imports SAP exports, runs the three-way match and keeps an append-only audit log. The web app (`../web`) reaches it at `/api` through the Vite proxy in dev and through nginx in production.
 
 ## Run
 
@@ -35,7 +35,7 @@ Open the app. With no users in the database it shows **Set up Pravah**: firm nam
 | `APP_SECRET_KEY` | base64 of 32 random bytes. Encrypts OAuth tokens, SAP passwords and TOTP secrets. Generate: `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"` |
 | `DATABASE_URL` | Postgres URL (`postgresql+psycopg://…`) |
 | `PUBLIC_URL` | The address users open. OAuth redirect URIs and emailed links use it. `https://` also turns on secure cookies. |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Claude reads every document. One key per deployment; nothing is entered in the UI. Default model `claude-sonnet-5-5`. |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Fallback for document reading when nothing is saved in **Settings → Integrations**. The provider (Anthropic or OpenAI), key and model are normally set there instead, and the key is stored encrypted. Default model `claude-sonnet-5-5`. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Invites, password resets, vendor queries. Optional. |
 | `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox sign-in (below). Optional. |
 | `STORAGE_DIR` | Where original documents and import files are kept (`/data/storage` in Docker) |
@@ -50,7 +50,7 @@ Open the app. With no users in the database it shows **Set up Pravah**: firm nam
 ## How documents are read
 
 1. A file arrives by email or upload (PDF, image, XML/JSON, or those inside a ZIP). Exact duplicates (same bytes) are marked.
-2. Claude classifies the pages: a scanned bundle is split into its documents (invoice, lorry receipt, weighbridge ticket, gate entry, purchase order, goods receipt note …), each stored as its own PDF.
+2. The model classifies the pages: a scanned bundle is split into its documents (invoice, lorry receipt, weighbridge ticket, gate entry, purchase order, goods receipt note …), each stored as its own PDF.
 3. Each document is read with a schema for its kind. Deterministic checks follow (GSTIN check digit, PAN–GSTIN, taxable + tax = total, CGST/SGST vs IGST, gross − tare = net); a failed check lowers the field's confidence so a person must confirm it.
 4. The reader links documents by PO number, invoice number, LR number, e-way bill and vehicle into one purchase order with its GRN, dispatch documents and invoice. The PO comes from the SAP register if imported, otherwise from the PO document itself.
 5. The three-way match compares Negotiated · PO · GRN · Invoice (qty, rate, HSN, tax rate and type, freight, total, payment terms, vehicle, e-way bill, IRN). Every difference becomes a flag and an exception under the matching rule (Settings → Exception rules), never a verdict.
@@ -89,7 +89,7 @@ Mailboxes are polled every `POLL_SECONDS` (Gmail history, Graph delta). Push not
 | `app/models.py` | Tables. `alembic/versions/0001_initial_schema.py` creates them, the audit trigger and the default exception rules. |
 | `app/auth.py` | Sessions, passwords, TOTP, roles, audit helper |
 | `app/routers/` | `auth`, `users`, `entities`, `mailboxes`, `oauth`, `intake`, `p2p`, `invoices`, `exceptions`, `approvals`, `parties`, `notifications`, `overview` (KPIs, counts, search, sources), `modules` (GST, payables, MSME, close, reports), `imports`, `sap`, `integrations` |
-| `app/extract/` | `schemas.py` (per-kind JSON schemas and prompts), `claude.py`, `split.py`, `validate.py`, `run.py` (the job) |
+| `app/extract/` | `schemas.py` (per-kind JSON schemas and prompts), `ai.py`, `split.py`, `validate.py`, `run.py` (the job) |
 | `app/domain/` | `link.py` (documents → records), `match.py` (three-way match), `p2p.py` (timeline and ledger), `calendar.py` (statutory dates) |
 | `app/imports/` | `readers.py`, `kinds.py` (templates and synonyms), `run.py` (writers) |
 | `app/sap/` | `odata.py` (client), `sync.py` |

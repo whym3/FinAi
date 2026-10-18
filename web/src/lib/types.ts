@@ -66,9 +66,14 @@ export interface SapConnection {
   id?: number; entityId: string; edition: string; host: string; client: string; companyCode: string; plantMapping?: Record<string, string>; username: string; passwordSet: boolean
   objects: string[]; scheduleMinutes: number; status: 'none' | 'draft' | 'active' | 'paused' | 'error'; lastTestAt?: string | null; lastTestResult?: string | null; lastSyncAt?: string | null; lastError?: string | null
 }
+export interface AiSettings {
+  provider: string; model: string; keySet: boolean; fromEnv: boolean; configured: boolean
+  lastTestAt?: string | null; lastTestResult?: string | null
+  providers: string[]; knownModels: Record<string, string[]>; defaultModels: Record<string, string>
+}
 export interface Integrations {
   entities: { id: string; name: string }[]; mailboxes: Mailbox[]; oauth: { gmail: boolean; outlook: boolean }; sap: SapConnection[]
-  claude: { configured: boolean; model: string }; smtp: { configured: boolean; from: string | null }; imports: (ImportRun & { kind: string })[]; publicUrl: string
+  ai: AiSettings; smtp: { configured: boolean; from: string | null }; imports: (ImportRun & { kind: string })[]; publicUrl: string
 }
 
 export interface Entity {

@@ -173,6 +173,18 @@ class SapConnection(Base):
     updated_at: Mapped[dt.datetime] = now_col()
 
 
+class AiSetting(Base):
+    """Which model reads documents. One row for the deployment; falls back to ANTHROPIC_API_KEY when empty."""
+    __tablename__ = 'ai_settings'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20), default='anthropic')  # anthropic | openai
+    model: Mapped[str] = mapped_column(String(80), default='')
+    enc_api_key: Mapped[str | None] = mapped_column(Text)
+    last_test_at: Mapped[dt.datetime | None] = ts_col()
+    last_test_result: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[dt.datetime] = now_col()
+
+
 # ---------------- documents ----------------
 
 class SourceDocument(Base):

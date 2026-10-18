@@ -6,14 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..auth import audit
-from ..config import settings
 from ..domain import link
 from ..domain.match import run_match
 from ..mail.ingest import store
 from ..models import Extraction, PurchaseOrder, SourceDocument, SupplierInvoice
 from ..notify import notify
 from ..serialize import DOC_KIND_LABEL
-from . import claude
+from . import ai
 from .split import page_count, slice_pdf
 from .validate import build_fields, build_lines, values
 
@@ -31,8 +30,8 @@ def _status_for(doc: SourceDocument) -> None:
     doc.status_note = f'{low} field(s) to confirm' if low else ('All fields read with high confidence' if doc.fields else 'Nothing could be read')
 
 
-def _extract_part(db: Session, part: SourceDocument, data: bytes) -> None:
-    res = claude.extract(part.kind, data, part.mime, part.filename)
+def _extract_part(db: Session, cfg: ai.Config, part: SourceDocument, data: bytes) -> None:
+    res = ai.extract(cfg, part.kind, data, part.mime, part.filename)
     db.add(Extraction(document_id=part.id, step='extract', model=res.model, status='done', raw=res.raw, input_tokens=res.input_tokens, output_tokens=res.output_tokens))
     part.fields, part.lines = build_fields(part.kind, res.raw), build_lines(part.kind, res.raw)
     v = values(part.fields)
@@ -47,20 +46,21 @@ def process_document(db: Session, doc_id: int) -> None:
     doc = db.get(SourceDocument, doc_id)
     if not doc or doc.confirmed_by or doc.status in ('duplicate', 'rejected'):
         return
-    if not claude.configured():
-        doc.status_note = 'Claude is not configured on the server (ANTHROPIC_API_KEY)'
+    cfg = ai.config(db)
+    if not cfg.configured:
+        doc.status_note = 'No API key for document reading. Set one in Settings → Integrations.'
         db.commit()
         return
     data = Path(doc.storage_path).read_bytes()
     doc.pages = page_count(data, doc.mime)
     try:
-        cls = claude.classify(data, doc.mime, doc.filename)
-    except claude.Unsupported as e:
+        cls = ai.classify(cfg, data, doc.mime, doc.filename)
+    except ai.Unsupported as e:
         doc.status, doc.status_note = 'review', str(e)
         db.commit()
         return
     except Exception as e:
-        db.add(Extraction(document_id=doc.id, step='classify', model=settings.anthropic_model, status='failed', error=f'{type(e).__name__}: {e}'[:2000]))
+        db.add(Extraction(document_id=doc.id, step='classify', model=cfg.model, status='failed', error=f'{type(e).__name__}: {e}'[:2000]))
         doc.status, doc.status_note = 'review', f'Reading failed: {e}'[:300]
         db.commit()
         raise
@@ -69,7 +69,7 @@ def process_document(db: Session, doc_id: int) -> None:
     if doc.mime != 'application/pdf' or doc.pages <= 1 or len(found) <= 1:
         doc.kind = found[0]['kind'] if found else 'other'
         doc.page_from, doc.page_to = 1, doc.pages
-        _extract_part(db, doc, data)
+        _extract_part(db, cfg, doc, data)
         touched = [doc]
     else:
         # a bundle: one row per document, each its own PDF so it can be viewed and re-read on its own
@@ -93,9 +93,9 @@ def process_document(db: Session, doc_id: int) -> None:
                 _status_for(part)
             else:
                 try:
-                    _extract_part(db, part, Path(part.storage_path).read_bytes())
+                    _extract_part(db, cfg, part, Path(part.storage_path).read_bytes())
                 except Exception as e:
-                    db.add(Extraction(document_id=part.id, step='extract', model=settings.anthropic_model, status='failed', error=f'{type(e).__name__}: {e}'[:2000]))
+                    db.add(Extraction(document_id=part.id, step='extract', model=cfg.model, status='failed', error=f'{type(e).__name__}: {e}'[:2000]))
                     part.status, part.status_note = 'review', f'Reading failed: {e}'[:300]
                     log.exception('extract failed for part %s', part.id)
             touched.append(part)

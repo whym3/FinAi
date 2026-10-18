@@ -46,6 +46,7 @@ export const useIntegrations = () => useQuery({ queryKey: ['integrations'], quer
 export const useImports = () => { const e = useEntityId(); return useQuery({ queryKey: ['imports', e], queryFn: () => api.listImports(e), refetchInterval: 5_000 }) }
 export const useImportKinds = () => useQuery({ queryKey: ['import-kinds'], queryFn: api.listImportKinds, staleTime: Infinity })
 export const useSap = (entityId: string) => useQuery({ queryKey: ['sap', entityId], queryFn: () => api.getSap(entityId), enabled: !!entityId })
+export const useAi = () => useQuery({ queryKey: ['ai'], queryFn: api.getAi })
 
 /**
  * Run any API mutation: `act(() => api.x(...), 'Saved')`.

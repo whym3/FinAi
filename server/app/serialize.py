@@ -4,7 +4,8 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session as DbSession
 
-from .models import (CustomerInvoice, Entity, ExceptionItem, Firm, GoodsReceipt, Import, Mailbox, Notification, Party, PurchaseOrder, SapConnection,
+from .extract import ai as ai_mod
+from .models import (AiSetting, CustomerInvoice, Entity, ExceptionItem, Firm, GoodsReceipt, Import, Mailbox, Notification, Party, PurchaseOrder, SapConnection,
                      SourceDocument, SupplierInvoice, User)
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -146,6 +147,13 @@ def sap_out(c: SapConnection) -> dict:
     return {'id': c.id, 'entityId': c.entity_id, 'edition': c.edition, 'host': c.host, 'client': c.client, 'companyCode': c.company_code, 'plantMapping': c.plant_mapping or {},
             'username': c.username, 'passwordSet': bool(c.enc_password), 'objects': c.objects or [], 'scheduleMinutes': c.schedule_minutes, 'status': c.status,
             'lastTestAt': ist(c.last_test_at), 'lastTestResult': c.last_test_result, 'lastSyncAt': ist(c.last_sync_at), 'lastError': c.last_error}
+
+
+def ai_out(c: AiSetting, cfg) -> dict:
+    """`cfg` is the config actually in force, which may come from the server's env instead of this row."""
+    return {'provider': cfg.provider, 'model': cfg.model, 'keySet': bool(c.enc_api_key), 'fromEnv': cfg.from_env, 'configured': cfg.configured,
+            'lastTestAt': ist(c.last_test_at), 'lastTestResult': c.last_test_result,
+            'providers': list(ai_mod.PROVIDERS), 'knownModels': ai_mod.KNOWN_MODELS, 'defaultModels': ai_mod.DEFAULT_MODEL}
 
 
 def grn_out(g: GoodsReceipt) -> dict:

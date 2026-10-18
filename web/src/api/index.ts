@@ -1,6 +1,6 @@
 // Every call the screens make. One module, one server.
 import type {
-  AuditEntry, DecisionKind, Entity, ExceptionItem, ExceptionRule, ExceptionStatus, ImportKind, ImportRun, IntakeDoc, Integrations, Invoice, MailProvider, Mailbox, Me,
+  AiSettings, AuditEntry, DecisionKind, Entity, ExceptionItem, ExceptionRule, ExceptionStatus, ImportKind, ImportRun, IntakeDoc, Integrations, Invoice, MailProvider, Mailbox, Me,
   Notification, Priority, PurchaseOrder, SapConnection, SearchHit, SyncState, User, Vendor,
 } from '@/lib/types'
 import { ApiError, http, q } from './http'
@@ -8,7 +8,7 @@ import { ApiError, http, q } from './http'
 export { ApiError }
 
 /* ---------------- auth ---------------- */
-export const authStatus = () => http<{ needsSetup: boolean; smtp: boolean; claude: boolean }>('/auth/status')
+export const authStatus = () => http<{ needsSetup: boolean; smtp: boolean; ai: boolean }>('/auth/status')
 export const setup = (body: { firm_name: string; firm_short: string; frn?: string; name: string; email: string; password: string }) => http<{ next: string }>('/auth/setup', { method: 'POST', json: body })
 export const login = (email: string, password: string) => http<{ next: 'mfa_verify' | 'mfa_enrol' | 'done' }>('/auth/login', { method: 'POST', json: { email, password } })
 export const logout = () => http<{ ok: boolean }>('/auth/logout', { method: 'POST' })
@@ -169,6 +169,12 @@ export const saveSap = (entity: string, body: Partial<{ edition: string; host: s
   http<SapConnection>(`/entities/${entity}/sap`, { method: 'PUT', json: body })
 export const testSap = (entity: string) => http<{ ok: boolean; message: string }>(`/entities/${entity}/sap/test`, { method: 'POST' })
 export const syncSap = (entity: string) => http<{ queued: boolean }>(`/entities/${entity}/sap/sync`, { method: 'POST' })
+
+/* ---------------- document reading (Anthropic / OpenAI) ---------------- */
+export const getAi = () => http<AiSettings>('/ai')
+export const saveAi = (body: { provider: string; model: string; api_key?: string | null }) => http<AiSettings>('/ai', { method: 'PUT', json: body })
+export const testAi = (body: { provider: string; model: string; api_key?: string | null }) => http<{ ok: boolean; message: string }>('/ai/test', { method: 'POST', json: body })
+export const listAiModels = (body: { provider: string; api_key?: string | null }) => http<{ ok: boolean; models: string[]; message: string }>('/ai/models', { method: 'POST', json: body })
 export const getIntegrations = () => http<Integrations>('/integrations')
 
 // shapes only this module names

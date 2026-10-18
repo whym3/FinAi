@@ -5,7 +5,7 @@ Finance control for Indian companies and the CA firms that serve them: invoice i
 | Folder | What |
 |---|---|
 | `web/` | React app ([web/README.md](web/README.md)) |
-| `server/` | FastAPI + Postgres API ([server/README.md](server/README.md)): sign-in, clients, mailboxes, Claude document reading, SAP imports and connector, matching, audit |
+| `server/` | FastAPI + Postgres API ([server/README.md](server/README.md)): sign-in, clients, mailboxes, Claude or OpenAI document reading, SAP imports and connector, matching, audit |
 | `design/` | The original design canvas |
 
 ```sh

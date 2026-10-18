@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from pypdf import PdfWriter
 
-from app.extract import claude
+from app.extract import ai
 from app.extract.run import process_document
 from app.extract.schemas import FIELD_META, schema_for
 from app.extract.validate import build_fields
@@ -41,7 +41,7 @@ def test_validate_checks():
 def test_bundle_pipeline(db, firm, tmp_path, monkeypatch):
     f, e, admin = firm
     monkeypatch.setattr('app.mail.ingest.settings.storage_dir', str(tmp_path))
-    monkeypatch.setattr('app.extract.claude.settings.anthropic_api_key', 'test-key')
+    monkeypatch.setattr('app.extract.ai.settings.anthropic_api_key', 'test-key')
     F = lambda v, c=95: {'value': v, 'confidence': c}
     answers = {
         'classify': {'documents': [{'page_from': 1, 'page_to': 2, 'kind': 'invoice', 'number': 'API/3166', 'date': '01-09-2026', 'party': 'Akshay', 'confidence': 95},
@@ -58,11 +58,11 @@ def test_bundle_pipeline(db, firm, tmp_path, monkeypatch):
     }
     calls = []
 
-    def fake_call(system, part, schema, max_tokens=8000):
+    def fake_call(cfg, system, data, mime, filename, schema, max_tokens=8000):
         kind = 'classify' if 'documents' in schema['properties'] else ('invoice' if 'irn' in schema['properties'] else 'purchase_order')
         calls.append(kind)
-        return claude.Result(answers[kind], 1000, 200, 'claude-test')
-    monkeypatch.setattr(claude, '_call', fake_call)
+        return ai.Result(answers[kind], 1000, 200, 'claude-test')
+    monkeypatch.setattr(ai, '_call', fake_call)
 
     doc = ingest_file(db, e.id, 'bundle.pdf', 'application/pdf', pdf(3), 'Upload', 'ap@apollo.in', uploaded_by=admin.id)
     db.commit()
