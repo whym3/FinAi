@@ -15,7 +15,7 @@ Server outside Docker (Python 3.13 via uv):
 
 ```sh
 docker compose up -d db
-cp .env.example .env             # then set APP_SECRET_KEY and ANTHROPIC_API_KEY
+cp .env.example .env             # then set APP_SECRET_KEY
 uv sync
 uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
@@ -35,7 +35,7 @@ Open the app. With no users in the database it shows **Set up Pravah**: firm nam
 | `APP_SECRET_KEY` | base64 of 32 random bytes. Encrypts OAuth tokens, SAP passwords and TOTP secrets. Generate: `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"` |
 | `DATABASE_URL` | Postgres URL (`postgresql+psycopg://…`) |
 | `PUBLIC_URL` | The address users open. OAuth redirect URIs and emailed links use it. `https://` also turns on secure cookies. |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Fallback for document reading when nothing is saved in **Settings → Integrations**. The provider (Anthropic or OpenAI), key and model are normally set there instead, and the key is stored encrypted. Default model `claude-sonnet-5-5`. |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Gone. Document reading is configured in the app: **Settings → Integrations → Document reading**, where an admin picks Anthropic or OpenAI, pastes the key (stored encrypted) and chooses the model. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Invites, password resets, vendor queries. Optional. |
 | `GOOGLE_CLIENT_ID/SECRET`, `MS_CLIENT_ID/SECRET` | Mailbox sign-in (below). Optional. |
 | `STORAGE_DIR` | Where original documents and import files are kept (`/data/storage` in Docker) |

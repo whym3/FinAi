@@ -150,8 +150,7 @@ def sap_out(c: SapConnection) -> dict:
 
 
 def ai_out(c: AiSetting, cfg) -> dict:
-    """`cfg` is the config actually in force, which may come from the server's env instead of this row."""
-    return {'provider': cfg.provider, 'model': cfg.model, 'keySet': bool(c.enc_api_key), 'fromEnv': cfg.from_env, 'configured': cfg.configured,
+    return {'provider': cfg.provider, 'model': cfg.model, 'keySet': bool(c.enc_api_key), 'configured': cfg.configured,
             'lastTestAt': ist(c.last_test_at), 'lastTestResult': c.last_test_result,
             'providers': list(ai_mod.PROVIDERS), 'knownModels': ai_mod.KNOWN_MODELS, 'defaultModels': ai_mod.DEFAULT_MODEL}
 

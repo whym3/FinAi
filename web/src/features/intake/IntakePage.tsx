@@ -98,7 +98,7 @@ export default function IntakePage() {
 
   return (
     <>
-      <PageHeader title="Intake inbox" sub={`Every document that reaches ${entity.shortName}: emailed, uploaded or scanned. Bundles are split into their documents and each is read by Claude.`}
+      <PageHeader title="Intake inbox" sub={`Every document that reaches ${entity.shortName}: emailed, uploaded or scanned. Bundles are split into their documents and each one is read by Pravah.`}
         actions={<>
           {entity.intakeEmail
             ? <Chip><Mail className="size-3.5" /><span className="font-mono">{entity.intakeEmail}</span>
@@ -222,7 +222,7 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
           <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3>Extracted fields</h3>
-              <span className="flex items-center gap-2"><Source name="Extracted" text="read by Claude" />{d.confidence != null && <Confidence value={d.confidence}>{d.confidence}% overall</Confidence>}</span>
+              <span className="flex items-center gap-2"><Source name="Extracted" text="read by Pravah" />{d.confidence != null && <Confidence value={d.confidence}>{d.confidence}% overall</Confidence>}</span>
             </div>
             <div className="flex flex-wrap gap-3 text-[11px] text-text-2">
               <span className="flex items-center gap-1"><span className="h-2.5 w-3.5 rounded-[2px] border-[1.5px] border-dashed border-warn" />Low confidence, not yet confirmed ({low})</span>
@@ -230,7 +230,7 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
             {!fields.length && d.kind !== 'bundle' && (
               <EmptyState title={d.statusNote ?? 'Not read yet'} icon={<Sparkles className="size-5" />}
                 action={!readOnly && !done && <Button size="sm" disabled={disabled} onClick={() => act(() => api.reExtract(d.id), 'Queued · fields appear in a few seconds')}><RefreshCw />Read again</Button>}>
-                Claude reads each document; every value stays unconfirmed until a person checks it.
+                Pravah reads each document; every value stays unconfirmed until a person checks it.
               </EmptyState>
             )}
             <div className="flex flex-col gap-0.5">{head.map(fieldRow)}</div>

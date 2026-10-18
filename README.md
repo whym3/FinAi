@@ -9,6 +9,6 @@ Finance control for Indian companies and the CA firms that serve them: invoice i
 | `design/` | The original design canvas |
 
 ```sh
-cp server/.env.example server/.env   # set APP_SECRET_KEY and ANTHROPIC_API_KEY
+cp server/.env.example server/.env   # set APP_SECRET_KEY
 docker compose up --build            # → http://localhost:5173, first run shows "Set up Pravah"
 ```

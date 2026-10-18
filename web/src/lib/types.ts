@@ -67,7 +67,7 @@ export interface SapConnection {
   objects: string[]; scheduleMinutes: number; status: 'none' | 'draft' | 'active' | 'paused' | 'error'; lastTestAt?: string | null; lastTestResult?: string | null; lastSyncAt?: string | null; lastError?: string | null
 }
 export interface AiSettings {
-  provider: string; model: string; keySet: boolean; fromEnv: boolean; configured: boolean
+  provider: string; model: string; keySet: boolean; configured: boolean
   lastTestAt?: string | null; lastTestResult?: string | null
   providers: string[]; knownModels: Record<string, string[]>; defaultModels: Record<string, string>
 }

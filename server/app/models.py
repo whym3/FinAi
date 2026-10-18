@@ -174,7 +174,7 @@ class SapConnection(Base):
 
 
 class AiSetting(Base):
-    """Which model reads documents. One row for the deployment; falls back to ANTHROPIC_API_KEY when empty."""
+    """Which model reads documents. One row for the deployment, set in Settings -> Integrations."""
     __tablename__ = 'ai_settings'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     provider: Mapped[str] = mapped_column(String(20), default='anthropic')  # anthropic | openai

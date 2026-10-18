@@ -1,4 +1,4 @@
-"""All model calls for document reading. Provider and key come from the ai_settings row, or ANTHROPIC_API_KEY when it is empty."""
+"""All model calls for document reading. Provider, key and model come from the ai_settings row, set in Settings -> Integrations."""
 import base64
 import json
 from dataclasses import dataclass
@@ -9,7 +9,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import crypto
-from ..config import settings
 from ..models import AiSetting
 from .schemas import CLASSIFY_PROMPT, CLASSIFY_SCHEMA, prompt_for, schema_for
 
@@ -46,7 +45,6 @@ class Config:
     provider: str
     model: str
     api_key: str
-    from_env: bool
 
     @property
     def configured(self) -> bool:
@@ -58,11 +56,11 @@ def row(db: Session) -> AiSetting | None:
 
 
 def config(db: Session) -> Config:
-    """The key saved in the app wins; otherwise fall back to the server's ANTHROPIC_API_KEY."""
+    """Provider, key and model all come from Settings -> Integrations. Nothing is read from the environment."""
     r = row(db)
     if r and r.enc_api_key:
-        return Config(r.provider, r.model or DEFAULT_MODEL[r.provider], crypto.decrypt(r.enc_api_key), False)
-    return Config('anthropic', settings.anthropic_model, settings.anthropic_api_key, True)
+        return Config(r.provider, r.model or DEFAULT_MODEL[r.provider], crypto.decrypt(r.enc_api_key))
+    return Config(r.provider if r else 'anthropic', (r.model if r else '') or DEFAULT_MODEL['anthropic'], '')
 
 
 def configured(db: Session) -> bool:

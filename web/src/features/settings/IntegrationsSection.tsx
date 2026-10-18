@@ -81,7 +81,7 @@ function ConnectPicker() {
   )
 }
 
-const PROVIDER_LABEL: Record<string, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI' }
+const PROVIDER_LABEL: Record<string, string> = { anthropic: 'Anthropic', openai: 'OpenAI' }
 const CUSTOM = '__custom__'
 
 /** Which model reads every document: provider, key and model, with a test call so you know it works. */
@@ -97,7 +97,7 @@ function AiCard({ canManage }: { canManage: boolean }) {
   const d = q.data
   // Re-sync only when the saved settings actually change: every mutation refetches, and that
   // must not wipe what the admin is typing or the test result they just asked for.
-  const sig = d ? `${d.provider}|${d.model}|${d.keySet}|${d.fromEnv}` : ''
+  const sig = d ? `${d.provider}|${d.model}|${d.keySet}` : ''
   useEffect(() => {
     if (!d) return
     setProvider(d.provider)
@@ -105,7 +105,7 @@ function AiCard({ canManage }: { canManage: boolean }) {
     setCustom(!d.knownModels[d.provider]?.includes(d.model))
   }, [sig])  // eslint-disable-line react-hooks/exhaustive-deps
   // Ask the provider which models this key can use; the built-in list is only the fallback.
-  const hasKey = !!d && (d.keySet || d.fromEnv)
+  const hasKey = !!d && d.keySet
   useEffect(() => {
     setLive(null)
     if (!provider || !hasKey) return
@@ -126,7 +126,6 @@ function AiCard({ canManage }: { canManage: boolean }) {
     <CardBody className="flex flex-col gap-3 text-xs">
       <div className="flex flex-wrap items-center gap-2">
         {d.configured ? <StatusPill tone="ok">{PROVIDER_LABEL[d.provider] ?? d.provider} · {d.model}</StatusPill> : <StatusPill tone="bad">Not configured</StatusPill>}
-        {d.fromEnv && d.configured && <span className="text-text-3">from the server's <code>ANTHROPIC_API_KEY</code></span>}
         {d.lastTestAt && <span className="text-text-3">Tested {dateTime(d.lastTestAt)}</span>}
       </div>
       {d.lastTestResult && !test && <Banner tone={d.lastTestResult.startsWith('OK') ? 'ok' : 'bad'}>{d.lastTestResult}</Banner>}

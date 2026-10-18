@@ -54,20 +54,16 @@ def save(body: AiIn, request: Request, u: User = Depends(current_user), db: Sess
     return ai_out(r, ai.config(db))
 
 
-def _key_for(db: Session, r: AiSetting, typed: str | None) -> str:
-    """The key to try: what is in the form, else the saved one, else the server's env key."""
-    if typed:
-        return typed
-    if r.enc_api_key:
-        return crypto.decrypt(r.enc_api_key)
-    return ai.config(db).api_key
+def _key_for(r: AiSetting, typed: str | None) -> str:
+    """The key to try: what is in the form, else the saved one."""
+    return typed or (crypto.decrypt(r.enc_api_key) if r.enc_api_key else '')
 
 
 @router.post('/ai/models')
 def models(body: AiIn, u: User = Depends(current_user), db: Session = Depends(get_db)):
     """The models the key can use, so the dropdown is the provider's real list."""
     require_admin(u, 'see the document reading settings')
-    key = _key_for(db, _get(db), body.api_key)
+    key = _key_for(_get(db), body.api_key)
     if not key:
         raise HTTPException(422, 'Enter an API key first')
     ok, found, message = ai.list_models(body.provider, key)
@@ -79,7 +75,7 @@ def test(body: AiTestIn, request: Request, u: User = Depends(current_user), db: 
     """Checks the key typed in the form, or the saved one when the field is left empty."""
     require_admin(u, 'test the document reading settings')
     r = _get(db)
-    key = _key_for(db, r, body.api_key)
+    key = _key_for(r, body.api_key)
     if not key:
         raise HTTPException(422, 'Enter an API key first')
     model = (body.model or r.model or ai.DEFAULT_MODEL[body.provider]).strip()

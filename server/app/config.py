@@ -15,9 +15,6 @@ class Settings(BaseSettings):
     google_client_secret: str = ''
     ms_client_id: str = ''
     ms_client_secret: str = ''
-    # Claude reads every document. One key for the deployment, never shown in the UI.
-    anthropic_api_key: str = ''
-    anthropic_model: str = 'claude-sonnet-5-5'
     # Outgoing email for invites and password resets. Without it the admin copies the links by hand.
     smtp_host: str = ''
     smtp_port: int = 587

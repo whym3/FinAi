@@ -9,7 +9,6 @@ TEST_DB_URL = _base.rsplit('/', 1)[0] + '/' + _base.rsplit('/', 1)[1] + '_test'
 os.environ['DATABASE_URL'] = TEST_DB_URL
 os.environ.setdefault('APP_SECRET_KEY', base64.b64encode(b'k' * 32).decode())
 os.environ['RUN_BACKGROUND'] = 'false'
-os.environ['ANTHROPIC_API_KEY'] = ''
 os.environ['REQUIRE_MFA'] = 'true'  # the auth tests cover the MFA path; test_mfa_off covers it switched off
 
 

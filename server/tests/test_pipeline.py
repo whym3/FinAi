@@ -1,4 +1,4 @@
-"""The reading pipeline with Claude mocked: classify a 3-page PDF into PO + invoice, split, extract, link and match."""
+"""The reading pipeline with the model mocked: classify a 3-page PDF into PO + invoice, split, extract, link and match."""
 import io
 import json
 from datetime import datetime
@@ -6,12 +6,13 @@ from datetime import datetime
 import pytest
 from pypdf import PdfWriter
 
+from app import crypto
 from app.extract import ai
 from app.extract.run import process_document
 from app.extract.schemas import FIELD_META, schema_for
 from app.extract.validate import build_fields
 from app.mail.ingest import ingest_file
-from app.models import Job, PurchaseOrder, SourceDocument, SupplierInvoice
+from app.models import AiSetting, Job, PurchaseOrder, SourceDocument, SupplierInvoice
 
 
 def pdf(pages: int) -> bytes:
@@ -41,7 +42,8 @@ def test_validate_checks():
 def test_bundle_pipeline(db, firm, tmp_path, monkeypatch):
     f, e, admin = firm
     monkeypatch.setattr('app.mail.ingest.settings.storage_dir', str(tmp_path))
-    monkeypatch.setattr('app.extract.ai.settings.anthropic_api_key', 'test-key')
+    db.add(AiSetting(provider='anthropic', model='claude-test', enc_api_key=crypto.encrypt('test-key')))
+    db.flush()
     F = lambda v, c=95: {'value': v, 'confidence': c}
     answers = {
         'classify': {'documents': [{'page_from': 1, 'page_to': 2, 'kind': 'invoice', 'number': 'API/3166', 'date': '01-09-2026', 'party': 'Akshay', 'confidence': 95},
