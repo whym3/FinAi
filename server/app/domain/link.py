@@ -7,8 +7,27 @@ from sqlalchemy.orm import Session
 
 from ..extract.validate import norm_code, norm_vehicle, terms_days, to_date, to_num, values
 from ..models import DispatchDoc, GoodsReceipt, GrLine, InvoiceLine, Party, PoLine, PurchaseOrder, SourceDocument, SupplierInvoice
+from ..validate import GSTIN_RE, PAN_RE
 
 DISPATCH_KINDS = {'lorry_receipt', 'consignment_note', 'weighbridge', 'gate_entry', 'eway_bill', 'delivery_challan'}
+
+
+def _gstin_from(v) -> str | None:
+    """Only store something in a GSTIN column if it is shaped like a GSTIN: a misread puts the
+    supplier's address there, which is neither true nor useful to match on."""
+    g = norm_code(v)
+    return g if g and GSTIN_RE.match(g) else None
+
+
+def _pan_from(pan: str | None, gstin: str | None) -> str | None:
+    """A read PAN is untrusted: models hand back near misses like the GSTIN's first 11 characters,
+    which the 10-char column rejects and the whole job dies with it. Keep it only if it is shaped
+    like a PAN, else take the PAN out of the GSTIN."""
+    cleaned = (pan or '').strip().upper()
+    if PAN_RE.match(cleaned):
+        return cleaned
+    inner = (gstin or '')[2:12]
+    return inner if PAN_RE.match(inner) else None
 
 
 def _name_key(name: str) -> str:
@@ -19,6 +38,7 @@ def find_or_create_party(db: Session, entity_id: str, kind: str, name: str | Non
                          pan: str | None = None, source: str = 'extracted', **extra) -> Party | None:
     gstin = norm_code(gstin)
     code = norm_code(code)
+    pan = _pan_from(pan, gstin)
     q = select(Party).where(Party.entity_id == entity_id, Party.kind == kind)
     p = None
     if gstin:
@@ -34,7 +54,7 @@ def find_or_create_party(db: Session, entity_id: str, kind: str, name: str | Non
     if not p:
         if not (name or gstin or code):
             return None
-        p = Party(entity_id=entity_id, kind=kind, name=(name or gstin or code).strip()[:200], gstin=gstin, code=code, pan=pan or (gstin[2:12] if gstin else None), source=source,
+        p = Party(entity_id=entity_id, kind=kind, name=(name or gstin or code).strip()[:200], gstin=gstin, code=code, pan=pan, source=source,
                  state=None, extra={})
         db.add(p)
         db.flush()
@@ -85,7 +105,7 @@ def _apply_invoice(db: Session, doc: SourceDocument, v: dict) -> None:
     if not no:
         doc.status_note = 'No invoice number read'
         return
-    gstin = norm_code(v.get('gstin'))
+    gstin = _gstin_from(v.get('gstin'))
     vendor = find_or_create_party(db, doc.entity_id, 'vendor', v.get('supplier'), gstin, None, v.get('supplierPan'),
                                   bank={'account': v['bankAccount'], 'ifsc': v.get('ifsc', '')} if v.get('bankAccount') else None,
                                   payment_terms_days=terms_days(v.get('paymentTerms')))
@@ -98,7 +118,7 @@ def _apply_invoice(db: Session, doc: SourceDocument, v: dict) -> None:
         db.add(inv)
     inv.vendor_id, inv.vendor_name = (vendor.id if vendor else None), (vendor.name if vendor else v.get('supplier') or '')
     inv.date = to_date(v.get('invoiceDate'))
-    inv.bill_to_gstin = norm_code(v.get('billTo'))
+    inv.bill_to_gstin = _gstin_from(v.get('billTo'))
     inv.irn, inv.ack_no, inv.ewaybill = (v.get('irn') or '').lower() or None, v.get('ackNo'), norm_code(v.get('ewaybill'))
     inv.vehicle, inv.transporter, inv.place_of_supply = norm_vehicle(v.get('vehicle')), v.get('transporter'), v.get('pos')
     inv.po_ref = norm_code(v.get('poRef'))
