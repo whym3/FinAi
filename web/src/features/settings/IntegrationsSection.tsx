@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { Mail, Plug, RefreshCw, Sparkles } from 'lucide-react'
+import { KeyRound, Mail, Plug, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Banner, Card, CardBody, CardHeader, EmptyState, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
@@ -94,6 +95,7 @@ function AiCard({ canManage }: { canManage: boolean }) {
   const [key, setKey] = useState('')
   const [test, setTest] = useState<{ ok: boolean; message: string } | null>(null)
   const [live, setLive] = useState<string[] | null>(null)
+  const [confirmRevoke, setConfirmRevoke] = useState(false)
   const d = q.data
   // Re-sync only when the saved settings actually change: every mutation refetches, and that
   // must not wipe what the admin is typing or the test result they just asked for.
@@ -110,7 +112,13 @@ function AiCard({ canManage }: { canManage: boolean }) {
     setLive(null)
     if (!provider || !hasKey) return
     let stale = false
-    api.listAiModels({ provider }).then(r => { if (!stale && r.ok && r.models.length) setLive(r.models) }).catch(() => {})
+    api.listAiModels({ provider }).then(r => {
+      if (stale || !r.ok || !r.models.length) return
+      setLive(r.models)
+      // The saved model counts as "Other" only against the built-in list; once the real one
+      // arrives it usually contains the model, so show it selected instead of as a custom name.
+      setCustom(c => c && !r.models.includes(model))
+    }).catch(() => {})
     return () => { stale = true }
   }, [provider, hasKey])
   if (q.isError) return <CardBody className="text-xs text-text-3">Only a firm admin or partner can see these settings.</CardBody>
@@ -153,9 +161,22 @@ function AiCard({ canManage }: { canManage: boolean }) {
             if (r) setTest(r)
             if (r?.ok) api.listAiModels({ provider, api_key: key || undefined }).then(m => { if (m.ok && m.models.length) setLive(m.models) }).catch(() => {})
           }}><Plug />Test API key</Button>
+          {d.keySet && <Button variant="ghost" disabled={pending} onClick={() => setConfirmRevoke(true)}><KeyRound />Revoke key</Button>}
         </div>
       )}
       <p className="text-text-2">Every uploaded or emailed document is read by this model. The key is stored encrypted and never shown again. Extracted values stay unconfirmed until a person checks them.</p>
+      <Dialog open={confirmRevoke} onOpenChange={setConfirmRevoke}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>Revoke the {PROVIDER_LABEL[d.provider] ?? d.provider} key?</DialogTitle>
+            <DialogDescription>Pravah forgets the key and stops reading documents until a new one is saved. Documents already read keep their fields, and the audit log keeps the record. Revoking here does not cancel the key at {d.provider === 'openai' ? 'OpenAI' : 'Anthropic'} — delete it there too if it should stop working everywhere.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setConfirmRevoke(false)}>Keep the key</Button>
+            <Button variant="destructive" disabled={pending} onClick={async () => { await act(() => api.revokeAiKey(), 'Key revoked'); setKey(''); setTest(null); setLive(null); setConfirmRevoke(false) }}><KeyRound />Revoke key</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </CardBody>
   )
 }

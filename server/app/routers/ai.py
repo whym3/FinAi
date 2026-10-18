@@ -54,6 +54,21 @@ def save(body: AiIn, request: Request, u: User = Depends(current_user), db: Sess
     return ai_out(r, ai.config(db))
 
 
+@router.delete('/ai/key')
+def revoke(request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Forget the stored key. Documents stop being read until a new one is saved."""
+    require_admin(u, 'change the document reading settings')
+    r = _get(db)
+    if not r.id or not r.enc_api_key:
+        raise HTTPException(404, 'No key is stored')
+    r.enc_api_key, r.last_test_at, r.last_test_result = None, None, None
+    r.updated_at = datetime.now(UTC)
+    db.flush()
+    audit(db, u.id, None, 'Revoked document reading key', f'{r.provider} · {r.model}', 'key removed', request=request)
+    db.commit()
+    return ai_out(r, ai.config(db))
+
+
 def _key_for(r: AiSetting, typed: str | None) -> str:
     """The key to try: what is in the form, else the saved one."""
     return typed or (crypto.decrypt(r.enc_api_key) if r.enc_api_key else '')

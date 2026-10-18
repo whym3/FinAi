@@ -175,6 +175,7 @@ export const getAi = () => http<AiSettings>('/ai')
 export const saveAi = (body: { provider: string; model: string; api_key?: string | null }) => http<AiSettings>('/ai', { method: 'PUT', json: body })
 export const testAi = (body: { provider: string; model: string; api_key?: string | null }) => http<{ ok: boolean; message: string }>('/ai/test', { method: 'POST', json: body })
 export const listAiModels = (body: { provider: string; api_key?: string | null }) => http<{ ok: boolean; models: string[]; message: string }>('/ai/models', { method: 'POST', json: body })
+export const revokeAiKey = () => http<AiSettings>('/ai/key', { method: 'DELETE' })
 export const getIntegrations = () => http<Integrations>('/integrations')
 
 // shapes only this module names
