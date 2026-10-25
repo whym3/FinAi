@@ -207,6 +207,10 @@ def _apply_grn(db: Session, doc: SourceDocument, v: dict) -> None:
             po.vendor_id = vendor.id
     db.flush()
     doc.grn_id, doc.po_id = g.id, g.po_id
+    if g.invoice_ref:
+        for inv in db.scalars(select(SupplierInvoice).where(SupplierInvoice.entity_id == doc.entity_id,
+                                                           SupplierInvoice.invoice_no == g.invoice_ref)):
+            _link_grn_to_invoice(db, inv)
     if po:
         relink_po(db, po)
 
@@ -265,6 +269,8 @@ def relink_po(db: Session, po: PurchaseOrder) -> None:
         _link_grn_to_invoice(db, inv)
         for sd in db.scalars(select(SourceDocument).where(SourceDocument.invoice_id == inv.id)):
             sd.po_id = po.id
+    for inv in db.scalars(select(SupplierInvoice).where(SupplierInvoice.entity_id == ent, SupplierInvoice.po_id == po.id)):
+        _link_grn_to_invoice(db, inv)
     db.flush()
     for d in db.scalars(select(DispatchDoc).where(DispatchDoc.entity_id == ent, DispatchDoc.po_id.is_(None))):
         _link_dispatch(db, d)

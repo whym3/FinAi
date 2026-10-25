@@ -68,6 +68,28 @@ def test_link_and_match(db, bundle):
     assert agg['sap']['grn'] == '5000119339' and agg['sap']['gateEntry'] == '0000183346'
 
 
+def test_late_grn_relinks_existing_invoice_and_refreshes_difference(db, firm):
+    _, e, _ = firm
+    doc(db, e, 'purchase_order', poNo='PO-9', vendorName='Supplier', total='118',
+        lines=[{'desc': 'Part', 'hsn': '3926', 'qty': 1, 'unit': 'pc', 'rate': 100, 'amount': 100, 'confidence': 95, 'item': '10'}])
+    doc(db, e, 'invoice', supplier='Supplier', invoiceNo='INV-9', poRef='PO-9', taxable='100', igst='18', total='118',
+        lines=[{'desc': 'Part', 'hsn': '3926', 'qty': 1, 'unit': 'pc', 'rate': 100, 'amount': 100, 'confidence': 95}])
+    inv = db.query(SupplierInvoice).filter_by(invoice_no='INV-9').one()
+    assert inv.po_id and not inv.grn_id
+    run_match(db, inv, today=date(2026, 10, 25))
+    grn_exception = db.query(ExceptionItem).filter_by(invoice_id=inv.id, flag_key='grn').one()
+    assert grn_exception.status == 'open'
+    grn_doc = doc(db, e, 'goods_receipt', grnNo='GRN-9', poNo='PO-9', invoiceNo='INV-9',
+                  lines=[{'desc': 'Part', 'hsn': '3926', 'qty': 1, 'unit': 'pc', 'rate': 0, 'amount': 0, 'confidence': 95, 'poItem': '10', 'accepted': 1}])
+    assert inv.grn_id == grn_doc.grn_id
+    run_match(db, inv, today=date(2026, 10, 25))
+    assert 'grn' not in {flag['key'] for flag in inv.match['flags']}
+    assert grn_exception.status == 'open'  # a reviewer closes the previously raised exception
+    assert grn_exception.status_note == 'Difference no longer detected; review evidence and resolve'
+    run_match(db, inv, today=date(2026, 10, 25))
+    assert sum('Difference no longer detected' in h['text'] for h in grn_exception.history) == 1
+
+
 def test_rate_and_freight_flags(db, firm):
     f, e, admin = firm
     doc(db, e, 'purchase_order', poNo='4500012345', vendorName='Sahyadri Packaging', vendorGstin='27AAPFU0939F1ZV', paymentTerms='30 days', freightTerms='FOR destination, included', total='100300.00',

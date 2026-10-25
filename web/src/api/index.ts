@@ -59,6 +59,11 @@ export function connectMailbox(provider: MailProvider, entityId: string, ret: st
 
 /* ---------------- intake ---------------- */
 export const listIntake = (entity: string) => http<IntakeDoc[]>('/intake' + q({ entity }))
+export function suggestClientFromDocs(files: File[]) {
+  const form = new FormData()
+  files.forEach(f => form.append('files', f, f.name))
+  return http<{ legal_name: string; gstin: string; pan: string; source: string; warnings: string[] }>('/intake/suggest-client', { method: 'POST', form })
+}
 export function uploadDocs(entity: string, files: File[]) {
   const form = new FormData()
   files.forEach(f => form.append('files', f, f.name))

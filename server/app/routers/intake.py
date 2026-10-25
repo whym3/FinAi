@@ -7,19 +7,55 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import WORK_ROLES, audit, current_user, load_session, require_entity, require_role
+from ..auth import WORK_ROLES, audit, current_user, load_session, require_admin, require_entity, require_role
 from ..config import settings
 from ..db import get_db
 from ..domain import link
 from ..domain.match import run_match
+from ..extract import ai
 from ..extract.schemas import FIELD_META
+from ..extract.split import slice_pdf
 from ..mail.base import Attachment
 from ..mail.ingest import expand, ingest_file, mime_of
 from ..mailer import send
 from ..models import Job, PurchaseOrder, SourceDocument, SupplierInvoice, User
 from ..serialize import doc_out
+from ..validate import check_gstin
 
 router = APIRouter(prefix='/api', tags=['intake'])
+
+
+@router.post('/intake/suggest-client')
+async def suggest_client(files: list[UploadFile] = File(...), u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Suggest bill-to client details from an invoice without saving the document or client."""
+    require_admin(u, 'create a client from an invoice')
+    cfg = ai.config(db)
+    if not cfg.configured:
+        raise HTTPException(503, 'Configure an AI document reader in Settings → Integrations first')
+    for file in files:
+        name = file.filename or 'document'
+        mime = mime_of(name, file.content_type or '')
+        if mime not in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp'):
+            continue
+        data = await file.read()
+        if len(data) > settings.max_upload_mb * 1024 * 1024:
+            raise HTTPException(413, f'{name}: larger than {settings.max_upload_mb} MB')
+        try:
+            found = ai.classify(cfg, data, mime, name).raw.get('documents', [])
+            invoice = next((d for d in found if d.get('kind') in ('invoice', 'invoice_copy')), None)
+            if not invoice:
+                continue
+            part = slice_pdf(data, int(invoice['page_from']), int(invoice.get('page_to') or invoice['page_from'])) if mime == 'application/pdf' else data
+            fields = ai.extract(cfg, 'invoice', part, mime, name).raw
+            def value(key: str) -> str:
+                return str((fields.get(key) or {}).get('value') or '').strip()
+            gstin = value('billTo').upper()
+            validation = check_gstin(gstin) if gstin else None
+            return {'legal_name': value('billToName'), 'gstin': gstin, 'pan': gstin[2:12] if len(gstin) == 15 else '',
+                    'source': name, 'warnings': validation['errors'] + validation['warnings'] if validation else ['Bill-to GSTIN was not found; enter it before creating the client']}
+        except Exception as exc:
+            raise HTTPException(422, f'Could not read {name}: {type(exc).__name__}') from exc
+    raise HTTPException(422, 'No invoice found in the selected PDF or images. Include an invoice to create the client.')
 
 
 def get_doc(db: Session, u: User, doc_id: str | int, act: bool = False) -> SourceDocument:

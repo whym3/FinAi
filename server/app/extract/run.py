@@ -107,6 +107,9 @@ def process_document(db: Session, doc_id: int) -> None:
         if po:
             link.relink_po(db, po)
     inv_ids = {p.invoice_id for p in touched if p.invoice_id}
+    grn_ids = {p.grn_id for p in touched if p.grn_id}
+    if grn_ids:
+        inv_ids |= {i.id for i in db.scalars(select(SupplierInvoice).where(SupplierInvoice.grn_id.in_(grn_ids)))}
     if po_ids:
         inv_ids |= {i.id for i in db.scalars(select(SupplierInvoice).where(SupplierInvoice.po_id.in_(po_ids)))}
     for inv in (db.scalars(select(SupplierInvoice).where(SupplierInvoice.id.in_(inv_ids))) if inv_ids else []):

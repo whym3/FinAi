@@ -205,12 +205,22 @@ def run_match(db: Session, inv: SupplierInvoice, today: date | None = None) -> N
 def _sync_exceptions(db: Session, inv: SupplierInvoice, flags: list[dict], today: date) -> None:
     rules = {r.type: r for r in db.scalars(select(ExceptionRule))}
     existing = {x.flag_key: x for x in db.scalars(select(ExceptionItem).where(ExceptionItem.invoice_id == inv.id))}
+    active_keys = {fl['key'] for fl in flags}
+    review_note = 'Difference no longer detected; review evidence and resolve'
+    for key, item in existing.items():
+        if key not in active_keys and item.status != 'resolved' and item.status_note is None:
+            item.status_note = review_note
+            item.history = [*(item.history or []), {'at': today.isoformat(), 'text': review_note}]
     for fl in flags:
         rule = rules.get(fl['key'])
         if rule and not rule.enabled:
             continue
         if fl['key'] in existing:
-            fl['exceptionId'] = f'EX-{existing[fl["key"]].id}'
+            item = existing[fl['key']]
+            if item.status_note == review_note:
+                item.status_note = None
+                item.history = [*(item.history or []), {'at': today.isoformat(), 'text': 'Difference detected again after updated documents or fields'}]
+            fl['exceptionId'] = f'EX-{item.id}'
             continue
         owners = users_with_role(db, inv.entity_id, {rule.default_role if rule else 'ap'})
         x = ExceptionItem(entity_id=inv.entity_id, rule_id=rule.id if rule else None, type=fl['key'], title=f'{fl["title"]} · {inv.invoice_no}', doc_ref=inv.invoice_no,
