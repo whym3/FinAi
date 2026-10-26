@@ -47,6 +47,12 @@ def run_one_job() -> bool:
             elif job.kind == 'sap_sync':
                 from .sap.sync import sync_connection
                 sync_connection(db, job.payload['connection_id'])
+            elif job.kind == 'verify':
+                from .domain.verify import run_for_invoice
+                run_for_invoice(db, job.payload['invoice_id'])
+            elif job.kind == 'verify_poll':
+                from .domain.verify import poll
+                poll(db, job.payload['verification_id'])
             job.done_at = datetime.now(UTC)
         except Exception as e:
             db.rollback()

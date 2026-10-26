@@ -5,10 +5,11 @@ from sqlalchemy.orm import Session
 from ..auth import current_user, visible_entities
 from ..config import settings
 from ..db import get_db
+from ..domain import verify
 from ..extract import ai
 from ..mailer import configured as smtp_configured
-from ..models import AiSetting, Import, Mailbox, SapConnection, SourceDocument, User
-from ..serialize import ai_out, import_out, ist, mailbox_out, sap_out
+from ..models import AiSetting, GspSetting, Import, Mailbox, SapConnection, SourceDocument, User
+from ..serialize import ai_out, gsp_out, import_out, ist, mailbox_out, sap_out
 
 router = APIRouter(prefix='/api', tags=['integrations'])
 
@@ -29,6 +30,7 @@ def integrations(u: User = Depends(current_user), db: Session = Depends(get_db))
         'oauth': {'gmail': bool(settings.google_client_id), 'outlook': bool(settings.ms_client_id)},
         'sap': [sap_out(c) for c in saps],
         'ai': ai_out(ai.row(db) or AiSetting(), ai.config(db)),
+        'gsp': gsp_out(verify.row(db) or GspSetting()),
         'smtp': {'configured': smtp_configured(), 'from': settings.smtp_from if smtp_configured() else None},
         'imports': [{'entityId': e, 'kind': k, **v} for (e, k), v in last_imports.items()],
         'publicUrl': settings.public_url,

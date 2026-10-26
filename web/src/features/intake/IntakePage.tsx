@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Check, ChevronLeft, ChevronRight, Copy, Database, ExternalLink, Filter, Link2, Mail, Mailbox, MessageCircle, Pencil, RefreshCw, Send, Sparkles, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -9,13 +9,14 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  Banner, BulkBar, Card, Chip, Confidence, DataTable, EmptyState, FieldRow, FilterChip, LineTabs, MsmeBadge, PageHeader, Pill, Q, Source, Spacer, Restricted,
+  Banner, BulkBar, Card, CardHeader, Chip, Confidence, DataTable, EmptyState, FieldCrop, FieldRow, FilterChip, FindingsTable, LineTabs, MsmeBadge, PageHeader, Pill, Q, Source, Spacer, Restricted, VerdictList,
 } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useIntake, usePOs, useVendors } from '@/api/hooks'
+import { useAct, useIntake, useInvoices, usePOs, useVendors } from '@/api/hooks'
 import * as api from '@/api'
+import { checkable, verdictStatus, verificationStatus } from '@/lib/evidence'
 import { dateTime, daysBetween, inr, num2, todayIso } from '@/lib/format'
-import type { Channel, ExtractedField, IntakeDoc, IntakeStatus, Status } from '@/lib/types'
+import type { Annotation, AnnotationKey, Channel, ExtractedField, IntakeDoc, IntakeStatus, Status, VerdictAction } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const TABS: { value: 'all' | IntakeStatus; label: string; tone?: 'acc' | 'warn' }[] = [
@@ -139,7 +140,9 @@ export default function IntakePage() {
             )}
             empty={<EmptyState title={tab === 'new' ? 'Nothing waiting for review' : 'No documents here'} action={<Button size="sm" onClick={() => fileRef.current?.click()}><Upload />Upload documents</Button>}>Documents from connected mailboxes and uploads appear here as they arrive.</EmptyState>} />
 
-          {selected && <ReviewPanel key={selected.id} d={selected} onOpen={id => set('doc', id)} pos={idx >= 0 ? `${idx + 1} of ${filtered.length}` : ''}
+          {selected && <ReviewPanel key={selected.id} d={selected} target={sp.get('field') ?? (sp.get('note') ? `note-${sp.get('note')}` : null)}
+            onOpen={(id, key) => setSp(p => { const n = new URLSearchParams(p); n.set('doc', id); n.delete('note'); if (key) n.set('field', key); else n.delete('field'); return n }, { replace: true })}
+            pos={idx >= 0 ? `${idx + 1} of ${filtered.length}` : ''}
             prev={idx > 0 ? () => set('doc', filtered[idx - 1].id) : undefined} next={idx >= 0 && idx < filtered.length - 1 ? () => set('doc', filtered[idx + 1].id) : undefined}
             onClose={() => set('doc', null)} />}
         </>
@@ -151,11 +154,19 @@ export default function IntakePage() {
 
 const TOTAL_KEYS = ['taxable', 'cgst', 'sgst', 'igst', 'total', 'bank', 'terms']
 
-function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; pos: string; prev?: () => void; next?: () => void; onClose: () => void; onOpen: (id: string) => void }) {
+function ReviewPanel({ d, pos, prev, next, onClose, onOpen, target }: { d: IntakeDoc; pos: string; prev?: () => void; next?: () => void; onClose: () => void; onOpen: (id: string, key?: string | null) => void; target: string | null }) {
   const { user, readOnly } = useSession()
   const vendor = useVendors().data?.find(v => v.id === d.vendorId)
+  const invoice = useInvoices().data?.find(i => i.id === d.invoiceId)
+  const irnCheck = invoice?.verifications?.find(v => v.kind === 'einvoice_qr')
   const { act, pending } = useAct()
-  const [focus, setFocus] = useState<string | undefined>()
+  const nav = useNavigate()
+  const [focus, setFocus] = useState<string | undefined>(target ?? undefined)
+  useEffect(() => {
+    if (!target) return
+    const el = document.getElementById(target.startsWith('note-') ? target : `field-${target}`)
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [target])
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [linkOpen, setLinkOpen] = useState(false)
@@ -164,13 +175,25 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
   const fields = d.fields
   const head = fields.filter(f => !TOTAL_KEYS.includes(f.key))
   const tail = fields.filter(f => TOTAL_KEYS.includes(f.key))
-  const low = fields.filter(f => f.confidence < 90 && !f.confirmedBy).length
+  const low = fields.filter(f => f.confidence < 90 && !f.confirmedBy).length + (d.annotations ?? []).filter(a => checkable(a) && a.confidence < 90 && !a.confirmedBy).length
   const done = d.status === 'linked' || d.status === 'duplicate' || d.status === 'notfinance' || d.status === 'rejected'
   const disabled = readOnly || pending
+  const bundleInvoice = (d.parts ?? []).find(p => p.invoiceId)?.invoiceId
+  const onVerdict = (a: VerdictAction) => {
+    if (a.kind === 'field') onOpen(a.docId, a.key)
+    else if (a.kind === 'annotation') nav(`/intake?tab=all&doc=${a.docId}&note=${a.index}`)
+    else if (a.kind === 'flag' && a.exceptionId) nav(`/exceptions?ex=${a.exceptionId}`)
+    else if (a.kind === 'verify' && bundleInvoice) act(() => api.verifyInvoice(bundleInvoice), 'Verification queued')
+    else if (a.kind === 'setup') nav(a.to)
+  }
 
   const show = (f: ExtractedField) => f.num ? inr(Number(f.value)) : f.key === 'date' ? f.value.split('-').reverse().join('-') : f.value
+  const flagged = (f: ExtractedField) => (f.confidence < 90 && !f.confirmedBy) || !!f.xcheck || !!f.blocking || !!f.qr
+  const evidence = (f: ExtractedField) => f.box
+    ? <FieldCrop crop={api.pageImageUrl(d.id, f.box.page, f.box, 640)} page={api.pageImageUrl(d.id, f.box.page)} box={f.box} label={f.label} compact={!flagged(f)} />
+    : undefined
   const fieldRow = (f: ExtractedField) => (
-    <FieldRow key={f.key} f={f} on={focus === f.key} onClick={() => setFocus(f.key)}
+    <FieldRow key={f.key} f={f} on={focus === f.key} onClick={() => setFocus(f.key)} evidence={evidence(f)}
       value={editing === f.key ? (
         <form className="flex w-full items-center gap-1" onSubmit={e => { e.preventDefault(); act(() => api.editField(d.id, f.key, f.num ? String(Number(draft.replace(/[₹,\s]/g, ''))) : draft), `${f.label} updated`); setEditing(null) }} onClick={e => e.stopPropagation()}>
           <Input autoFocus value={draft} onChange={e => setDraft(e.target.value)} className="h-6 flex-1 px-1.5 text-xs" aria-label={f.label} />
@@ -180,7 +203,8 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
       ) : <>
         <span className={cn('min-w-0 break-words', f.mono && 'font-mono text-[12px]')}>{show(f)}</span>
         {f.check && <span className={cn('flex items-center gap-1 text-[11px] font-medium', { ok: 'text-ok', warn: 'text-warn', bad: 'text-bad', none: 'text-text-3', acc: 'text-acc' }[f.check.tone])}>{f.check.label}</span>}
-        {f.key === 'irn' && f.confidence < 90 && !f.confirmedBy && <Button size="xs" disabled={disabled} onClick={e => { e.stopPropagation(); act(() => api.editField(d.id, 'irn', f.value), 'IRN verified on IRP: signed QR matches') }}>Verify on IRP</Button>}
+        {f.qr && !done && !readOnly && <Button size="xs" disabled={disabled} onClick={e => { e.stopPropagation(); act(() => api.editField(d.id, f.key, f.qr!), `${f.label} set from the e-invoice QR code`) }}>Use QR value</Button>}
+        {f.key === 'irn' && irnCheck && <span className="flex items-center gap-1 text-[11px]"><Pill s={verificationStatus(irnCheck)} />{irnCheck.message && <span className="text-text-3">{irnCheck.message}</span>}</span>}
         {!done && !readOnly && <button type="button" aria-label={`Edit ${f.label}`} className="ml-auto grid size-5 flex-none cursor-pointer place-items-center rounded-sm text-text-3 hover:bg-surface-3 hover:text-text" onClick={e => { e.stopPropagation(); setDraft(show(f)); setEditing(f.key) }}><Pencil className="size-3" /></button>}
       </>} />
   )
@@ -211,6 +235,13 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
           <div className="mt-2 flex flex-wrap gap-2">
             {(d.parts ?? []).map(p => <Button key={p.id} size="sm" onClick={() => onOpen(p.id)}>{p.type} · p{p.pageFrom}{p.pageTo !== p.pageFrom ? `–${p.pageTo}` : ''}{p.docNo && p.docNo !== p.filename ? ` · ${p.docNo}` : ''}</Button>)}
           </div>
+          {d.checks && (
+            <Card aria-label="Bundle checks" className="mt-3">
+              <CardHeader title="Do the documents agree?" as="h3"><Pill s={verdictStatus(d.checks.verdict)} /></CardHeader>
+              <VerdictList verdict={d.checks.verdict} disabled={disabled} onAction={a => onVerdict(a)} />
+              <FindingsTable findings={d.checks.findings} onOpen={onOpen} />
+            </Card>
+          )}
         </div>
       )}
 
@@ -252,6 +283,7 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
               </div>
             )}
             <div className="flex flex-col gap-0.5">{tail.map(fieldRow)}</div>
+            {(d.annotations?.length ?? 0) > 0 && <Notes d={d} editable={!done && !readOnly} disabled={disabled} target={target} />}
 
             {d.suggestedLink && d.status !== 'linked' && !done && (
               <div className="flex flex-wrap items-center gap-2.5 rounded-lg border border-border bg-surface-2 px-3 py-2.5">
@@ -293,9 +325,49 @@ function ReviewPanel({ d, pos, prev, next, onClose, onOpen }: { d: IntakeDoc; po
   )
 }
 
-/** The original file as received, served by the server. PDFs and text in a frame, images inline. */
+const NOTE_TYPE: Record<Annotation['type'], string> = { receipt: 'Receipt stamp', approval: 'Approval mark', company_seal: 'Company seal', signature: 'Signature', handwritten_note: 'Handwritten note', other: 'Stamp' }
+const NOTE_KEYS: [AnnotationKey, string][] = [['grnNo', 'GRN no.'], ['gateEntryNo', 'Gate entry no.'], ['poNo', 'PO no.'], ['invoiceNo', 'Invoice no.'], ['parkPostNo', 'Park/post no.'], ['date', 'Date'], ['text', 'Text']]
+
+/** Stamps and handwritten notes read off the page; the numbers on them are compared with the other documents. */
+function Notes({ d, editable, disabled, target }: { d: IntakeDoc; editable: boolean; disabled: boolean; target: string | null }) {
+  const { act } = useAct()
+  const [editing, setEditing] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  return (
+    <div className="flex flex-col gap-1.5 pt-1">
+      <h3>Stamps & handwritten notes</h3>
+      {(d.annotations ?? []).map((a, i) => (
+        <div key={i} id={`note-${i}`} className={cn('flex flex-col gap-1.5 rounded-md border px-2.5 py-2', target === `note-${i}` ? 'border-acc bg-acc-weak' : checkable(a) && a.confidence < 90 && !a.confirmedBy ? 'border-dashed border-warn bg-warn-bg' : 'border-border')}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium">{NOTE_TYPE[a.type]}</span>
+            <Spacer />
+            {a.confirmedBy && a.confidence === 100 ? <Confidence value={100}>{a.edited ? 'Edited' : 'Confirmed'}</Confidence> : <Confidence value={a.confidence} />}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {NOTE_KEYS.filter(([k]) => a[k] || editing === `${i}:${k}`).map(([k, label]) => editing === `${i}:${k}` ? (
+              <form key={k} className="flex items-center gap-1" onSubmit={e => { e.preventDefault(); act(() => api.editAnnotation(d.id, i, k, draft), `${label} updated`); setEditing(null) }}>
+                <Input autoFocus value={draft} onChange={e => setDraft(e.target.value)} className="h-6 w-40 px-1.5 text-xs" aria-label={label} />
+                <Button size="icon-xs" type="submit" aria-label="Save"><Check /></Button>
+                <Button size="icon-xs" type="button" aria-label="Cancel" onClick={() => setEditing(null)}><X /></Button>
+              </form>
+            ) : (
+              <span key={k} className="flex items-center gap-1 rounded-md border border-border-2 bg-surface px-2 py-0.5 text-xs">
+                <span className="text-text-3">{label}</span><span className={cn(k !== 'text' && 'font-mono')}>{a[k]}</span>
+                {editable && <button type="button" aria-label={`Edit ${label}`} disabled={disabled} className="grid size-4 cursor-pointer place-items-center rounded-sm text-text-3 hover:text-text" onClick={() => { setDraft(a[k] ?? ''); setEditing(`${i}:${k}`) }}><Pencil className="size-3" /></button>}
+              </span>
+            ))}
+          </div>
+          {a.xcheck && <span className={cn('text-[11px] font-medium', a.xcheck.tone === 'bad' ? 'text-bad' : 'text-warn')}>{a.xcheck.label}</span>}
+          {a.box && <FieldCrop crop={api.pageImageUrl(d.id, a.box.page, a.box, 640)} page={api.pageImageUrl(d.id, a.box.page)} box={a.box} label={NOTE_TYPE[a.type]} />}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** The original file as received, served by the server, turned upright. PDFs and text in a frame, images inline. */
 function FileView({ d }: { d: IntakeDoc }) {
-  const url = api.fileUrl(d)
+  const url = api.fileUrl(d, false, true)
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">

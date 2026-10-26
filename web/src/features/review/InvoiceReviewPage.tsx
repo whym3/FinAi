@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  Avatar, Banner, Bar, Card, CardBody, CardHeader, Chip, Chk, CompareCell, DocumentDrawer, Gstin, KV, MsmeBadge, OptionCard, PageHeader, Pill, Q, Restricted, Source, StatusPill, OkIcon, WarnIcon, BadIcon, NoneIcon, placeholderPaper,
+  Avatar, Banner, Bar, Card, CardBody, CardHeader, Chip, Chk, CompareCell, DocumentDrawer, FindingsTable, Gstin, KV, MsmeBadge, OptionCard, PageHeader, Pill, Q, Restricted, Source, StatusPill,
+  OkIcon, WarnIcon, BadIcon, NoneIcon, VerdictList, placeholderPaper,
 } from '@/components/pravah'
 import { useSession } from '@/app/session'
 import { useAct, useIntake, useInvoice, useInvoices, useVendors } from '@/api/hooks'
 import * as api from '@/api'
+import { VERIFICATION_LABEL, verdictStatus, verificationStatus } from '@/lib/evidence'
 import { date, dateTime, daysFromNow, inr } from '@/lib/format'
-import type { DecisionKind, EvidenceDoc, Invoice } from '@/lib/types'
+import type { DecisionKind, EvidenceDoc, Invoice, VerdictAction } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { invoiceStatus } from './ReviewQueuePage'
 
@@ -75,6 +77,14 @@ function Review({ inv }: { inv: Invoice }) {
     return [{ id: 'inv', title: inv.docTitle, number: inv.invoiceNo, date: date(inv.date), source: inv.channel === 'SAP' ? 'SAP' : 'Extracted', linkedBy: 'Auto-linked', check: invoiceStatus(inv), paper: p ?? placeholderPaper({ title: inv.docTitle, number: inv.invoiceNo, date: date(inv.date), source: inv.channel }) }]
   }, [intake, inv])
   const firstDiffTotal = inv.flags.reduce((s, f) => s + f.amount, 0)
+  const toIntake = (docId: string, extra: string) => nav(`/intake?tab=all&doc=${docId}${extra}`)
+  const onVerdict = (a: VerdictAction) => {
+    if (a.kind === 'field') toIntake(a.docId, a.key ? `&field=${a.key}` : '')
+    else if (a.kind === 'annotation') toIntake(a.docId, `&note=${a.index}`)
+    else if (a.kind === 'flag' && a.exceptionId) nav(`/exceptions?ex=${a.exceptionId}`)
+    else if (a.kind === 'verify') act(() => api.verifyInvoice(inv.id), 'Verification queued')
+    else if (a.kind === 'setup') nav(a.to)
+  }
 
   return (
     <>
@@ -97,6 +107,18 @@ function Review({ inv }: { inv: Invoice }) {
 
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex min-w-0 flex-[2_1_760px] flex-col gap-4">
+          <Card aria-label="Verdict">
+            <CardHeader title="Verdict"><Pill s={verdictStatus(inv.verdict)} /></CardHeader>
+            {!inv.verdict
+              ? <CardBody className="text-xs text-text-2">Not checked yet. Read the documents again from the Intake inbox to compare them and verify with GST systems.</CardBody>
+              : inv.verdict.state === 'clean'
+                ? <CardBody className="flex items-center gap-2 text-xs text-ok"><OkIcon />All documents agree and every check passed: ready to approve.</CardBody>
+                : inv.verdict.state === 'pending' && !inv.verdict.items.length
+                  ? <CardBody className="text-xs text-text-2">Still reading documents or waiting for GST systems; this updates on its own.</CardBody>
+                  : null}
+            {inv.verdict && <VerdictList verdict={inv.verdict} disabled={readOnly || pending} onAction={onVerdict} />}
+          </Card>
+
           <Card aria-label="Flags">
             <CardHeader title={inv.flags.length ? `${inv.flags.length} difference${inv.flags.length > 1 ? 's' : ''} to decide` : 'No differences'}>
               <span className="text-xs text-text-2">{firstDiffTotal ? <>Net <span className="font-medium text-text">{inr(dnTotal || firstDiffTotal)}</span> above PO incl. GST · </> : null}Pravah flags, you decide</span>
@@ -140,6 +162,13 @@ function Review({ inv }: { inv: Invoice }) {
               </table>
             </div>
           </Card>
+
+          {(inv.consistency?.length ?? 0) > 0 && (
+            <Card aria-label="Documents agree">
+              <CardHeader title="Do the documents agree?"><span className="text-[11px] text-text-2">Invoice, PO, GRN, transport papers, stamps and the e-invoice QR</span></CardHeader>
+              <FindingsTable findings={inv.consistency!} onOpen={(docId, key) => toIntake(docId, key ? `&field=${key}` : '')} />
+            </Card>
+          )}
 
           <Card aria-label="Decision" className="border-border-2">
             <CardHeader title="Decision"><span className="flex items-center gap-1.5 text-xs text-text-2"><Avatar id={inv.decision?.byId ?? user.id} />{users.find(u => u.id === (inv.decision?.byId ?? user.id))?.name} · {users.find(u => u.id === (inv.decision?.byId ?? user.id))?.title}{!inv.decision && approvalLimit > 0 && approvalLimit < 1e11 && ` · approval limit ${inr(approvalLimit)}`}</span></CardHeader>
@@ -193,6 +222,26 @@ function Review({ inv }: { inv: Invoice }) {
         </div>
 
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
+          <Card aria-label="GST verification">
+            <CardHeader title="GST verification"><Source name="GST portal" text="via Vayana" /></CardHeader>
+            <CardBody className="flex flex-col gap-2.5">
+              {(inv.verifications?.length ?? 0) === 0
+                ? <span className="text-xs text-text-2">{inv.verdict?.items.some(i => i.action?.kind === 'setup' && i.action.to === '/settings/integrations')
+                  ? <>Not connected. <Link to="/settings/integrations">Connect Vayana</Link> to check GSTIN status, the signed e-invoice and the e-way bill.</>
+                  : 'No checks have run for this invoice yet.'}</span>
+                : inv.verifications!.map(v => (
+                  <div key={v.id} className="flex flex-col gap-0.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium">{VERIFICATION_LABEL[v.kind]}</span><Pill s={verificationStatus(v)} /></div>
+                    <span className="font-mono text-[11px] break-all text-text-3">{v.ref}</span>
+                    {v.message && <span className="text-[11px] text-text-2">{v.message}</span>}
+                    {v.checkedAt && <span className="text-[11px] text-text-3">Checked {dateTime(v.checkedAt)}</span>}
+                  </div>
+                ))}
+              {!readOnly && inv.status === 'needs-decision' && !inv.verdict?.items.some(i => i.action?.kind === 'setup' && i.action.to === '/settings/integrations') && (
+                <div><Button size="sm" disabled={pending} onClick={() => act(() => api.verifyInvoice(inv.id), 'Verification queued')}>Verify again</Button></div>
+              )}
+            </CardBody>
+          </Card>
           <Card aria-label="TDS">
             <CardHeader title="TDS"><Source name="SAP" text="vendor master" /></CardHeader>
             <CardBody>

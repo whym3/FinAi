@@ -1,6 +1,6 @@
 // Every call the screens make. One module, one server.
 import type {
-  AiSettings, AuditEntry, DecisionKind, Entity, ExceptionItem, ExceptionRule, ExceptionStatus, ImportKind, ImportRun, IntakeDoc, Integrations, Invoice, MailProvider, Mailbox, Me,
+  AiSettings, AnnotationKey, AuditEntry, Box, DecisionKind, Entity, GspSettings, ExceptionItem, ExceptionRule, ExceptionStatus, ImportKind, ImportRun, IntakeDoc, Integrations, Invoice, MailProvider, Mailbox, Me,
   Notification, Priority, PurchaseOrder, SapConnection, SearchHit, SyncState, User, Vendor,
 } from '@/lib/types'
 import { ApiError, http, q } from './http'
@@ -42,6 +42,9 @@ export const getEntity = (id: string) => http<Entity>(`/entities/${id}`)
 export const createEntity = (body: EntityInput) => http<Entity>('/entities', { method: 'POST', json: body })
 export const updateEntity = (id: string, body: Partial<EntityInput>) => http<Entity>(`/entities/${id}`, { method: 'PATCH', json: body })
 export const activateEntity = (id: string) => http<Entity>(`/entities/${id}/activate`, { method: 'POST' })
+export const setEwbUser = (entityId: string, gstin: string, username: string, password: string) =>
+  http<Entity>(`/entities/${entityId}/gstins/${gstin}/ewb-user`, { method: 'PUT', json: { username, password } })
+export const clearEwbUser = (entityId: string, gstin: string) => http<Entity>(`/entities/${entityId}/gstins/${gstin}/ewb-user`, { method: 'DELETE' })
 export const validateGstin = (gstin: string, pan?: string) => http<{ ok: boolean; errors: string[]; warnings: string[]; state?: string }>('/validate/gstin', { method: 'POST', json: { gstin, pan } })
 
 /* ---------------- mailboxes ---------------- */
@@ -69,8 +72,14 @@ export function uploadDocs(entity: string, files: File[]) {
   files.forEach(f => form.append('files', f, f.name))
   return http<{ documents: IntakeDoc[]; skipped: string[] }>('/intake/upload' + q({ entity }), { method: 'POST', form })
 }
-export const fileUrl = (d: { fileUrl?: string; id: string }, download = false) => (d.fileUrl ?? `/api/files/${d.id}`) + (download ? '?download=true' : '')
+export const fileUrl = (d: { fileUrl?: string; id: string }, download = false, upright = false) =>
+  (d.fileUrl ?? `/api/files/${d.id}`) + (download ? '?download=true' : upright ? '?upright=true' : '')
+/** One upright page as an image, or the part of it inside the box: the evidence next to a field. */
+export const pageImageUrl = (docId: string, page: number, box?: Box | null, width = 900) =>
+  `/api/files/${docId}/pages/${page}.png` + q({ box: box ? `${box.x0},${box.y0},${box.x1},${box.y1}` : undefined, width })
 export const editField = (docId: string, key: string, value: string) => http<IntakeDoc>(`/intake/${docId}/fields`, { method: 'PATCH', json: { key, value } })
+export const editAnnotation = (docId: string, index: number, key: AnnotationKey, value: string) =>
+  http<IntakeDoc>(`/intake/${docId}/annotations/${index}`, { method: 'PATCH', json: { key, value } })
 export const confirmFields = (docId: string) => http<IntakeDoc>(`/intake/${docId}/confirm`, { method: 'POST' })
 export const setIntakeStatus = (docId: string, status: 'notfinance' | 'rejected' | 'new', note?: string) => http<IntakeDoc>(`/intake/${docId}/status`, { method: 'POST', json: { status, note } })
 export const reExtract = (docId: string) => http<IntakeDoc>(`/intake/${docId}/extract`, { method: 'POST' })
@@ -92,6 +101,9 @@ export const listInvoices = (entity: string) => http<Invoice[]>('/invoices' + q(
 export const getInvoice = (id: string) => http<Invoice>(`/invoices/${id}`)
 export const saveDraft = (id: string, draft: { kind: DecisionKind; reasons: string[]; note: string }) => http<Invoice>(`/invoices/${id}/draft`, { method: 'PUT', json: draft })
 export const submitDecision = (id: string, kind: DecisionKind, reasons: string[], note: string) => http<Invoice>(`/invoices/${id}/decision`, { method: 'POST', json: { kind, reasons, note } })
+export const verifyInvoice = (id: string) => http<Invoice>(`/invoices/${id}/verify`, { method: 'POST' })
+export interface InvoiceStats { days: number; decided: number; straightThrough: number; clean: number; issues: number; pending: number }
+export const invoiceStats = (entity: string, days = 30) => http<InvoiceStats>('/invoices/stats' + q({ entity, days }))
 export const confirmSecondApproval = (id: string) => http<Invoice>(`/invoices/${id}/second-approval`, { method: 'POST' })
 
 /* ---------------- exceptions ---------------- */
@@ -181,6 +193,11 @@ export const saveAi = (body: { provider: string; model: string; api_key?: string
 export const testAi = (body: { provider: string; model: string; api_key?: string | null }) => http<{ ok: boolean; message: string }>('/ai/test', { method: 'POST', json: body })
 export const listAiModels = (body: { provider: string; api_key?: string | null }) => http<{ ok: boolean; models: string[]; message: string }>('/ai/models', { method: 'POST', json: body })
 export const revokeAiKey = () => http<AiSettings>('/ai/key', { method: 'DELETE' })
+export const getGsp = () => http<GspSettings>('/gsp')
+export const saveGsp = (body: { environment: GspSettings['environment']; email: string; password?: string | null; org_id: string }) => http<GspSettings>('/gsp', { method: 'PUT', json: body })
+export const testGsp = (body: { environment: GspSettings['environment']; email: string; password?: string | null; org_id: string }) =>
+  http<{ ok: boolean; message: string; orgs: { id: string; name: string }[] }>('/gsp/test', { method: 'POST', json: body })
+export const revokeGsp = () => http<GspSettings>('/gsp/credentials', { method: 'DELETE' })
 export const getIntegrations = () => http<Integrations>('/integrations')
 
 // shapes only this module names

@@ -5,12 +5,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..auth import users_with_role
-from ..models import AppSetting, DispatchDoc, Entity, ExceptionItem, ExceptionRule, GoodsReceipt, Party, PurchaseOrder, SupplierInvoice
+from ..models import AppSetting, DispatchDoc, Entity, ExceptionItem, ExceptionRule, GoodsReceipt, Party, PurchaseOrder, SourceDocument, SupplierInvoice, Verification
 from ..notify import notify
-from ..serialize import f
+from ..serialize import f, verification_out
 from ..validate import STATES, check_gstin
+from . import crosscheck
 
-DEFAULT_TOL = {'qty_pct': 0.0, 'rate_pct': 0.5, 'tax_inr': 1.0, 'total_inr': 10.0, 'freight_inr': 0.0}
+DEFAULT_TOL = {'qty_pct': 0.0, 'rate_pct': 0.5, 'tax_inr': 1.0, 'total_inr': 10.0, 'freight_inr': 0.0, 'weight_pct': 10.0, 'weight_kg': 5.0}
+# facts the match below may already have raised its own flag for: fact -> that flag's key
+MATCH_FACTS = {'vehicle': 'vehicle', 'supplier_gstin': 'gstin'}
+VERIFY_TITLE = {'gstin': 'GSTIN status', 'einvoice_qr': 'E-invoice', 'ewb': 'E-way bill'}
 NA = {'s': 'na'}
 
 
@@ -73,6 +77,7 @@ def run_match(db: Session, inv: SupplierInvoice, today: date | None = None) -> N
     dispatch = list(db.scalars(select(DispatchDoc).where(DispatchDoc.entity_id == inv.entity_id, (DispatchDoc.po_id == inv.po_id) if inv.po_id else (DispatchDoc.invoice_ref == inv.invoice_no))))
     lr = next((d for d in dispatch if d.kind in ('lorry_receipt', 'eway_bill')), None)
     tol = tolerances(db, inv.entity_id)
+    group, findings = crosscheck.run_for_invoice(db, inv, tol)
     rows, flags, dn_lines = [], [], []
     neg = po.negotiation if po and po.negotiation else None
 
@@ -189,6 +194,32 @@ def run_match(db: Session, inv: SupplierInvoice, today: date | None = None) -> N
     if po and not grn:
         flag('grn', 'No goods receipt yet', 'The invoice arrived before the GRN; hold until stores confirm receipt', 'GRN before invoice', reason='Hold')
 
+    # documents of this delivery that disagree after a person confirmed them, and pages that never arrived
+    for fd in findings:
+        if fd['severity'] != 'discrepancy' or (fd['fact'] in MATCH_FACTS and any(fl['key'] == MATCH_FACTS[fd['fact']] for fl in flags)):
+            continue
+        if fd['fact'] == 'pages_missing':
+            if not any(fl['key'] == 'pages' for fl in flags):
+                flag('pages', 'Pages missing from a document', fd['detail'], 'Every page of the PO, invoice and GRN', reason='Query vendor')
+                flags[-1]['rule'] = 'pages'
+            continue
+        flag(f'xdoc-{fd["fact"]}', f'{fd["label"]} differs between documents', fd['detail'], 'Same value on every document', reason='Query vendor')
+        flags[-1]['rule'] = 'xdoc'
+    # results from GST systems
+    checks = latest_verifications(db, inv)
+    for v in checks:
+        if v.kind == 'gstin' and v.status in ('ok', 'mismatch') and (v.detail or {}).get('sts') and v.detail['sts'] != 'Active':
+            when = f', cancelled {v.detail["cxdt"]}' if v.detail.get('cxdt') else ''
+            flag('gstin-status', f'GSTIN {v.ref} is {v.detail["sts"]}', f'GST portal shows {v.detail.get("lgnm") or v.ref} as {v.detail["sts"]}{when}', 'Active GSTIN', reason='Hold')
+            flags[-1]['rule'] = 'gstin'
+        elif v.kind == 'einvoice_qr' and v.status in ('mismatch', 'failed'):
+            title = 'E-invoice QR signature is not valid' if v.status == 'failed' else 'Invoice differs from its signed e-invoice'
+            flag('einv', title, v.message or '', 'Signed QR matches the invoice', reason='Hold')
+            flags[-1]['rule'] = 'einv'
+        elif v.kind == 'ewb' and v.status in ('mismatch', 'failed'):
+            flag('ewb', 'E-way bill does not match the invoice' if v.status == 'mismatch' else 'E-way bill could not be verified', v.message or '', 'E-way bill matches the invoice', reason='Query vendor')
+            flags[-1]['rule'] = 'ewb'
+
     # MSME clock (acceptance = GRN date, else invoice date)
     msme = None
     if vendor and vendor.msme_class:
@@ -197,9 +228,37 @@ def run_match(db: Session, inv: SupplierInvoice, today: date | None = None) -> N
         pay_by = accepted + timedelta(days=limit)
         msme = {'daysLeft': (pay_by - today).days, 'acceptedOn': accepted.isoformat(), 'payBy': pay_by.isoformat(), 'recommended': 'Pay in the next run',
                 'note': f'{vendor.msme_class} enterprise · {limit}-day limit from acceptance'}
-    inv.match = {'heads': heads, 'rows': rows, 'flags': flags, 'msme': msme}
     inv.dn_lines = dn_lines
     _sync_exceptions(db, inv, flags, today)
+    from .verify import configured
+    rows_out = [verification_out(v) for v in checks]
+    inv.match = {'heads': heads, 'rows': rows, 'flags': flags, 'msme': msme, 'consistency': crosscheck.clean_findings(findings), 'verifications': rows_out,
+                 'verdict': crosscheck.verdict(group, findings, flags, rows_out, configured(db), pending=crosscheck.reading(group))}
+    for bundle_id in {d.bundle_id for d in group if d.bundle_id}:
+        bundle = db.get(SourceDocument, bundle_id)
+        if bundle:
+            refresh_bundle_checks(db, bundle)
+
+
+def latest_verifications(db: Session, inv: SupplierInvoice) -> list[Verification]:
+    """The newest check of each kind and reference for this invoice."""
+    latest: dict[tuple, Verification] = {}
+    for v in db.scalars(select(Verification).where(Verification.invoice_id == inv.id).order_by(Verification.id)):
+        latest[(v.kind, v.ref)] = v
+    return list(latest.values())
+
+
+def refresh_bundle_checks(db: Session, bundle: SourceDocument) -> None:
+    """The bundle's own view: its parts compared, with the flags and GST checks of the invoices it carries."""
+    from .verify import configured
+    parts = [p for p in db.scalars(select(SourceDocument).where(SourceDocument.bundle_id == bundle.id).order_by(SourceDocument.page_from)) if p.status not in ('rejected', 'notfinance')]
+    findings = crosscheck.compare(parts, tolerances(db, bundle.entity_id))
+    flags, checks = [], []
+    for inv in db.scalars(select(SupplierInvoice).where(SupplierInvoice.id.in_({p.invoice_id for p in parts if p.invoice_id}))):
+        flags += [fl for fl in (inv.match or {}).get('flags', []) if not fl['key'].startswith('xdoc-') and fl['key'] != 'pages']
+        checks += [verification_out(v) for v in latest_verifications(db, inv)]
+    bundle.data = {**(bundle.data or {}), 'checks': {'findings': crosscheck.clean_findings(findings),
+                                                     'verdict': crosscheck.verdict(parts, findings, flags, checks, configured(db), pending=crosscheck.reading(parts), include_discrepancies=True)}}
 
 
 def _sync_exceptions(db: Session, inv: SupplierInvoice, flags: list[dict], today: date) -> None:
@@ -212,7 +271,7 @@ def _sync_exceptions(db: Session, inv: SupplierInvoice, flags: list[dict], today
             item.status_note = review_note
             item.history = [*(item.history or []), {'at': today.isoformat(), 'text': review_note}]
     for fl in flags:
-        rule = rules.get(fl['key'])
+        rule = rules.get(fl.get('rule') or fl['key'])
         if rule and not rule.enabled:
             continue
         if fl['key'] in existing:
@@ -223,7 +282,7 @@ def _sync_exceptions(db: Session, inv: SupplierInvoice, flags: list[dict], today
             fl['exceptionId'] = f'EX-{item.id}'
             continue
         owners = users_with_role(db, inv.entity_id, {rule.default_role if rule else 'ap'})
-        x = ExceptionItem(entity_id=inv.entity_id, rule_id=rule.id if rule else None, type=fl['key'], title=f'{fl["title"]} · {inv.invoice_no}', doc_ref=inv.invoice_no,
+        x = ExceptionItem(entity_id=inv.entity_id, rule_id=rule.id if rule else None, type=rule.type if rule else fl['key'], title=f'{fl["title"]} · {inv.invoice_no}', doc_ref=inv.invoice_no,
                           doc_route=f'/review/{inv.id}', owner_id=owners[0].id if owners else None, priority=rule.priority if rule else 'Medium',
                           due=today + timedelta(days=rule.sla_days if rule else 3), amount=fl['amount'], invoice_id=inv.id, po_id=inv.po_id, vendor_id=inv.vendor_id,
                           flag_key=fl['key'], evidence_note=fl['detail'], sources=[{'source': 'Extracted', 'text': 'invoice'}] + ([{'source': 'SAP', 'text': 'PO'}] if inv.po_id else []),

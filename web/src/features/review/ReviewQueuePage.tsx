@@ -2,11 +2,12 @@ import { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { toast } from 'sonner'
-import { Avatar, Card, CardBody, Chip, DataTable, LineTabs, MsmeBadge, PageHeader, Pill, Q } from '@/components/pravah'
+import { Avatar, Card, CardBody, Chip, DataTable, FilterChip, LineTabs, MsmeBadge, PageHeader, Pill, Q } from '@/components/pravah'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/app/session'
-import { useAct, useAi, useInvoices, useVendors } from '@/api/hooks'
+import { useAct, useAi, useInvoiceStats, useInvoices, useVendors } from '@/api/hooks'
 import * as api from '@/api'
+import { verdictStatus } from '@/lib/evidence'
 import { date, dateTime, inr } from '@/lib/format'
 import type { Invoice, Status } from '@/lib/types'
 import { Flag, Upload } from 'lucide-react'
@@ -33,12 +34,15 @@ export default function ReviewQueuePage() {
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
   const tab = (sp.get('tab') ?? 'open') as Tab
+  const cleanOnly = sp.get('clean') === '1'
+  const stats = useInvoiceStats().data
   const columns = useMemo<ColumnDef<Invoice, any>[]>(() => [ // eslint-disable-line @typescript-eslint/no-explicit-any
     { accessorKey: 'invoiceNo', header: 'Invoice no.', cell: ({ getValue }) => <span className="font-mono font-medium whitespace-nowrap">{getValue()}</span> },
     { id: 'vendor', header: 'Vendor', accessorFn: i => vendors.find(v => v.id === i.vendorId)?.name, cell: ({ row: { original: i } }) => { const v = vendors.find(v => v.id === i.vendorId); return <span className="flex items-center gap-1.5 whitespace-nowrap"><span className="font-medium">{v?.name}</span>{v?.msme && <MsmeBadge cls={v.msme} />}</span> } },
     { accessorKey: 'date', header: 'Dated', cell: ({ getValue }) => date(getValue()) },
     { accessorKey: 'receivedAt', header: 'Received', cell: ({ getValue, row }) => <span className="whitespace-nowrap">{dateTime(getValue())} <span className="text-text-3">· {row.original.channel}</span></span> },
     { accessorKey: 'poId', header: 'PO', cell: ({ getValue }) => <span className="font-mono">{getValue() ?? '—'}</span> },
+    { id: 'verdict', header: 'Verdict', accessorFn: i => verdictStatus(i.verdict).label, cell: ({ row: { original: i } }) => i.status === 'needs-decision' ? <Pill s={verdictStatus(i.verdict)} /> : <span className="text-text-3">—</span> },
     { id: 'flags', header: 'Flags', accessorFn: i => i.flags.length, cell: ({ getValue }) => getValue() ? <Chip><Flag className="size-3" />{getValue()} flag{getValue() > 1 ? 's' : ''}</Chip> : <span className="text-xs text-ok">Clean match</span> },
     { accessorKey: 'total', header: 'Total', meta: { num: true }, cell: ({ getValue }) => inr(getValue()) },
     { id: 'status', header: 'Status', accessorFn: i => invoiceStatus(i).label, cell: ({ row: { original: i } }) => <Pill s={invoiceStatus(i)} /> },
@@ -46,7 +50,8 @@ export default function ReviewQueuePage() {
   ], [vendors])
   return (
     <>
-      <PageHeader title="Invoice review" sub="Three-way match of negotiated terms, PO, goods receipt and invoice. Pravah flags differences; a person decides." />
+      <PageHeader title="Invoice review" sub="Three-way match of negotiated terms, PO, goods receipt and invoice. Pravah flags differences; a person decides."
+        meta={stats && <span>Straight-through, last {stats.days} days: <span className="font-medium text-text">{stats.straightThrough} of {stats.decided} decided</span>{stats.decided ? ` (${Math.round(stats.straightThrough / stats.decided * 100)}%)` : ''} · open: {stats.clean} clean, {stats.issues} with issues{stats.pending ? `, ${stats.pending} checking` : ''}</span>} />
       <ReviewUpload />
       {!entity.id ? null :
       <Q q={q}>{all => {
@@ -64,7 +69,9 @@ export default function ReviewQueuePage() {
               { value: 'decided', label: 'Decided', count: lists.decided.length },
               { value: 'all', label: 'All', count: all.length },
             ]} />
-            <DataTable id="review" data={lists[tab]} columns={columns} getRowId={i => i.id} onRowClick={i => nav('/review/' + i.id)} initialSort={[{ id: 'receivedAt', desc: true }]} toolbar={null} />
+            <DataTable id="review" data={cleanOnly ? lists[tab].filter(i => i.verdict?.state === 'clean' && i.status === 'needs-decision') : lists[tab]} columns={columns} getRowId={i => i.id}
+              onRowClick={i => nav('/review/' + i.id)} initialSort={[{ id: 'receivedAt', desc: true }]}
+              toolbar={<FilterChip on={cleanOnly} onClick={() => setSp(p => { const n = new URLSearchParams(p); if (cleanOnly) n.delete('clean'); else n.set('clean', '1'); return n }, { replace: true })}>Clean only · ready to approve</FilterChip>} />
           </>
         )
       }}</Q>}

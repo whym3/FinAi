@@ -173,6 +173,9 @@ def _apply_po(db: Session, doc: SourceDocument, v: dict) -> None:
     po.payment_terms_days, po.freight_terms, po.delivery_terms = terms_days(v.get('paymentTerms')), v.get('freightTerms'), v.get('deliveryTerms')
     po.taxable, po.tax, po.total = (to_num(v.get(k)) or 0 for k in ('taxable', 'tax', 'total'))
     po.source_doc_id = doc.id
+    if po.lines:  # a re-read: drop the old lines first, or the new ones collide on (po_id, item)
+        po.lines = []
+        db.flush()
     po.lines = [PoLine(item=int(to_num(l.get('item')) or (i + 1) * 10), material_code=l.get('material'), description=l['desc'], hsn=norm_code(l['hsn']), uom=l['unit'],
                        qty=l['qty'], rate=l['rate'], tax_rate=l.get('taxRate'), amount=l['amount'], delivery_date=to_date(l.get('deliveryDate'))) for i, l in enumerate(doc.lines or [])]
     db.flush()

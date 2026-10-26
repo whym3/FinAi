@@ -4,3 +4,6 @@ server/.venv/
 server/storage/
 __pycache__/
 .pytest_cache/
+
+# sample client bundle, not code
+AKSHAY PLASTICS - 4230001548 - 3166.pdf

@@ -35,7 +35,7 @@ export interface Me {
   access: Record<string, { role: RoleKey; approvalLimit: number }>
 }
 
-export interface Gstin { gstin: string; code: string; state: string; placeOfBusiness?: string; filingFrequency?: 'monthly' | 'qrmp'; einvoiceApplicable?: boolean }
+export interface Gstin { gstin: string; code: string; state: string; placeOfBusiness?: string; filingFrequency?: 'monthly' | 'qrmp'; einvoiceApplicable?: boolean; ewbUsername?: string | null; ewbUserSet?: boolean }
 
 export type MailProvider = 'gmail' | 'outlook' | 'imap'
 /** A connected invoice mailbox (server). */
@@ -71,9 +71,14 @@ export interface AiSettings {
   lastTestAt?: string | null; lastTestResult?: string | null
   providers: string[]; knownModels: Record<string, string[]>; defaultModels: Record<string, string>
 }
+/** The GSP that verifies GSTINs, e-invoices and e-way bills (Vayana). */
+export interface GspSettings {
+  provider: string; environment: 'sandbox' | 'live'; email: string; passwordSet: boolean; orgId: string; configured: boolean
+  lastTestAt?: string | null; lastTestResult?: string | null
+}
 export interface Integrations {
   entities: { id: string; name: string }[]; mailboxes: Mailbox[]; oauth: { gmail: boolean; outlook: boolean }; sap: SapConnection[]
-  ai: AiSettings; smtp: { configured: boolean; from: string | null }; imports: (ImportRun & { kind: string })[]; publicUrl: string
+  ai: AiSettings; gsp: GspSettings; smtp: { configured: boolean; from: string | null }; imports: (ImportRun & { kind: string })[]; publicUrl: string
 }
 
 export interface Entity {
@@ -225,9 +230,47 @@ export interface ExtractedField {
   check?: Status
   confirmedBy?: string
   edited?: boolean
+  /** Where the value is printed: page within the document and 0-1000 coordinates of the upright page. */
+  box?: Box
+  /** Another document of the same delivery shows something else. */
+  xcheck?: Status
+  /** The e-invoice QR code's value when it differs from what was read. */
+  qr?: string
+  /** The value can never be right (an IRN of 63 characters); it must be corrected before confirming. */
+  blocking?: boolean
 }
 
-export interface DocLine { desc: string; hsn: string; qty: number; unit: string; rate: number; amount: number; confidence: number }
+export interface Box { page: number; x0: number; y0: number; x1: number; y1: number }
+
+export interface DocLine { desc: string; hsn: string; qty: number; unit: string; rate: number; amount: number; confidence: number; box?: Box; check?: Status }
+
+export type AnnotationType = 'receipt' | 'approval' | 'company_seal' | 'signature' | 'handwritten_note' | 'other'
+export type AnnotationKey = 'text' | 'grnNo' | 'gateEntryNo' | 'poNo' | 'invoiceNo' | 'parkPostNo' | 'date'
+/** A rubber stamp or handwritten note read off the page. */
+export type Annotation = { type: AnnotationType; confidence: number; box?: Box; xcheck?: Status; confirmedBy?: string; edited?: boolean } & Partial<Record<AnnotationKey, string | null>>
+
+export interface FindingObservation {
+  docId: string | null; kind: string; doc: string; key: string | null; label: string; value: string; confidence: number
+  source: 'printed' | 'stamp' | 'qr' | 'confirmed' | 'master'; outlier?: boolean; annotation?: number
+}
+/** One fact compared across the documents of a delivery. */
+export interface Finding {
+  fact: string; label: string; state: 'agree' | 'differ' | 'single'; severity: 'ok' | 'misread' | 'discrepancy' | 'warn'
+  consensus: string | null; detail: string; docId?: string | null; observations: FindingObservation[]
+}
+export type VerdictAction =
+  | { kind: 'field'; docId: string; key: string | null }
+  | { kind: 'annotation'; docId: string; index: number }
+  | { kind: 'flag'; key: string; exceptionId?: string }
+  | { kind: 'verify'; verificationId: string }
+  | { kind: 'setup'; to: string }
+export interface VerdictItem { tone: Tone; title: string; detail: string; blocks: boolean; action: VerdictAction | null }
+/** What stands between a delivery and approval. */
+export interface Verdict { state: 'clean' | 'issues' | 'pending'; issues: number; items: VerdictItem[] }
+export interface VerificationRow {
+  id: string; kind: 'gstin' | 'einvoice_qr' | 'ewb'; ref: string; status: 'pending' | 'ok' | 'mismatch' | 'failed' | 'skipped' | 'error'
+  message: string | null; detail: Record<string, unknown>; checkedAt: string | null
+}
 
 /** Data for the paper rendering of a document in the viewer. */
 export interface PaperDoc {
@@ -294,6 +337,14 @@ export interface IntakeDoc {
   grnId?: string | null
   /** Documents split out of a bundle (multi-document PDF). */
   parts?: IntakeDoc[]
+  /** Clockwise turn per page that makes it upright. */
+  rotations?: number[]
+  codes?: { page: number; einvoice: Record<string, string | null> | null }[]
+  annotations?: Annotation[]
+  /** The paper says "Page x of N". */
+  printedPageTotal?: number | null
+  /** A bundle's documents compared with each other. */
+  checks?: { findings: Finding[]; verdict: Verdict } | null
 }
 
 /* ---------------- purchase-to-pay ---------------- */
@@ -425,6 +476,8 @@ export interface Decision {
   debitNote?: { no: string; taxable: number; gst: number; total: number } | null
   secondById?: string
   secondAt?: string
+  /** Approved with nothing to fix: every document agreed and no field was edited. */
+  straightThrough?: boolean
 }
 
 export interface Invoice {
@@ -466,6 +519,9 @@ export interface Invoice {
   draft?: { kind: DecisionKind; reasons: string[]; note: string } | null
   decision?: Decision | null
   docTitle: string
+  verdict?: Verdict | null
+  consistency?: Finding[]
+  verifications?: VerificationRow[]
 }
 
 /* ---------------- exceptions ---------------- */

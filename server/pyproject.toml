@@ -12,19 +12,23 @@ dependencies = [
     "httpx>=0.28.1",
     "openai>=3.35.1",
     "openpyxl>=3.1.5",
+    "pillow>=11.0.0",
     "psycopg[binary]>=3.3.6",
     "pwdlib[argon2]>=0.3.1",
     "pydantic-settings>=2.15.0",
     "pyotp>=2.10.0",
     "pypdf>=6.20.1",
+    "pypdfium2>=4.30.0",
     "python-multipart>=0.0.32",
     "pyxlsb>=1.0.10",
     "sqlalchemy>=2",
     "uvicorn[standard]>=0.54.0",
+    "zxing-cpp>=2.3.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
     "respx>=0.23.1",
+    "segno>=1.6.1",
 ]

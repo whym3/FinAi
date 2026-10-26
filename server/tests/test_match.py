@@ -111,3 +111,11 @@ def test_vehicle_only_when_dispatch_docs_exist(db, firm):
     inv = db.query(SupplierInvoice).filter_by(invoice_no='X/1').one()
     run_match(db, inv, today=date(2026, 9, 3))
     assert {f['key'] for f in inv.match['flags']} == {'po'}
+
+
+def test_reading_a_po_again_replaces_its_lines(db, bundle):
+    e, po_doc, grn, inv = bundle
+    apply(db, po_doc)
+    db.flush()
+    po = db.query(PurchaseOrder).filter_by(po_no='4230001548').one()
+    assert [(l.item, float(l.qty)) for l in po.lines] == [(10, 1000.0)]

@@ -21,7 +21,8 @@ export const useIntake = () => { const e = useEntityId(); return useQuery({ quer
 export const usePOs = (p: { q?: string; plant?: string; vendor?: string; with_docs?: boolean } = {}) => { const e = useEntityId(); return useQuery({ queryKey: ['pos', e, p], queryFn: () => api.listPOs(e, p), enabled: !!e }) }
 export const usePO = (id: string) => useQuery({ queryKey: ['po', id], queryFn: () => api.getPO(id), refetchInterval: LIVE })
 export const useInvoices = () => { const e = useEntityId(); return useQuery({ queryKey: ['invoices', e], queryFn: () => api.listInvoices(e), refetchInterval: LIVE, enabled: !!e }) }
-export const useInvoice = (id: string) => useQuery({ queryKey: ['invoice', id], queryFn: () => api.getInvoice(id) })
+export const useInvoice = (id: string) => useQuery({ queryKey: ['invoice', id], queryFn: () => api.getInvoice(id), refetchInterval: q => q.state.data?.verdict?.state === 'pending' ? 5_000 : false })
+export const useInvoiceStats = () => { const e = useEntityId(); return useQuery({ queryKey: ['invoice-stats', e], queryFn: () => api.invoiceStats(e), refetchInterval: LIVE, enabled: !!e }) }
 export const useExceptions = () => { const e = useEntityId(); return useQuery({ queryKey: ['exceptions', e], queryFn: () => api.listExceptions(e), refetchInterval: LIVE, enabled: !!e }) }
 export const useRules = () => useQuery({ queryKey: ['rules'], queryFn: api.listRules })
 export const useGst = (gstin: string) => { const e = useEntityId(); return useQuery({ queryKey: ['gst', e, gstin], queryFn: () => api.getGst(e, gstin), enabled: !!e }) }
@@ -47,6 +48,7 @@ export const useImports = () => { const e = useEntityId(); return useQuery({ que
 export const useImportKinds = () => useQuery({ queryKey: ['import-kinds'], queryFn: api.listImportKinds, staleTime: Infinity })
 export const useSap = (entityId: string) => useQuery({ queryKey: ['sap', entityId], queryFn: () => api.getSap(entityId), enabled: !!entityId })
 export const useAi = (enabled = true) => useQuery({ queryKey: ['ai'], queryFn: api.getAi, enabled })
+export const useGsp = (enabled = true) => useQuery({ queryKey: ['gsp'], queryFn: api.getGsp, enabled })
 
 /**
  * Run any API mutation: `act(() => api.x(...), 'Saved')`.

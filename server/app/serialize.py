@@ -5,8 +5,8 @@ from decimal import Decimal
 from sqlalchemy.orm import Session as DbSession
 
 from .extract import ai as ai_mod
-from .models import (AiSetting, CustomerInvoice, Entity, ExceptionItem, Firm, GoodsReceipt, Import, Mailbox, Notification, Party, PurchaseOrder, SapConnection,
-                     SourceDocument, SupplierInvoice, User)
+from .models import (AiSetting, CustomerInvoice, Entity, ExceptionItem, Firm, GoodsReceipt, GspSetting, Import, Mailbox, Notification, Party, PurchaseOrder, SapConnection,
+                     SourceDocument, SupplierInvoice, User, Verification)
 
 IST = timezone(timedelta(hours=5, minutes=30))
 DOC_KIND_LABEL = {
@@ -67,7 +67,8 @@ def entity_out(e: Entity) -> dict:
     return {
         'id': e.id, 'name': e.legal_name, 'shortName': e.short_name, 'city': e.city, 'pan': e.pan, 'tan': e.tan, 'cin': e.cin,
         'gstins': [{'gstin': g.gstin, 'code': g.state_code, 'state': g.state, 'placeOfBusiness': g.place_of_business,
-                    'filingFrequency': g.filing_frequency, 'einvoiceApplicable': g.einvoice_applicable} for g in e.gstins],
+                    'filingFrequency': g.filing_frequency, 'einvoiceApplicable': g.einvoice_applicable,
+                    'ewbUsername': g.ewb_username, 'ewbUserSet': bool(g.ewb_username and g.enc_ewb_password)} for g in e.gstins],
         'sapCompanyCode': e.sap_company_code, 'risk': 'Low', 'riskScore': 0, 'intakeEmail': live[0].address if live else '', 'whatsapp': e.whatsapp,
         'status': e.status, 'fyStartMonth': e.fy_start_month, 'einvoiceBand': e.einvoice_band, 'msmeStatus': e.msme_status,
         'createdAt': ist(e.created_at), 'mailboxes': [mailbox_out(m) for m in live], 'plants': [{'code': p.code, 'name': p.name} for p in e.plants],
@@ -93,6 +94,9 @@ def doc_out(d: SourceDocument, parts: list[SourceDocument] | None = None) -> dic
         'bundleId': str(d.bundle_id) if d.bundle_id else None, 'poId': str(d.po_id) if d.po_id else None, 'grnId': str(d.grn_id) if d.grn_id else None,
         'invoiceId': str(d.invoice_id) if d.invoice_id else None, 'linkedPoId': str(d.po_id) if d.po_id else None,
         'parts': [doc_out(p) for p in parts] if parts else [],
+        'rotations': d.page_rotations or [], 'codes': [{'page': c.get('page'), 'einvoice': c.get('einvoice')} for c in d.codes or []],
+        'annotations': d.annotations or [], 'printedPageTotal': (d.data or {}).get('printedPages'),
+        'checks': (d.data or {}).get('checks') if d.kind == 'bundle' else None,
     }
 
 
@@ -155,6 +159,15 @@ def ai_out(c: AiSetting, cfg) -> dict:
             'providers': list(ai_mod.PROVIDERS), 'knownModels': ai_mod.KNOWN_MODELS, 'defaultModels': ai_mod.DEFAULT_MODEL}
 
 
+def gsp_out(c: GspSetting) -> dict:
+    return {'provider': c.provider or 'vayana', 'environment': c.environment or 'sandbox', 'email': c.email or '', 'passwordSet': bool(c.enc_password),
+            'orgId': c.org_id or '', 'configured': bool(c.email and c.enc_password and c.org_id), 'lastTestAt': ist(c.last_test_at), 'lastTestResult': c.last_test_result}
+
+
+def verification_out(v: Verification) -> dict:
+    return {'id': str(v.id), 'kind': v.kind, 'ref': v.ref, 'status': v.status, 'message': v.message, 'detail': v.detail or {}, 'checkedAt': ist(v.checked_at)}
+
+
 def grn_out(g: GoodsReceipt) -> dict:
     return {'id': str(g.id), 'grnNo': g.grn_no, 'date': iso(g.date), 'poRef': g.po_ref, 'gateEntryNo': g.gate_entry_no, 'gateEntryDate': iso(g.gate_entry_date),
             'invoiceRef': g.invoice_ref, 'lrNo': g.lr_no, 'transporter': g.transporter, 'vehicle': g.vehicle, 'ewaybill': g.ewaybill,
@@ -174,6 +187,7 @@ def invoice_out(inv: SupplierInvoice, vendor: Party | None = None) -> dict:
         'msme': m.get('msme'), 'draft': inv.draft, 'decision': inv.decision, 'docTitle': f'Tax invoice {inv.invoice_no}',
         'irn': inv.irn, 'ewaybill': inv.ewaybill, 'vehicle': inv.vehicle, 'placeOfSupply': inv.place_of_supply, 'supplierGstin': inv.supplier_gstin, 'billToGstin': inv.bill_to_gstin,
         'paymentTermsDays': inv.payment_terms_days, 'sapDocNo': inv.sap_doc_no,
+        'verdict': m.get('verdict'), 'consistency': m.get('consistency', []), 'verifications': m.get('verifications', []),
         'lines': [{'line': l.line_no, 'description': l.description, 'hsn': l.hsn, 'qty': f(l.qty), 'uom': l.uom, 'rate': f(l.rate), 'taxable': f(l.taxable), 'taxRate': f(l.tax_rate)} for l in inv.lines],
     }
 
