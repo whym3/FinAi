@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { boxStyle } from '@/lib/evidence'
 import { date, num2, rupeesInWords } from '@/lib/format'
-import type { EvidenceDoc, ExtractedField, PaperDoc, Status } from '@/lib/types'
+import type { Box, EvidenceDoc, ExtractedField, PaperDoc, Status } from '@/lib/types'
 import { Chk } from './data-table'
 import { Spacer, LineTabs } from './layout'
 import { Confidence, Pill, Source } from './status'
@@ -153,17 +154,49 @@ export function DocumentViewer({ doc, label, source, focus, onPick, compact }: {
   )
 }
 
-/** Extracted-field row: label, value box, confidence. Low confidence gets a dashed amber outline until someone confirms. */
-export function FieldRow({ f, on, onClick, value, action }: { f: ExtractedField; on?: boolean; onClick?: () => void; value?: ReactNode; action?: ReactNode }) {
+/** Extracted-field row: label, value box, confidence. Low confidence gets a dashed amber outline until someone confirms.
+ *  A value that can never be right gets a red outline; `evidence` shows the crop of the page where it was read. */
+export function FieldRow({ f, on, onClick, value, action, evidence }: { f: ExtractedField; on?: boolean; onClick?: () => void; value?: ReactNode; action?: ReactNode; evidence?: ReactNode }) {
   const low = f.confidence < 90 && !f.confirmedBy
   return (
-    <div onClick={onClick} className={cn('grid grid-cols-[minmax(110px,34%)_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-md border border-transparent px-2 py-1.5', onClick && 'cursor-pointer hover:bg-surface-2', on && 'bg-acc-weak hover:bg-acc-weak')}>
+    <div id={`field-${f.key}`} onClick={onClick} className={cn('grid grid-cols-[minmax(110px,34%)_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-md border border-transparent px-2 py-1.5', onClick && 'cursor-pointer hover:bg-surface-2', on && 'bg-acc-weak hover:bg-acc-weak')}>
       <span className="text-xs font-medium text-text-2">{f.label}</span>
-      <span className={cn('flex min-h-[30px] min-w-0 flex-wrap items-center gap-1.5 rounded-[5px] border px-2 py-1', low ? 'border-[1.5px] border-dashed border-warn bg-warn-bg' : 'border-border-2 bg-surface', on && !low && 'border-acc', value == null && f.mono && 'font-mono text-[12px]', f.num && 'justify-end tabular-nums')}>
+      <span title={f.blocking ? f.check?.label : undefined}
+        className={cn('flex min-h-[30px] min-w-0 flex-wrap items-center gap-1.5 rounded-[5px] border px-2 py-1', f.blocking ? 'border-[1.5px] border-bad bg-bad-bg' : low ? 'border-[1.5px] border-dashed border-warn bg-warn-bg' : 'border-border-2 bg-surface', on && !low && !f.blocking && 'border-acc', value == null && f.mono && 'font-mono text-[12px]', f.num && 'justify-end tabular-nums')}>
         {value ?? f.value}{action}
+        {f.xcheck && <span className={cn('basis-full text-[11px] font-medium', f.xcheck.tone === 'bad' ? 'text-bad' : 'text-warn')}>{f.xcheck.label}</span>}
       </span>
       {f.confirmedBy && f.confidence === 100 ? <Confidence value={100}>{f.edited ? 'Edited' : 'Confirmed'}</Confidence> : <Confidence value={f.confidence} />}
+      {evidence && <div className="col-start-2 col-end-4">{evidence}</div>}
     </div>
+  )
+}
+
+/** The part of the page a value was read from; click to see the whole page with the spot outlined. */
+export function FieldCrop({ crop, page, box, label, compact }: { crop: string; page: string; box: Box; label: string; compact?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [failed, setFailed] = useState(false)
+  if (failed) return null
+  return (
+    <>
+      {compact
+        ? <button type="button" onClick={e => { e.stopPropagation(); setOpen(true) }} className="cursor-pointer text-[11px] text-acc hover:underline">Show on page</button>
+        : <button type="button" onClick={e => { e.stopPropagation(); setOpen(true) }} aria-label={`Show where ${label} is on the page`}
+            className="block max-w-full cursor-zoom-in overflow-hidden rounded-md border border-border bg-surface-3">
+            <img src={crop} alt={`${label} as printed`} loading="lazy" onError={() => setFailed(true)} className="block max-h-[110px] w-auto max-w-full object-contain" />
+          </button>}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[760px]" onClick={e => e.stopPropagation()}>
+          <DialogHeader><DialogTitle>{label} · page {box.page}</DialogTitle></DialogHeader>
+          <div className="relative max-h-[75vh] overflow-auto rounded-md border border-border bg-surface-3">
+            <div className="relative">
+              <img src={page} alt={`Page ${box.page}`} className="block w-full" />
+              <span className="pointer-events-none absolute rounded-sm border-2 border-acc bg-acc/10" style={boxStyle(box)} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 

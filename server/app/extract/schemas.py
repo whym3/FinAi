@@ -1,11 +1,20 @@
 """One JSON schema per document kind. Values are strings so the model never invents number formats; we parse them after.
-Each header field is {value, confidence 0-100}. FIELD_META gives the web label and formatting for each key."""
+Each header field is {value, confidence 0-100, box}. FIELD_META gives the web label and formatting for each key."""
 
 KINDS = ['invoice', 'invoice_copy', 'credit_note', 'debit_note', 'delivery_challan', 'lorry_receipt', 'consignment_note', 'weighbridge', 'gate_entry',
          'eway_bill', 'purchase_order', 'goods_receipt', 'statement', 'quotation', 'other', 'not_finance']
 
-_F = {'type': 'object', 'additionalProperties': False, 'required': ['value', 'confidence'],
-      'properties': {'value': {'type': ['string', 'null']}, 'confidence': {'type': 'integer', 'description': '0-100: how sure you are the value is read correctly'}}}
+BOX_KEYS = ('page', 'x0', 'y0', 'x1', 'y1')
+_BOX = {'type': 'object', 'additionalProperties': False, 'required': list(BOX_KEYS),
+        'properties': {k: {'type': 'integer'} for k in BOX_KEYS}}
+_F = {'type': 'object', 'additionalProperties': False, 'required': ['value', 'confidence', 'box'],
+      'properties': {'value': {'type': ['string', 'null']}, 'confidence': {'type': 'integer', 'description': '0-100: how sure you are the value is read correctly'}, 'box': _BOX}}
+
+STAMP_TYPES = ['receipt', 'approval', 'company_seal', 'signature', 'handwritten_note', 'other']
+STAMP_KEYS = ['text', 'grnNo', 'gateEntryNo', 'poNo', 'invoiceNo', 'parkPostNo', 'date']
+_STAMPS = {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False, 'required': ['type', *STAMP_KEYS, 'confidence', 'box'],
+                                      'properties': {'type': {'type': 'string', 'enum': STAMP_TYPES}, **{k: {'type': 'string'} for k in STAMP_KEYS},
+                                                     'confidence': {'type': 'integer'}, 'box': _BOX}}}
 
 
 def _obj(keys: list[str], extra: dict | None = None) -> dict:
@@ -16,8 +25,8 @@ def _obj(keys: list[str], extra: dict | None = None) -> dict:
 
 
 def _lines(cols: list[str]) -> dict:
-    return {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False, 'required': [*cols, 'confidence'],
-                                        'properties': {**{c: {'type': ['string', 'null']} for c in cols}, 'confidence': {'type': 'integer'}}}}
+    return {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False, 'required': [*cols, 'confidence', 'box'],
+                                        'properties': {**{c: {'type': ['string', 'null']} for c in cols}, 'confidence': {'type': 'integer'}, 'box': _BOX}}}
 
 
 # key -> (label, mono, num)
@@ -29,7 +38,7 @@ FIELD_META: dict[str, dict[str, tuple[str, bool, bool]]] = {
         'ewaybill': ('E-way bill', True, False), 'vehicle': ('Vehicle', True, False), 'transporter': ('Transporter', False, False), 'paymentTerms': ('Payment terms', False, False),
         'taxable': ('Taxable value', False, True), 'cgst': ('CGST', False, True), 'sgst': ('SGST', False, True), 'igst': ('IGST', False, True),
         'freight': ('Freight / P&F', False, True), 'otherCharges': ('Other charges', False, True), 'roundOff': ('Round-off', False, True), 'total': ('Invoice total', False, True),
-        'bankAccount': ('Bank account', True, False), 'ifsc': ('IFSC', True, False),
+        'bankAccount': ('Bank account', True, False), 'ifsc': ('IFSC', True, False), 'amountInWords': ('Amount in words', False, False),
     },
     'purchase_order': {
         'poNo': ('PO number', True, False), 'poDate': ('PO date', False, False), 'vendorCode': ('Vendor code', True, False), 'vendorName': ('Vendor', False, False),
@@ -81,16 +90,20 @@ LINE_COLS = {
 
 def schema_for(kind: str) -> dict:
     meta = FIELD_META.get(kind, FIELD_META['generic'])
-    extra = {'lines': _lines(LINE_COLS[kind])} if kind in LINE_COLS else None
+    extra = {'lines': _lines(LINE_COLS[kind])} if kind in LINE_COLS else {}
+    extra['stamps'] = _STAMPS
     return _obj(list(meta), extra)
 
 
 CLASSIFY_SCHEMA = {
-    'type': 'object', 'additionalProperties': False, 'required': ['documents'],
+    'type': 'object', 'additionalProperties': False, 'required': ['documents', 'pages'],
     'properties': {'documents': {'type': 'array', 'items': {
-        'type': 'object', 'additionalProperties': False, 'required': ['page_from', 'page_to', 'kind', 'number', 'date', 'party', 'confidence'],
+        'type': 'object', 'additionalProperties': False, 'required': ['page_from', 'page_to', 'kind', 'number', 'date', 'party', 'printed_page_total', 'confidence'],
         'properties': {'page_from': {'type': 'integer'}, 'page_to': {'type': 'integer'}, 'kind': {'type': 'string', 'enum': KINDS},
-                       'number': {'type': ['string', 'null']}, 'date': {'type': ['string', 'null']}, 'party': {'type': ['string', 'null']}, 'confidence': {'type': 'integer'}}}}},
+                       'number': {'type': ['string', 'null']}, 'date': {'type': ['string', 'null']}, 'party': {'type': ['string', 'null']},
+                       'printed_page_total': {'type': 'integer'}, 'confidence': {'type': 'integer'}}}},
+                   'pages': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False, 'required': ['page', 'rotation'],
+                                                        'properties': {'page': {'type': 'integer'}, 'rotation': {'type': 'integer', 'enum': [0, 90, 180, 270]}}}}},
 }
 
 CLASSIFY_PROMPT = """You sort scanned paperwork received by the accounts-payable team of an Indian company.
@@ -99,19 +112,28 @@ Kinds: invoice (the original tax invoice), invoice_copy (a duplicate/transporter
 delivery_challan, lorry_receipt (transporter GR/LR/consignment receipt with GR number), consignment_note (a handwritten or simple consignor/consignee slip without a GR number),
 weighbridge (weighbridge/weighment ticket with gross/tare/net), gate_entry (gate entry, unloading or material information sheet of the receiving plant),
 eway_bill, purchase_order, goods_receipt (GRN / goods receipt note / MIGO printout), statement, quotation, other, not_finance.
-number = the document's own number (invoice no., PO no., GRN no., GR no., ticket no.); date as printed; party = the issuing party's name."""
+number = the document's own number (invoice no., PO no., GRN no., GR no., ticket no.); date as printed; party = the issuing party's name.
+printed_page_total = y when the document prints "Page x of y", else 0.
+pages: one entry per page of the file; rotation = degrees clockwise to turn that page so its main text reads upright (0 when it already does)."""
 
 COMMON = """Copy values exactly as printed. Use null when a field is absent; never guess.
 Dates as DD-MM-YYYY. Amounts and quantities as plain numbers with decimals and no commas or symbols (e.g. 72500.00, 1000.000).
 Vehicle numbers without spaces (DL01LV1851). GSTINs are 15 characters. IRN is 64 hex characters.
+A printed caption, column heading or template text (e.g. "HEADING 1", "Consignor", the field's own label) is not a value: use null.
 confidence (0-100) is how sure you are the value is read correctly: lower it for blurry, handwritten, stamped-over, cut-off or ambiguous text.
-Handwritten values must get confidence 70 or lower."""
+Handwritten values must get confidence 70 or lower.
+box: where the value is printed, on the page as you see it, as page (1-based within this file) and x0, y0, x1, y1 from 0 to 1000
+(left, top, right, bottom of the page); all 0 when the value is not on the page.
+stamps: every rubber stamp and handwritten note as its own entry (receipt stamps of stores or gate, approval or "OK" marks, company seals, signatures,
+handwritten notes). text = what it says; copy any numbers it carries into grnNo, gateEntryNo, poNo, invoiceNo, parkPostNo (park/post or SAP document no.)
+and date, exactly as written, including shorthand like "5-119339"; empty string where absent. Handwritten stamp values get confidence 70 or lower.
+Handwriting that fills in a printed form field is that field's value, not a stamp: do not repeat it under stamps."""
 
 PROMPTS = {
     'invoice': 'You read an Indian GST tax invoice (or credit/debit note or delivery challan) received from a supplier.\n'
                'gstin is the supplier\'s GSTIN, billTo is the buyer\'s. pos is place of supply as printed (state name or code). poRef is the buyer\'s PO number quoted on the invoice.\n'
                'paymentTerms as printed (e.g. "30 DAYS CREDIT"). freight is packing & forwarding / freight charged on the invoice (0.00 if a line shows zero). reverseCharge Y or N.\n'
-               'lines: one entry per item line; taxRate is the GST % for that line.\n' + COMMON,
+               'amountInWords is the invoice total written in words, as printed. lines: one entry per item line; taxRate is the GST % for that line.\n' + COMMON,
     'purchase_order': 'You read a purchase order issued by the buyer (an Indian company) to a vendor. vendorCode is the buyer\'s number for the vendor (e.g. 1003071).\n'
                       'paymentTerms, freightTerms (e.g. "FREIGHT EXTRA AS ACTUAL", "FOR destination") and deliveryTerms as printed. plant = the delivery plant/address name.\n'
                       'lines: item is the PO line number (10, 20…); materialCode the buyer\'s material code; deliveryDate the required delivery date.\n' + COMMON,

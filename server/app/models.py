@@ -121,6 +121,8 @@ class GstRegistration(Base):
     place_of_business: Mapped[str] = mapped_column(String(200), default='')
     filing_frequency: Mapped[str] = mapped_column(String(10), default='monthly')
     einvoice_applicable: Mapped[bool] = mapped_column(Boolean, default=True)
+    ewb_username: Mapped[str | None] = mapped_column(String(60))  # e-way bill API user created for the GSP
+    enc_ewb_password: Mapped[str | None] = mapped_column(Text)
 
 
 class EntityPlant(Base):
@@ -185,6 +187,22 @@ class AiSetting(Base):
     updated_at: Mapped[dt.datetime] = now_col()
 
 
+class GspSetting(Base):
+    """The GST Suvidha Provider used to verify e-invoices, e-way bills and GSTINs. One row, set in Settings -> Integrations."""
+    __tablename__ = 'gsp_settings'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20), default='vayana')
+    environment: Mapped[str] = mapped_column(String(10), default='sandbox')  # sandbox | live
+    email: Mapped[str] = mapped_column(String(320), default='')
+    enc_password: Mapped[str | None] = mapped_column(Text)
+    org_id: Mapped[str] = mapped_column(String(80), default='')
+    enc_token: Mapped[str | None] = mapped_column(Text)
+    token_expiry: Mapped[dt.datetime | None] = ts_col()
+    last_test_at: Mapped[dt.datetime | None] = ts_col()
+    last_test_result: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[dt.datetime] = now_col()
+
+
 # ---------------- documents ----------------
 
 class SourceDocument(Base):
@@ -222,6 +240,27 @@ class SourceDocument(Base):
     grn_id: Mapped[int | None] = mapped_column(ForeignKey('goods_receipts.id'))
     invoice_id: Mapped[int | None] = mapped_column(ForeignKey('supplier_invoices.id'))
     dispatch_id: Mapped[int | None] = mapped_column(ForeignKey('dispatch_docs.id'))
+    page_rotations: Mapped[list] = mapped_column(J, default=list)  # clockwise degrees per page that make it upright
+    codes: Mapped[list] = mapped_column(J, default=list)  # QR codes found: [{page, text, einvoice}]
+    annotations: Mapped[list] = mapped_column(J, default=list)  # stamps and handwritten notes
+    created_at: Mapped[dt.datetime] = now_col()
+
+
+class Verification(Base):
+    """One check against GST systems through the GSP: GSTIN status, signed e-invoice QR or e-way bill."""
+    __tablename__ = 'verifications'
+    __table_args__ = (Index('ix_verifications_ref', 'entity_id', 'kind', 'ref'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    entity_id: Mapped[str] = mapped_column(ForeignKey('entities.id'), index=True)
+    invoice_id: Mapped[int | None] = mapped_column(ForeignKey('supplier_invoices.id'), index=True)
+    kind: Mapped[str] = mapped_column(String(16))  # gstin | einvoice_qr | ewb
+    ref: Mapped[str] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(12), default='pending')  # pending | ok | mismatch | failed | skipped | error
+    task_id: Mapped[str | None] = mapped_column(String(80))
+    detail: Mapped[dict] = mapped_column(J, default=dict)
+    message: Mapped[str | None] = mapped_column(Text)
+    polls: Mapped[int] = mapped_column(Integer, default=0)
+    checked_at: Mapped[dt.datetime | None] = ts_col()
     created_at: Mapped[dt.datetime] = now_col()
 
 

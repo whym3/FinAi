@@ -85,3 +85,21 @@ def client(db):
     c = TestClient(app, headers={'X-Pravah': '1'})
     yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def sign_in(client, db):
+    """Sign a user in with MFA passed, without going through the login screens: sign_in(user) -> client."""
+    import secrets
+    from datetime import timedelta
+
+    from app.auth import COOKIE, _h, now
+    from app.models import Session as UserSession
+
+    def go(user):
+        raw = secrets.token_urlsafe(32)
+        db.add(UserSession(id=_h(raw), user_id=user.id, mfa_passed=True, last_seen_at=now(), expires_at=now() + timedelta(hours=1)))
+        db.flush()
+        client.cookies.set(COOKIE, raw)
+        return client
+    return go

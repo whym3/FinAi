@@ -3,9 +3,10 @@ import { Link } from 'react-router'
 import { Book, Box, Check, DoorOpen, File, FileCheck, IndianRupee, RefreshCw, Tag, Truck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { daysFromNow, dayMonthTime, date, inr } from '@/lib/format'
-import type { Comment, ExceptionItem, MatchCell, Stage } from '@/lib/types'
+import type { Comment, ExceptionItem, Finding, FindingObservation, MatchCell, Stage, Verdict, VerdictAction } from '@/lib/types'
 import { useSession } from '@/app/session'
-import { Avatar, BadIcon, NoneIcon, OkIcon, Prio, Sla, StatusPill, WarnIcon } from './status'
+import { Button } from '@/components/ui/button'
+import { Avatar, BadIcon, NoneIcon, OkIcon, Prio, Sla, StatusPill, WarnIcon, toneIcon, toneText } from './status'
 
 /* ---------- comparison-grid cell ---------- */
 
@@ -105,5 +106,72 @@ export function OptionCard({ name, checked, onChange, title, desc, disabled }: {
       <input type="radio" name={name} checked={checked} onChange={onChange} disabled={disabled} className="mt-0.5 accent-[var(--primary)]" />
       <span className="flex flex-col"><span className="font-medium">{title}</span>{desc && <span className="text-[11px] text-text-3">{desc}</span>}</span>
     </label>
+  )
+}
+
+/* ---------- documents of one delivery compared ---------- */
+
+const SOURCE_TAG: Record<FindingObservation['source'], string> = { printed: '', stamp: 'stamp', qr: 'QR', confirmed: 'confirmed', master: 'master' }
+
+/** One row per fact: what each document says, the reading that disagrees marked, and whether that is a misread or a real difference. */
+export function FindingsTable({ findings, onOpen }: { findings: Finding[]; onOpen?: (docId: string, key: string | null) => void }) {
+  const rows = [...findings].sort((a, b) => Number(a.state !== 'differ') - Number(b.state !== 'differ'))
+  if (!rows.length) return <div className="px-4 py-3 text-xs text-text-3">Nothing to compare yet: the documents share no references.</div>
+  return (
+    <div className="overflow-auto">
+      <table className="w-full border-separate border-spacing-0 text-[12.5px] [&_td]:border-b [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:align-top [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-2 [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_th]:text-[11.5px] [&_th]:font-semibold [&_th]:text-text-2">
+        <thead><tr><th className="w-[150px]">Fact</th><th>What each document says</th><th className="w-[150px]">Result</th></tr></thead>
+        <tbody>
+          {rows.map(fd => (
+            <tr key={fd.fact + (fd.docId ?? '')}>
+              <td className="font-medium text-text-2">{fd.label}</td>
+              <td>
+                {fd.observations.length ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {fd.observations.map((o, i) => (
+                      <button key={i} type="button" disabled={!onOpen || !o.docId} onClick={() => o.docId && onOpen?.(o.docId, o.key)}
+                        className={cn('flex max-w-full flex-col rounded-md border px-2 py-1 text-left', o.outlier && fd.severity !== 'ok' ? 'border-bad-bd bg-bad-bg' : 'border-border bg-surface', onOpen && o.docId && 'cursor-pointer hover:border-acc')}>
+                        <span className="text-[10.5px] text-text-3">{o.doc}{SOURCE_TAG[o.source] && ` · ${SOURCE_TAG[o.source]}`}</span>
+                        <span className="font-mono text-[12px] break-all">{o.value}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : <span className="text-text-2">{fd.detail}</span>}
+              </td>
+              <td>
+                {fd.state !== 'differ' ? <StatusPill tone="ok" plain>{fd.state === 'single' ? 'Read once' : 'Agree'}</StatusPill>
+                  : fd.severity === 'misread' ? <StatusPill tone="warn">Check reading</StatusPill>
+                    : fd.severity === 'warn' ? <StatusPill tone="warn" plain>Differs (allowed)</StatusPill>
+                      : <StatusPill tone="bad">Differs</StatusPill>}
+                {fd.state === 'differ' && fd.consensus && <div className="mt-1 text-[11px] text-text-3">Most say {fd.consensus}</div>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+const ACTION_LABEL: Record<VerdictAction['kind'], string> = { field: 'Fix', annotation: 'Fix', flag: 'Open exception', verify: 'Verify again', setup: 'Set up' }
+
+/** The verdict's items, each with the one button that resolves it. */
+export function VerdictList({ verdict, onAction, disabled }: { verdict: Verdict; onAction: (a: VerdictAction) => void; disabled?: boolean }) {
+  if (verdict.state === 'clean' && !verdict.items.length) return null
+  return (
+    <ul className="flex flex-col">
+      {verdict.items.map((it, i) => { const Icon = toneIcon[it.tone]; return (
+        <li key={i} className="flex items-start gap-2.5 border-b border-border px-4 py-2 last:border-b-0">
+          <span className={cn('mt-0.5', toneText[it.tone])}><Icon size={15} /></span>
+          <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-0.5">
+            <span className="font-medium">{it.title}{!it.blocks && <span className="ml-1.5 text-[11px] font-normal text-text-3">for information</span>}</span>
+            {it.detail && <span className="text-[11px] break-words text-text-2">{it.detail}</span>}
+          </div>
+          {it.action && (it.action.kind !== 'flag' || it.action.exceptionId) && (
+            <Button size="xs" disabled={disabled && it.action.kind !== 'setup' && it.action.kind !== 'flag'} onClick={() => onAction(it.action!)}>{ACTION_LABEL[it.action.kind]}</Button>
+          )}
+        </li>
+      ) })}
+    </ul>
   )
 }

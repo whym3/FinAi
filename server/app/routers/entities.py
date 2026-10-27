@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import crypto
 from ..auth import ADMIN_ROLES, audit, current_user, require_admin, require_entity, require_role, visible_entities
 from ..db import get_db
 from ..models import Entity, GstRegistration, User
@@ -158,6 +159,45 @@ def activate_entity(entity_id: str, request: Request, u: User = Depends(current_
         raise HTTPException(422, 'Add at least one GST registration first')
     e.status = 'active'
     audit(db, u.id, e.id, 'Activated client', e.legal_name, request=request)
+    db.commit()
+    db.refresh(e)
+    return entity_out(e)
+
+
+class EwbUserIn(BaseModel):
+    username: str = Field(min_length=1, max_length=60)
+    password: str = Field(min_length=1, max_length=200)
+
+
+def _registration(e: Entity, gstin: str) -> GstRegistration:
+    reg = next((g for g in e.gstins if g.gstin == gstin.strip().upper()), None)
+    if not reg:
+        raise HTTPException(404, f'{gstin} is not a GST registration of this client')
+    return reg
+
+
+@router.put('/entities/{entity_id}/gstins/{gstin}/ewb-user')
+def set_ewb_user(entity_id: str, gstin: str, body: EwbUserIn, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The e-way bill API user this GSTIN created for the GSP, so e-way bills addressed to it can be verified."""
+    e = get_entity(db, u, entity_id)
+    require_role(u, e.id, ADMIN_ROLES, 'edit client details')
+    reg = _registration(e, gstin)
+    reg.ewb_username, reg.enc_ewb_password = body.username.strip(), crypto.encrypt(body.password)
+    audit(db, u.id, e.id, 'Set e-way bill API user', reg.gstin, f'user {reg.ewb_username} · credentials set', request=request)
+    db.commit()
+    db.refresh(e)
+    return entity_out(e)
+
+
+@router.delete('/entities/{entity_id}/gstins/{gstin}/ewb-user')
+def clear_ewb_user(entity_id: str, gstin: str, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    e = get_entity(db, u, entity_id)
+    require_role(u, e.id, ADMIN_ROLES, 'edit client details')
+    reg = _registration(e, gstin)
+    if not reg.enc_ewb_password and not reg.ewb_username:
+        raise HTTPException(404, 'No e-way bill API user is stored for this GSTIN')
+    reg.ewb_username, reg.enc_ewb_password = None, None
+    audit(db, u.id, e.id, 'Cleared e-way bill API user', reg.gstin, 'credentials cleared', request=request)
     db.commit()
     db.refresh(e)
     return entity_out(e)

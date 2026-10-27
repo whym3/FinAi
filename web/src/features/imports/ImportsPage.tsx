@@ -16,7 +16,7 @@ import { NativeSelect } from '@/features/settings/clients/parts'
 const STATUS: Record<ImportRun['status'], [Tone, string]> = { detected: ['warn', 'Needs mapping'], queued: ['acc', 'Queued'], running: ['acc', 'Running'], done: ['ok', 'Done'], failed: ['bad', 'Failed'] }
 
 export default function ImportsPage() {
-  const { entity, readOnly } = useSession()
+  const { entity, entities, isAdmin, firmWide, readOnly } = useSession()
   const q = useImports()
   const kinds = useImportKinds().data ?? []
   const { act, pending } = useAct()
@@ -26,11 +26,27 @@ export default function ImportsPage() {
   const open = q.data?.find(i => i.id === openId)
 
   async function drop(files: FileList | File[]) {
+    if (!entity.id) return
     for (const f of Array.from(files)) {
       const r = await act(() => api.uploadImport(entity.id, f), r => r.kind ? `${f.name}: looks like a ${kinds.find(k => k.kind === r.kind)?.label.toLowerCase() ?? r.kind}` : `${f.name}: could not tell the kind, map it by hand`)
       if (r) setOpenId(r.id)
     }
   }
+
+  if (entities.length === 0) return (
+    <>
+      <PageHeader title="Imports" sub="SAP exports and other spreadsheets" />
+      <Card>
+        <CardBody className="flex flex-col items-start gap-3 py-8">
+          <EmptyState title="Add a client before importing" icon={<FileSpreadsheet className="size-5" />}>
+            Every uploaded register belongs to a client. Create the first client, then return here to upload its .xlsx, .xlsb or .csv files.
+          </EmptyState>
+          {(isAdmin || firmWide) ? <Button variant="default" asChild><Link to="/settings/clients/new">Onboard client</Link></Button> :
+            <p className="text-xs text-text-2">Ask a firm admin or partner to onboard a client and give you access.</p>}
+        </CardBody>
+      </Card>
+    </>
+  )
 
   return (
     <>

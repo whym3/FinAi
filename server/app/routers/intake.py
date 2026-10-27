@@ -1,25 +1,63 @@
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from ..auth import WORK_ROLES, audit, current_user, load_session, require_entity, require_role
+from ..auth import WORK_ROLES, audit, current_user, load_session, require_admin, require_entity, require_role
 from ..config import settings
 from ..db import get_db
-from ..domain import link
-from ..domain.match import run_match
+from ..domain import link, verify
+from ..domain.match import refresh_bundle_checks, run_match
+from ..extract import ai, render
 from ..extract.schemas import FIELD_META
+from ..extract.split import slice_pdf
+from ..extract.validate import assess, blocking_error
 from ..mail.base import Attachment
 from ..mail.ingest import expand, ingest_file, mime_of
 from ..mailer import send
 from ..models import Job, PurchaseOrder, SourceDocument, SupplierInvoice, User
 from ..serialize import doc_out
+from ..validate import check_gstin
 
 router = APIRouter(prefix='/api', tags=['intake'])
+
+
+@router.post('/intake/suggest-client')
+async def suggest_client(files: list[UploadFile] = File(...), u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Suggest bill-to client details from an invoice without saving the document or client."""
+    require_admin(u, 'create a client from an invoice')
+    cfg = ai.config(db)
+    if not cfg.configured:
+        raise HTTPException(503, 'Configure an AI document reader in Settings → Integrations first')
+    for file in files:
+        name = file.filename or 'document'
+        mime = mime_of(name, file.content_type or '')
+        if mime not in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp'):
+            continue
+        data = await file.read()
+        if len(data) > settings.max_upload_mb * 1024 * 1024:
+            raise HTTPException(413, f'{name}: larger than {settings.max_upload_mb} MB')
+        try:
+            found = ai.classify(cfg, data, mime, name).raw.get('documents', [])
+            invoice = next((d for d in found if d.get('kind') in ('invoice', 'invoice_copy')), None)
+            if not invoice:
+                continue
+            part = slice_pdf(data, int(invoice['page_from']), int(invoice.get('page_to') or invoice['page_from'])) if mime == 'application/pdf' else data
+            fields = ai.extract(cfg, 'invoice', part, mime, name).raw
+            def value(key: str) -> str:
+                return str((fields.get(key) or {}).get('value') or '').strip()
+            gstin = value('billTo').upper()
+            validation = check_gstin(gstin) if gstin else None
+            return {'legal_name': value('billToName'), 'gstin': gstin, 'pan': gstin[2:12] if len(gstin) == 15 else '',
+                    'source': name, 'warnings': validation['errors'] + validation['warnings'] if validation else ['Bill-to GSTIN was not found; enter it before creating the client']}
+        except Exception as exc:
+            raise HTTPException(422, f'Could not read {name}: {type(exc).__name__}') from exc
+    raise HTTPException(422, 'No invoice found in the selected PDF or images. Include an invoice to create the client.')
 
 
 def get_doc(db: Session, u: User, doc_id: str | int, act: bool = False) -> SourceDocument:
@@ -71,16 +109,74 @@ async def upload(entity: str, request: Request, files: list[UploadFile] = File(.
     return {'documents': [doc_out(d) for d in out], 'skipped': skipped}
 
 
-# <iframe>/<img> send cookies but no custom header, so this GET skips the CSRF check on purpose.
-@router.get('/files/{doc_id}')
-def file(doc_id: int, request: Request, download: bool = False, db: Session = Depends(get_db)):
+def _file_doc(request: Request, db: Session, doc_id: int) -> SourceDocument:
     loaded = load_session(request, db)
     if not loaded or not loaded[0].mfa_passed:
         raise HTTPException(401, 'unauthenticated')
-    d = get_doc(db, loaded[1], doc_id)
+    return get_doc(db, loaded[1], doc_id)
+
+
+FILE_HEADERS = {'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, max-age=3600'}
+
+
+# <iframe>/<img> send cookies but no custom header, so these GETs skip the CSRF check on purpose.
+@router.get('/files/{doc_id}')
+def file(doc_id: int, request: Request, download: bool = False, upright: bool = False, db: Session = Depends(get_db)):
+    d = _file_doc(request, db, doc_id)
     mime = 'text/plain; charset=utf-8' if d.mime in ('application/xml', 'application/json') else d.mime
-    return FileResponse(d.storage_path, media_type=mime, filename=d.filename, content_disposition_type='attachment' if download else 'inline',
-                        headers={'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, max-age=3600'})
+    if upright and not download and d.mime in render.RENDERABLE:
+        try:
+            data, out_mime = render.upright_file(Path(d.storage_path).read_bytes(), d.mime, d.page_rotations or [])
+            return Response(data, media_type=out_mime, headers={**FILE_HEADERS, 'Content-Disposition': 'inline'})
+        except Exception:
+            pass  # the original is still worth showing
+    return FileResponse(d.storage_path, media_type=mime, filename=d.filename, content_disposition_type='attachment' if download else 'inline', headers=FILE_HEADERS)
+
+
+@router.get('/files/{doc_id}/pages/{page}.png')
+def page_image(doc_id: int, page: int, request: Request, box: str | None = None, width: int = Query(900, ge=64, le=1600), db: Session = Depends(get_db)):
+    """One upright page as PNG, or the part of it inside box=x0,y0,x1,y1 (0-1000): the evidence next to a field."""
+    d = _file_doc(request, db, doc_id)
+    if d.mime not in render.RENDERABLE:
+        raise HTTPException(404, 'This document has no pages to show')
+    if not 1 <= page <= (d.pages or 1):
+        raise HTTPException(422, f'Page {page} is not in this document')
+    area = None
+    if box:
+        try:
+            x0, y0, x1, y1 = (int(v) for v in box.split(','))
+        except ValueError:
+            raise HTTPException(422, 'box is four whole numbers: x0,y0,x1,y1') from None
+        if not (0 <= x0 < x1 <= 1000 and 0 <= y0 < y1 <= 1000):
+            raise HTTPException(422, 'box values run from 0 to 1000 with x0 < x1 and y0 < y1')
+        area = {'x0': x0, 'y0': y0, 'x1': x1, 'y1': y1}
+    rotations = d.page_rotations or []
+    try:
+        png = render.page_png(Path(d.storage_path).read_bytes(), d.mime, page, rotations[page - 1] if page - 1 < len(rotations) else 0, area, width)
+    except render.RenderError:
+        raise HTTPException(422, 'Page could not be rendered') from None
+    return Response(png, media_type='image/png', headers=FILE_HEADERS)
+
+
+def _rematch(db: Session, d: SourceDocument) -> list[SupplierInvoice]:
+    """Re-run the match for every open invoice this document belongs to, and the checks of its bundle."""
+    conds = [SupplierInvoice.id == d.invoice_id] if d.invoice_id else []
+    if d.grn_id:
+        conds.append(SupplierInvoice.grn_id == d.grn_id)
+    if d.po_id:
+        conds.append(SupplierInvoice.po_id == d.po_id)
+    invs = list(db.scalars(select(SupplierInvoice).where(SupplierInvoice.entity_id == d.entity_id, or_(*conds)))) if conds else []
+    for inv in invs:
+        if inv.status == 'needs-decision':
+            run_match(db, inv)
+    if d.bundle_id:
+        bundle = db.get(SourceDocument, d.bundle_id)
+        if bundle:
+            refresh_bundle_checks(db, bundle)
+    return invs
+
+
+VERIFIED_KEYS = ('irn', 'ewaybill', 'gstin', 'billTo', 'invoiceNo', 'invoiceDate', 'total')
 
 
 class FieldEdit(BaseModel):
@@ -99,16 +195,44 @@ def edit_field(doc_id: str, body: FieldEdit, request: Request, u: User = Depends
             raise HTTPException(404, 'Unknown field')
         f = {'key': body.key, 'label': meta[0], 'value': '', 'confidence': 0, **({'mono': True} if meta[1] else {}), **({'num': True} if meta[2] else {})}
         fields.append(f)
+    value = body.value.strip()
+    problem = blocking_error(d.kind, body.key, value) if value else None
+    if problem:
+        raise HTTPException(422, f"{f['label']}: {problem}")
     before = f['value']
-    f.update(value=body.value.strip(), confidence=100, edited=True, confirmedBy=str(u.id))
-    f.pop('check', None)
-    d.fields = fields
+    f.update(value=value, confidence=100, read=100, edited=True, confirmedBy=str(u.id))
+    d.fields = assess(d.kind, fields, [dict(ln) for ln in d.lines or []], d.codes or [], d.received_at.date() if d.received_at else None)
     link.apply(db, d)  # the record behind the document follows the correction
-    if d.invoice_id:
-        inv = db.get(SupplierInvoice, d.invoice_id)
-        if inv and inv.status == 'needs-decision':
-            run_match(db, inv)
+    invs = _rematch(db, d)
+    if body.key in VERIFIED_KEYS:
+        for inv in invs:
+            if inv.status == 'needs-decision' and inv.id == d.invoice_id:
+                verify.queue(db, inv)
     audit(db, u.id, d.entity_id, 'Edited extracted field', d.filename, f"{f['label']}: {before} → {f['value']}", before={'value': before}, after={'value': f['value']}, request=request)
+    db.commit()
+    return doc_out(d)
+
+
+class AnnotationEdit(BaseModel):
+    key: Literal['text', 'grnNo', 'gateEntryNo', 'poNo', 'invoiceNo', 'parkPostNo', 'date']
+    value: str
+
+
+@router.patch('/intake/{doc_id}/annotations/{index}')
+def edit_annotation(doc_id: str, index: int, body: AnnotationEdit, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    d = get_doc(db, u, doc_id, act=True)
+    notes = [dict(a) for a in d.annotations or []]
+    if not 0 <= index < len(notes):
+        raise HTTPException(404, 'Unknown stamp or note')
+    a = notes[index]
+    before = a.get(body.key) or ''
+    a[body.key] = body.value.strip() or None
+    a.update(confidence=100, read=100, baseConfidence=100, edited=True, confirmedBy=str(u.id))
+    a.pop('xcheck', None)
+    d.annotations = notes
+    _rematch(db, d)
+    audit(db, u.id, d.entity_id, 'Edited stamp or note', d.filename, f'{a.get("type")} {body.key}: {before} → {a[body.key] or ""}',
+          before={'value': before}, after={'value': a[body.key]}, request=request)
     db.commit()
     return doc_out(d)
 
@@ -118,13 +242,18 @@ def confirm(doc_id: str, request: Request, u: User = Depends(current_user), db: 
     d = get_doc(db, u, doc_id, act=True)
     if not d.fields:
         raise HTTPException(409, 'Nothing read yet: run extraction first')
+    blocked = [f['label'] for f in d.fields if f.get('blocking')]
+    if blocked:
+        raise HTTPException(409, f'Correct before confirming; these values can never be right: {", ".join(blocked)}')
     low = [f['label'] for f in d.fields if f['confidence'] < 90 and not f.get('confirmedBy')]
     d.fields = [{**f, 'confirmedBy': f.get('confirmedBy') or str(u.id)} for f in d.fields]
+    d.annotations = [{**a, 'confirmedBy': a.get('confirmedBy') or str(u.id)} for a in d.annotations or []]
     d.confirmed_by = u.id
     d.status = 'linked' if (d.po_id or d.invoice_id or d.grn_id or d.dispatch_id) else 'review'
     d.status_note = 'Confirmed · linked' if d.status == 'linked' else 'Fields confirmed · no PO matched yet'
     audit(db, u.id, d.entity_id, 'Confirmed extracted fields', d.filename,
           f'{len(low)} low-confidence field(s) accepted unchanged: {", ".join(low)}' if low else 'All fields high confidence', request=request)
+    _rematch(db, d)
     db.commit()
     return doc_out(d)
 

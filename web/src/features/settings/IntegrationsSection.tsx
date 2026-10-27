@@ -6,10 +6,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Banner, Card, CardBody, CardHeader, EmptyState, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
-import { useAct, useAi, useIntegrations, useSap } from '@/api/hooks'
+import { useAct, useAi, useGsp, useIntegrations, useSap } from '@/api/hooks'
 import * as api from '@/api'
 import { dateTime } from '@/lib/format'
-import type { SapConnection } from '@/lib/types'
+import type { GspSettings, SapConnection } from '@/lib/types'
 import { ConnectMailbox, Field, MailboxRow, NativeSelect, PasswordInput } from './clients/parts'
 
 const OBJECTS: [string, string][] = [['purchase_orders', 'Purchase orders'], ['goods_receipts', 'Goods receipts'], ['supplier_invoices', 'Supplier invoices'], ['business_partners', 'Business partners (vendors)'], ['ar_open_items', 'Customer open items'], ['ap_open_items', 'Vendor open items']]
@@ -44,6 +44,15 @@ export function IntegrationsSection() {
         <Card>
           <CardHeader title="Document reading" as="h3" />
           <AiCard canManage={canManage} />
+        </Card>
+        <Card>
+          <CardHeader title="GST verification" as="h3"><span className="text-[11px] text-text-3">Vayana · GSP</span></CardHeader>
+          {isAdmin ? <GspCard /> : (
+            <CardBody className="flex flex-col gap-2 text-xs">
+              {d?.gsp.configured ? <StatusPill tone="ok">Connected · {d.gsp.environment}</StatusPill> : <StatusPill tone="none" plain>Not connected</StatusPill>}
+              <p className="text-text-2">A firm admin connects the GSP that checks GSTIN status, signed e-invoices and e-way bills.</p>
+            </CardBody>
+          )}
         </Card>
         <Card>
           <CardHeader title="Outgoing email" as="h3" />
@@ -174,6 +183,76 @@ function AiCard({ canManage }: { canManage: boolean }) {
           <DialogFooter>
             <Button onClick={() => setConfirmRevoke(false)}>Keep the key</Button>
             <Button variant="destructive" disabled={pending} onClick={async () => { await act(() => api.revokeAiKey(), 'Key revoked'); setKey(''); setTest(null); setLive(null); setConfirmRevoke(false) }}><KeyRound />Revoke key</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </CardBody>
+  )
+}
+
+/** The GSP login that verifies GSTINs, the IRP signature on e-invoice QR codes and e-way bills. */
+function GspCard() {
+  const q = useGsp()
+  const d = q.data
+  if (q.isError) return <CardBody className="text-xs text-text-3">Only a firm admin can see these settings.</CardBody>
+  if (!d) return <CardBody className="text-xs text-text-3">Loading…</CardBody>
+  // A new form whenever the saved settings change: every mutation refetches, and that must not wipe what is being typed.
+  return <GspForm key={`${d.environment}|${d.email}|${d.orgId}|${d.passwordSet}`} d={d} />
+}
+
+function GspForm({ d }: { d: GspSettings }) {
+  const { act, pending } = useAct()
+  const [environment, setEnvironment] = useState<GspSettings['environment']>(d.environment)
+  const [email, setEmail] = useState(d.email)
+  const [password, setPassword] = useState('')
+  const [orgId, setOrgId] = useState(d.orgId)
+  const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([])
+  const [test, setTest] = useState<{ ok: boolean; message: string } | null>(null)
+  const [confirmRevoke, setConfirmRevoke] = useState(false)
+  const body = { environment, email: email.trim(), org_id: orgId.trim(), password: password ? password : undefined }
+  const orgOptions: [string, string][] = orgs.length ? orgs.map(o => [o.id, o.name ? `${o.name} · ${o.id}` : o.id]) : orgId ? [[orgId, orgId]] : []
+  return (
+    <CardBody className="flex flex-col gap-3 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        {d.configured ? <StatusPill tone="ok">Connected · {d.environment}</StatusPill> : <StatusPill tone="bad">Not configured</StatusPill>}
+        {d.lastTestAt && <span className="text-text-3">Tested {dateTime(d.lastTestAt)}</span>}
+      </div>
+      {d.lastTestResult && !test && <Banner tone={d.lastTestResult.startsWith('OK') ? 'ok' : 'bad'}>{d.lastTestResult}</Banner>}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Environment">
+          <NativeSelect label="Environment" value={environment} onChange={v => { setEnvironment(v as GspSettings['environment']); setTest(null) }} options={[['sandbox', 'Sandbox (testing)'], ['live', 'Live']]} />
+        </Field>
+        <Field label="Vayana login email"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="off" /></Field>
+      </div>
+      <Field label={d.passwordSet ? 'Password (saved · enter to replace)' : 'Password'}>
+        <PasswordInput aria-label="Vayana password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="off" placeholder={d.passwordSet ? '••••••••' : ''} />
+      </Field>
+      <Field label="Organisation" hint={orgs.length ? `${orgs.length} on this login` : 'Test the login to list the organisations it can use'}>
+        {orgOptions.length ? <NativeSelect label="Organisation" value={orgId} onChange={setOrgId} options={[['', 'Choose…'], ...orgOptions]} />
+          : <Input value={orgId} onChange={e => setOrgId(e.target.value)} placeholder="Organisation id" className="font-mono" />}
+      </Field>
+      {test && <Banner tone={test.ok ? 'ok' : 'bad'}>{test.message}</Banner>}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="default" disabled={pending || !email.trim()} onClick={async () => { if (await act(() => api.saveGsp({ ...body, password: password ? password : null }), 'GST verification saved')) { setPassword(''); setTest(null) } }}>Save</Button>
+        <Button disabled={pending || !email.trim() || (!password && !d.passwordSet)} onClick={async () => {
+          const r = await act(() => api.testGsp(body))
+          if (!r) return
+          setTest(r)
+          setOrgs(r.orgs)
+          if (!orgId && r.orgs.length === 1) setOrgId(r.orgs[0].id)
+        }}><Plug />Test login</Button>
+        {d.passwordSet && <Button variant="ghost" disabled={pending} onClick={() => setConfirmRevoke(true)}><KeyRound />Revoke</Button>}
+      </div>
+      <p className="text-text-2">Checks each supplier's GSTIN status, verifies the IRP signature on the e-invoice QR code read from the paper, and matches e-way bills. Ask Vayana to set your billing GSTIN (comm GSTIN). E-way bills also need each client's e-way bill API user, set under the client's GST registrations. The password is stored encrypted and never shown again.</p>
+      <Dialog open={confirmRevoke} onOpenChange={setConfirmRevoke}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>Revoke the Vayana login?</DialogTitle>
+            <DialogDescription>Pravah forgets the password and stops verifying with GST systems until a new one is saved. Results already recorded stay, and the audit log keeps the record.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setConfirmRevoke(false)}>Keep it</Button>
+            <Button variant="destructive" disabled={pending} onClick={async () => { await act(() => api.revokeGsp(), 'Login revoked'); setPassword(''); setTest(null); setConfirmRevoke(false) }}><KeyRound />Revoke</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

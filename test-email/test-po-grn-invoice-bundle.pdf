@@ -1,0 +1,54 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 591 >>
+stream
+BT /F1 12 Tf 48 750 Td 20 TL (TEST DATA ONLY - PURCHASE ORDER) Tj T* (PO No: PO-TEST-2026-001) Tj T* (PO Date: 18-10-2026) Tj T* (Buyer: APOLLO PIPES LIMITED) Tj T* (Buyer GSTIN: 09AAACA1199D1ZW) Tj T* (Vendor: DEMO INDUSTRIAL SUPPLIES PRIVATE LIMITED) Tj T* (Vendor GSTIN: 07AAACD1234E1Z5) Tj T* (Ship to: Dadri Plant, Uttar Pradesh) Tj T* (Item 10: PVC Resin Grade A) Tj T* (HSN: 39041020) Tj T* (Quantity: 100 BAG) Tj T* (Rate: INR 500.00 per BAG) Tj T* (Taxable: INR 50000.00) Tj T* (IGST 18%: INR 9000.00) Tj T* (Total: INR 59000.00) Tj T* (Payment terms: 30 days from receipt) Tj T* ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 511 >>
+stream
+BT /F1 12 Tf 48 750 Td 20 TL (TEST DATA ONLY - GOODS RECEIPT NOTE) Tj T* (GRN No: GRN-TEST-2026-001) Tj T* (GRN Date: 20-10-2026) Tj T* (PO No: PO-TEST-2026-001) Tj T* (Invoice No: INV-TEST-2026-001) Tj T* (Vendor: DEMO INDUSTRIAL SUPPLIES PRIVATE LIMITED) Tj T* (Vendor GSTIN: 07AAACD1234E1Z5) Tj T* (Plant: Dadri, Uttar Pradesh) Tj T* (Vehicle: UP16AB1234) Tj T* (Item 10: PVC Resin Grade A) Tj T* (HSN: 39041020) Tj T* (Received Qty: 100 BAG) Tj T* (Accepted Qty: 95 BAG) Tj T* (Rejected Qty: 5 BAG) Tj T* ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 645 >>
+stream
+BT /F1 12 Tf 48 750 Td 20 TL (TEST DATA ONLY - GST TAX INVOICE) Tj T* (Invoice No: INV-TEST-2026-001) Tj T* (Invoice Date: 19-10-2026) Tj T* (Supplier: DEMO INDUSTRIAL SUPPLIES PRIVATE LIMITED) Tj T* (Supplier GSTIN: 07AAACD1234E1Z5) Tj T* (Bill To: APOLLO PIPES LIMITED) Tj T* (Bill To GSTIN: 09AAACA1199D1ZW) Tj T* (PO Reference: PO-TEST-2026-001) Tj T* (Item: PVC Resin Grade A) Tj T* (HSN: 39041020) Tj T* (Quantity: 100 BAG) Tj T* (Rate: INR 520.00 per BAG) Tj T* (Taxable value: INR 52000.00) Tj T* (IGST 18%: INR 9360.00) Tj T* (Invoice total: INR 61360.00) Tj T* (Payment terms: 15 days from invoice) Tj T* (Vehicle: UP16AB1234) Tj T* ET
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000127 00000 n 
+0000000197 00000 n 
+0000000323 00000 n 
+0000000965 00000 n 
+0000001091 00000 n 
+0000001653 00000 n 
+0000001779 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+2475
+%%EOF

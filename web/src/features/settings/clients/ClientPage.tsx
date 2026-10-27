@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { useParams } from 'react-router'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Banner, Card, CardBody, CardHeader, Gstin, KV, PageHeader, Q, StatusPill } from '@/components/pravah'
 import { useSession } from '@/app/session'
 import { useAct, useEntity } from '@/api/hooks'
 import * as api from '@/api'
 import type { EntityInput, GstInput } from '@/api'
 import type { Entity } from '@/lib/types'
-import { CompanyFields, GstinEditor, MailboxesCard, companyErrors, gstinRowError, useCanManage } from './parts'
+import { CompanyFields, Field, GstinEditor, MailboxesCard, PasswordInput, companyErrors, gstinRowError, useCanManage } from './parts'
 
 const BAND = { 'above-5cr': 'Above ₹5 Cr · e-invoice required', 'below-5cr': 'Below ₹5 Cr', exempt: 'Exempt' }
 
@@ -25,6 +27,7 @@ function Client({ e }: { e: Entity }) {
   const [editing, setEditing] = useState(false)
   const [c, setC] = useState<EntityInput>(() => toInput(e))
   const [gst, setGst] = useState<GstInput[]>(() => toGst(e))
+  const [ewbFor, setEwbFor] = useState<string | null>(null)
   const err = companyErrors(c), gstErr = gstinRowError(gst, e.pan)
   const reset = () => { setC(toInput(e)); setGst(toGst(e)); setEditing(false) }
 
@@ -62,13 +65,44 @@ function Client({ e }: { e: Entity }) {
                 <Gstin g={g.gstin} state={`${g.code} · ${g.state}`} />
                 <span className="mr-auto text-[11.5px] text-text-2">{g.placeOfBusiness}</span>
                 <span className="text-[11px] text-text-3">{g.filingFrequency === 'qrmp' ? 'Quarterly (QRMP)' : 'Monthly'} · {g.einvoiceApplicable ? 'e-invoice' : 'no e-invoice'}</span>
+                <div className="flex basis-full flex-wrap items-center gap-2 text-[11px]">
+                  <span className="text-text-2">E-way bill API user:</span>
+                  {g.ewbUserSet ? <StatusPill tone="ok" plain>{g.ewbUsername}</StatusPill> : <StatusPill tone="none" plain>Not set</StatusPill>}
+                  {canEdit && <Button size="xs" onClick={() => setEwbFor(g.gstin)}>{g.ewbUserSet ? 'Change' : 'Set'}</Button>}
+                  {canEdit && g.ewbUserSet && <Button size="xs" variant="ghost" disabled={pending} onClick={() => act(() => api.clearEwbUser(e.id, g.gstin), 'E-way bill API user removed')}>Remove</Button>}
+                </div>
               </div>
             ))}
           </Card>
         )}
+        <EwbUserDialog entityId={e.id} gstin={ewbFor} onClose={() => setEwbFor(null)} />
         <MailboxesCard entityId={e.id} ret={`/settings/clients/${e.id}`} />
       </div>
     </>
+  )
+}
+
+/** The e-way bill portal API user this GSTIN created for the GSP, so e-way bills addressed to it can be verified. */
+function EwbUserDialog({ entityId, gstin, onClose }: { entityId: string; gstin: string | null; onClose: () => void }) {
+  const { act, pending } = useAct()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  return (
+    <Dialog open={gstin != null} onOpenChange={o => { if (!o) { onClose(); setUsername(''); setPassword('') } }}>
+      <DialogContent className="sm:max-w-[460px]">
+        <DialogHeader>
+          <DialogTitle>E-way bill API user · {gstin}</DialogTitle>
+          <DialogDescription>On ewaybillgst.gov.in, sign in as this GSTIN, go to Registration → For GSP, choose Vayana and create an API user. Enter it here; the password is stored encrypted and never shown again.</DialogDescription>
+        </DialogHeader>
+        <Field label="API username"><Input value={username} onChange={ev => setUsername(ev.target.value)} autoComplete="off" /></Field>
+        <Field label="API password"><PasswordInput aria-label="API password" value={password} onChange={ev => setPassword(ev.target.value)} autoComplete="off" /></Field>
+        <DialogFooter>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="default" disabled={pending || !username.trim() || !password}
+            onClick={async () => { if (gstin && await act(() => api.setEwbUser(entityId, gstin, username.trim(), password), 'E-way bill API user saved')) { setUsername(''); setPassword(''); onClose() } }}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

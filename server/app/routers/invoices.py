@@ -1,13 +1,15 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..auth import approval_limit, audit, current_user, require_entity, require_role, users_with_role
+from ..auth import WORK_ROLES, approval_limit, audit, current_user, require_entity, require_role, users_with_role
 from ..db import get_db
+from ..domain import verify
+from ..domain.crosscheck import group_for_invoice
 from ..models import ExceptionItem, Party, SourceDocument, SupplierInvoice, User
 from ..notify import notify
 from ..serialize import f, invoice_out
@@ -35,6 +37,41 @@ def list_invoices(entity: str, u: User = Depends(current_user), db: Session = De
     invs = db.scalars(select(SupplierInvoice).where(SupplierInvoice.entity_id == entity).order_by(SupplierInvoice.received_at.desc()).limit(500)).all()
     vendors = {p.id: p for p in db.scalars(select(Party).where(Party.id.in_([i.vendor_id for i in invs if i.vendor_id])))} if invs else {}
     return [invoice_out(i, vendors.get(i.vendor_id)) for i in invs]
+
+
+@router.get('/invoices/stats')
+def invoice_stats(entity: str, days: int = Query(30, ge=1, le=365), u: User = Depends(current_user), db: Session = Depends(get_db)):
+    """How many invoices went through without anyone touching them, and where the open ones stand."""
+    require_entity(u, entity)
+    since = datetime.now(UTC) - timedelta(days=days)
+    decided = straight = 0
+    open_states = {'clean': 0, 'issues': 0, 'pending': 0}
+    for inv in db.scalars(select(SupplierInvoice).where(SupplierInvoice.entity_id == entity)):
+        if inv.decision:
+            try:
+                at = datetime.fromisoformat(inv.decision['at'])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if at >= since:
+                decided += 1
+                straight += bool(inv.decision.get('straightThrough'))
+        elif inv.status == 'needs-decision':
+            state = ((inv.match or {}).get('verdict') or {}).get('state')
+            if state in open_states:
+                open_states[state] += 1
+    return {'days': days, 'decided': decided, 'straightThrough': straight, **open_states}
+
+
+@router.post('/invoices/{inv_id}/verify')
+def verify_invoice(inv_id: str, request: Request, u: User = Depends(current_user), db: Session = Depends(get_db)):
+    inv = get_invoice(db, u, inv_id)
+    require_role(u, inv.entity_id, WORK_ROLES, 'verify invoices')
+    if not verify.configured(db):
+        raise HTTPException(409, 'Connect Vayana in Settings → Integrations to verify with GST systems.')
+    verify.queue(db, inv)
+    audit(db, u.id, inv.entity_id, 'Queued GST verification', inv.invoice_no, request=request)
+    db.commit()
+    return _out(db, inv)
 
 
 @router.get('/invoices/{inv_id}')
@@ -92,7 +129,10 @@ def decide(inv_id: str, body: DraftIn, request: Request, u: User = Depends(curre
         tax = sum(l['taxable'] for l in inv.dn_lines)
         gst = sum(l['gst'] for l in inv.dn_lines)
         dn = {'no': _next_dn(db, inv.entity_id), 'taxable': round(tax, 2), 'gst': round(gst, 2), 'total': round(tax + gst, 2)}
-    inv.decision = {'kind': body.kind, 'reasons': body.reasons, 'note': body.note, 'byId': str(u.id), 'at': datetime.now(UTC).isoformat(), 'secondApproverNeeded': second, 'debitNote': dn}
+    clean = ((inv.match or {}).get('verdict') or {}).get('state') == 'clean'
+    untouched = not any(f.get('edited') for d in group_for_invoice(db, inv) for f in d.fields or [])
+    inv.decision = {'kind': body.kind, 'reasons': body.reasons, 'note': body.note, 'byId': str(u.id), 'at': datetime.now(UTC).isoformat(), 'secondApproverNeeded': second, 'debitNote': dn,
+                    'straightThrough': clean and untouched and body.kind == 'approve'}
     inv.status = {'hold': 'held', 'reject': 'rejected', 'dn': 'dn-raised'}.get(body.kind, 'approved')
     inv.draft = None
     for fl in (inv.match or {}).get('flags', []):
